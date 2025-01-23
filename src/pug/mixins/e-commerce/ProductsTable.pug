@@ -1,0 +1,78 @@
+mixin ProductTableRow(product,index)
+  tr.position-static
+    td.fs-9.align-middle
+      .form-check.mb-0.fs-8
+        input.form-check-input(type='checkbox' data-bulk-select-row!=data)
+    td.align-middle.white-space-nowrap.py-0
+      a(href=`/products/${product.id}`).d-block.border.border-translucent.rounded-2
+        img(src=`${product.image && product.image.url ? product.image.url : 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2'}` alt=`${product.name}` width=53)
+
+    td.product.align-middle.ps-4
+      //- a.fw-semibold.line-clamp-3.mb-0(href=`${CWD}${paths['e-commerce-fe-product-details']}`)=`${data.product.slice(0,138)}${data.product.length > 138 ? '...' : '' }`
+      a.fw-semibold.line-clamp-3.mb-0(href=`/products/${product.id}`)= `${product.name}`
+    td.price.align-middle.white-space-nowrap.text-end.fw-bold.text-body-tertiary.ps-4= `$${product.price}`
+    td.category.align-middle.white-space-nowrap.text-body-quaternary.fs-9.ps-4.fw-semibold
+      each cat in product.category
+        a(href="#!").text-decoration-none
+          span.badge.badge-tag.me-2.mb-2= cat.name
+    td.tags.align-middle.review.pb-2.ps-3(style="min-width:225px;")
+      each tag in product.tags
+        a(href="#!").text-decoration-none
+          span.badge.badge-tag.me-2.mb-2= tag
+    td.align-middle.review.fs-8.text-center.ps-4
+      span.fas.fa-star.text-warning
+      //- else
+        .d-toggle-container
+          .d-block-hover
+            span.fas.fa-star.text-warning
+          .d-none-hover
+            span.far.fa-star.text-warning
+    td.vendor.align-middle.text-start.fw-semibold.ps-4
+      if product.vendor
+        a(href='#!')=`${product.vendor.name}`
+    td.time.align-middle.white-space-nowrap.text-body-tertiary.text-opacity-85.ps-4= new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(product.dateCreated))
+    td.align-middle.white-space-nowrap.text-end.pe-0.ps-4.btn-reveal-trigger
+      +DashboardDropdown.fs-10
+
+
+mixin ProductTable(products)
+  .table-responsive.scrollbar.mx-n1.px-1
+    table.table.fs-9.mb-0
+      thead
+        tr
+          th.white-space-nowrap.fs-9.align-middle.ps-0(style="max-width:20px; width:18px;")
+            .form-check.mb-0.fs-8
+              input.form-check-input#checkbox-bulk-products-select(
+                type='checkbox' 
+                data-bulk-select!={
+                  body: "products-table-body",
+                }
+              )
+          th.sort.white-space-nowrap.align-middle.fs-10(scope='col' style='width:70px;')
+          th.sort.white-space-nowrap.align-middle.ps-4(scope='col' style='width:350px;' data-sort="product") PRODUCT NAME
+          th.sort.align-middle.text-end.ps-4(scope='col' data-sort="price" style='width:150px;' ) PRICE
+          th.sort.align-middle.ps-4(scope='col' data-sort="category" style='width:150px;') CATEGORY
+          th.sort.align-middle.ps-3(scope='col' data-sort="tags" style='width:250px;') TAGS
+          th.sort.align-middle.fs-8.text-center.ps-4(scope='col' style='width:125px;')
+          th.sort.align-middle.ps-4(scope='col' data-sort="vendor" style='width:200px;') VENDOR
+          th.sort.align-middle.ps-4(scope='col' data-sort="time" style='width:50px;') PUBLISHED ON
+          th.sort.text-end.align-middle.pe-0.ps-4(scope='col')
+
+      tbody.list#products-table-body
+        each product, index in products
+          +ProductTableRow(product,index)
+  .row.align-items-center.justify-content-between.py-2.pe-0.fs-9
+    .col-auto.d-flex
+      p.mb-0.d-none.d-sm-block.me-3.fw-semibold.text-body(data-list-info)
+      a.fw-semibold(href='#!' data-list-view="*")
+        | View all
+        span.fas.fa-angle-right.ms-1(data-fa-transform='down-1')
+      a.fw-semibold.d-none(href='#!' data-list-view="less")
+        | View Less
+        span.fas.fa-angle-right.ms-1(data-fa-transform='down-1')
+    .col-auto.d-flex
+      button.page-link(data-list-pagination="prev")
+        span.fas.fa-chevron-left
+      ul.mb-0.pagination
+      button.page-link.pe-0(data-list-pagination="next")
+        span.fas.fa-chevron-right
