@@ -5,24 +5,39 @@ mixin Details
         .col-12.col-md-2.col-lg-12.col-xl-2
           #productGalleryThumb.swiper.swiper-thumb.h-100
             .swiper-wrapper.h-100
-              each image, index in product.gallery
-                .swiper-slide.h-auto(class=index === 0 ? 'active' : '')
-                  img.img-fluid.rounded-1.cursor-pointer.border.border-translucent(
-                    src=image.url 
-                    alt=image.alt
-                    style="height: 75px; object-fit: cover;"
+              if product && product.gallery && product.gallery.length > 0
+                each image, index in product.gallery
+                  .swiper-slide.h-auto(class=index === 0 ? 'active' : '')
+                    img.img-fluid.rounded-1.cursor-pointer.border.border-translucent(
+                      src=image.url 
+                      alt=image.alt
+                      style="height: 75px; object-fit: cover;"
+                    )
+              else
+                .swiper-slide.h-auto.active
+                  .bg-body-tertiary.rounded-1.border.border-translucent.d-flex.align-items-center.justify-content-center(
+                    style="height: 75px;"
                   )
+                    span.text-body-quaternary No image
         .col-12.col-md-10.col-lg-12.col-xl-10
           #productGalleryMain.swiper
             .swiper-wrapper
-              each image in product.gallery
+              if product && product.gallery && product.gallery.length > 0
+                each image in product.gallery
+                  .swiper-slide
+                    .product-image-wrap.border.border-translucent.rounded-1.p-3.text-center
+                      img.img-fluid(
+                        src=image.url 
+                        alt=image.alt
+                        style="max-height: 500px; object-fit: contain;"
+                      )
+              else
                 .swiper-slide
                   .product-image-wrap.border.border-translucent.rounded-1.p-3.text-center
-                    img.img-fluid(
-                      src=image.url 
-                      alt=image.alt
-                      style="max-height: 500px; object-fit: contain;"
+                    .bg-body-tertiary.rounded-1.d-flex.align-items-center.justify-content-center(
+                      style="height: 500px;"
                     )
+                      span.text-body-quaternary No product image
             .swiper-button-next
             .swiper-button-prev
 
@@ -38,34 +53,35 @@ mixin Details
         div
           .d-flex.flex-wrap
             .me-2
-              +Rating(product.rating)
-            p.text-primary.fw-semibold.mb-2 (#{product.numReviews}) People rated and reviewed 
-          h3.mb-3.lh-sm #{product.name}
-          if product.category
+              +Rating(product ? product.rating || 0 : 0)
+            p.text-primary.fw-semibold.mb-2 (#{product ? product.numReviews || 0 : 0}) People rated and reviewed 
+          h3.mb-3.lh-sm #{product ? product.name || 'Product Name' : 'Product Name'}
+          if product && product.category && product.category.length > 0
             .d-flex.flex-wrap.align-items-start.mb-3
               each cat in product.category
                 span.badge.text-bg-success.fs-9.rounded-pill.me-2.fw-semibold= cat.name
 
           .d-flex.flex-wrap.align-items-center
-            if product.formattedSalePrice
+            if product && product.formattedSalePrice
                 h1.me-3 $#{product.formattedSalePrice}
                 p.text-body-quaternary.text-decoration-line-through.fs-6.mb-0.me-3 $#{product.formattedPrice}
                 p.text-warning.fw-bolder.fs-6.mb-0 #{product.discountPercentage}% off
             else
-              h1.me-3 $#{product.formattedPrice}
+              h1.me-3 $#{product ? product.formattedPrice || '0.00' : '0.00'}
 
-          p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2`)= product.stockStatus
+          if product && product.stockLevel
+            p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2`)= product.stockStatus
           
-          if product.description
+          if product && product.description
             p.mb-2.text-body-secondary!= product.description
 
-          if product.deliveryInfo
+          if product && product.deliveryInfo
             p.mb-2.text-body-secondary!= product.deliveryInfo
-          if product.specialOffer
+          if product && product.specialOffer
             p.text-danger-dark.fw-bold.mb-5.mb-lg-0!= product.specialOffer
             
         div
-          if product.availableColors && product.availableColors.length
+          if product && product.availableColors && product.availableColors.length
             .mb-3
               p.fw-semibold.mb-2.text-body Color: 
                 span.text-body-emphasis(data-product-color)= product.availableColors[0]
@@ -79,7 +95,7 @@ mixin Details
                     if product.gallery && product.gallery[0]
                       img(src=product.gallery[0].url alt=color width=38)
 
-          if product.availableSizes && product.availableSizes.length
+          if product && product.availableSizes && product.availableSizes.length
             .row.g-3.g-sm-5.align-items-end
               .col-12.col-sm-auto
                 p.fw-semibold.mb-2.text-body Size:
@@ -101,7 +117,7 @@ mixin Details
                     style='width:50px;' 
                     type='number' 
                     min="1" 
-                    max=`${product.countInStock}`
+                    max=`${product ? product.countInStock || 1 : 1}`
                     value="1"
                   )
                   button.btn.btn-phoenix-primary.px-3(data-type="plus")
