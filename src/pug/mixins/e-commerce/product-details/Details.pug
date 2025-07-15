@@ -3,24 +3,30 @@ mixin Details
     .col-12.col-lg-6
       .row.g-3.mb-3
         .col-12.col-md-2.col-lg-12.col-xl-2
-          #swiper-products-thumb.swiper-products-thumb.swiper.swiper.theme-slider.overflow-visible
+          #productGalleryThumb.swiper.swiper-thumb.h-100
+            .swiper-wrapper.h-100
+              each image, index in product.gallery
+                .swiper-slide.h-auto(class=index === 0 ? 'active' : '')
+                  img.img-fluid.rounded-1.cursor-pointer.border.border-translucent(
+                    src=image.url 
+                    alt=image.alt
+                    style="height: 75px; object-fit: cover;"
+                  )
+        .col-12.col-md-10.col-lg-12.col-xl-10
+          #productGalleryMain.swiper
             .swiper-wrapper
               each image in product.gallery
                 .swiper-slide
-                  img(src=image.url alt=image.alt width=38)
-        .col-12.col-md-10.col-lg-12.col-xl-10
-          .d-flex.align-items-center.border.border-translucent.rounded-3.text-center.p-5.h-100
-            .swiper.swiper.theme-slider(data-thumb-target='swiper-products-thumb' data-products-swiper!={
-              slidesPerView: 1,
-              spaceBetween: 16,
-              thumbsEl: '.swiper-products-thumb'
-            })
-              .swiper-wrapper
-                each image in product.gallery
-                  .swiper-slide
-                    img(src=image.url alt=image.alt).img-fluid
+                  .product-image-wrap.border.border-translucent.rounded-1.p-3.text-center
+                    img.img-fluid(
+                      src=image.url 
+                      alt=image.alt
+                      style="max-height: 500px; object-fit: contain;"
+                    )
+            .swiper-button-next
+            .swiper-button-prev
 
-      .d-flex
+      .d-flex.mt-3
         button.btn.btn-lg.btn-outline-warning.rounded-pill.w-100.me-3.px-2.px-sm-4.fs-9.fs-sm-8
           span.me-2.far.fa-heart
           | Add to wishlist
@@ -50,6 +56,9 @@ mixin Details
 
           p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2`)= product.stockStatus
           
+          if product.description
+            p.mb-2.text-body-secondary!= product.description
+
           if product.deliveryInfo
             p.mb-2.text-body-secondary!= product.deliveryInfo
           if product.specialOffer
@@ -65,65 +74,10 @@ mixin Details
                   .rounded-1.border.border-translucent.me-2(
                     class={active: color === product.availableColors[0]} 
                     data-variant=color 
-                    data-products-images!=[
-                      ...product.gallery.map(image => image.url)
-                    ]
+                    data-products-images!= product.colorVariantImages[color] || []
                   )
                     if product.gallery && product.gallery[0]
                       img(src=product.gallery[0].url alt=color width=38)
-          //- .mb-3
-            p.fw-semibold.mb-2.text-body Color : 
-              span.text-body-emphasis(data-product-color) Blue
-            .d-flex.product-color-variants(data-product-color-variants)
-              .rounded-1.border.border-translucent.me-2.active(data-variant='Blue' data-products-images!= [
-                `${CWD}assets/img/products/details/blue_front.png`,
-                `${CWD}assets/img/products/details/blue_back.png`,
-                `${CWD}assets/img/products/details/blue_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/blue_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Red' data-products-images!= [
-                `${CWD}assets/img/products/details/red_front.png`,
-                `${CWD}assets/img/products/details/red_back.png`,
-                `${CWD}assets/img/products/details/red_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/red_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Green' data-products-images!= [
-                `${CWD}assets/img/products/details/green_front.png`,
-                `${CWD}assets/img/products/details/green_back.png`,
-                `${CWD}assets/img/products/details/green_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/green_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Purple' data-products-images!= [
-                `${CWD}assets/img/products/details/purple_front.png`,
-                `${CWD}assets/img/products/details/purple_back.png`,
-                `${CWD}assets/img/products/details/purple_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/purple_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Silver' data-products-images!= [
-                `${CWD}assets/img/products/details/silver_front.png`,
-                `${CWD}assets/img/products/details/silver_back.png`,
-                `${CWD}assets/img/products/details/silver_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/silver_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Yellow' data-products-images!= [
-                `${CWD}assets/img/products/details/yellow_front.png`,
-                `${CWD}assets/img/products/details/yellow_back.png`,
-                `${CWD}assets/img/products/details/yellow_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/yellow_front.png`, alt="" width=38)
-
-              .rounded-1.border.border-translucent.me-2(data-variant='Orange' data-products-images!= [
-                `${CWD}assets/img/products/details/orange_front.png`,
-                `${CWD}assets/img/products/details/orange_back.png`,
-                `${CWD}assets/img/products/details/orange_side.png`,
-              ])
-                img(src=`${CWD}assets/img/products/details/orange_front.png`, alt="" width=38)
-
 
           if product.availableSizes && product.availableSizes.length
             .row.g-3.g-sm-5.align-items-end
@@ -147,10 +101,48 @@ mixin Details
                     style='width:50px;' 
                     type='number' 
                     min="1" 
-                    max=product.countInStock 
+                    max=`${product.countInStock}`
                     value="1"
                   )
                   button.btn.btn-phoenix-primary.px-3(data-type="plus")
                     span.fas.fa-plus
                 button.btn.btn-phoenix-primary.px-3.border-0
                   span.fas.fa-share-alt.fs-7
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize thumbnail swiper
+      const thumbSwiper = new Swiper('#productGalleryThumb', {
+        spaceBetween: 10,
+        slidesPerView: 'auto',
+        direction: 'horizontal',
+        breakpoints: {
+          768: {
+            direction: 'vertical',
+            slidesPerView: 4,
+          }
+        },
+        freeMode: true,
+        watchSlidesProgress: true,
+      });
+
+      // Initialize main swiper
+      const mainSwiper = new Swiper('#productGalleryMain', {
+        spaceBetween: 10,
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        thumbs: {
+          swiper: thumbSwiper,
+        },
+      });
+
+      // Handle thumbnail clicks
+      document.querySelectorAll('#productGalleryThumb .swiper-slide').forEach((thumb, index) => {
+        thumb.addEventListener('click', () => {
+          mainSwiper.slideTo(index);
+        });
+      });
+    });

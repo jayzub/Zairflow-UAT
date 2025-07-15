@@ -53,7 +53,7 @@ const dropzoneInit = () => {
           addRemoveLinks: true,
           thumbnailWidth: 80,
           thumbnailHeight: 80,
-          autoProcessQueue: true,
+          autoProcessQueue: false,
           uploadMultiple: true,
           init: function() {
             this.on(Events.ADDED_FILE, function(file) {

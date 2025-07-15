@@ -1825,6 +1825,63 @@
         let userOptions = getData(item, DATA_KEY.OPTIONS);
         userOptions = userOptions ? userOptions : {};
         const data = userOptions.data ? userOptions.data : {};
+
+        // Special handling for product images dropzone
+        if (item.id === 'product-images') {
+          const productDropzoneOptions = {
+            url: '/api/v1/products',
+            paramName: 'images',
+            maxFilesize: 5,
+            maxFiles: 5,
+            acceptedFiles: 'image/*',
+            addRemoveLinks: true,
+            thumbnailWidth: 80,
+            thumbnailHeight: 80,
+            autoProcessQueue: false,
+            uploadMultiple: true,
+            init: function() {
+              this.on(Events.ADDED_FILE, function(file) {
+                console.log("File added:", file.name);
+              });
+
+              this.on('success', function(file, response) {
+                console.log("File uploaded successfully:", file.name);
+                console.log("Server response:", response);
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'uploadedImages[]';
+                input.value = file.name;
+                document.querySelector('form').appendChild(input);
+              });
+
+              this.on('error', function(file, errorMessage) {
+                console.error("Upload error for file", file.name, ":", errorMessage);
+              });
+
+              this.on(Events.REMOVED_FILE, function(file) {
+                console.log("File removed:", file.name);
+                const input = document.querySelector(`input[value="${file.name}"]`);
+                if (input) input.remove();
+              });
+
+              this.on(Events.COMPLETE, function() {
+                if (item.querySelector(Selector.DZ_PREVIEW_COVER)) {
+                  item
+                    .querySelector(Selector.DZ_PREVIEW_COVER)
+                    .classList.remove(ClassName.DZ_PROCESSING);
+                }
+                item.classList.add(ClassName.DZ_FILE_COMPLETE);
+              });
+            }
+          };
+          
+          // Initialize product dropzone with merged options
+          new window.Dropzone(item, merge$1(productDropzoneOptions, userOptions));
+          return; // Skip the rest of the code for this item
+        }
+
+        // Default dropzone options for other dropzones
         const options = merge$1(
           {
             url: '/assets/php/',
@@ -1864,57 +1921,14 @@
                   }
                 }
               });
-            },
-            error(file, message) {
-              if (file.previewElement) {
-                file.previewElement.classList.add('dz-error');
-                if (typeof message !== 'string' && message.error) {
-                  message = message.error;
-                }
-                for (let node of file.previewElement.querySelectorAll(
-                  '[data-dz-errormessage]'
-                )) {
-                  node.textContent = message;
-                }
-              }
             }
           },
           userOptions
         );
-        // eslint-disable-next-line
+
+        // Initialize regular dropzone
         item.querySelector(Selector.DZ_PREVIEW).innerHTML = '';
-
-        const dropzone = new window.Dropzone(item, options);
-
-        dropzone.on(Events.ADDED_FILE, () => {
-          if (item.querySelector(Selector.DZ_PREVIEW_COVER)) {
-            item
-              .querySelector(Selector.DZ_PREVIEW_COVER)
-              .classList.remove(ClassName.DZ_FILE_COMPLETE);
-          }
-          item.classList.add(ClassName.DZ_FILE_PROCESSING);
-          // Kanban custom bg radio select
-          document
-            .querySelector('.kanban-custom-bg-radio')
-            ?.setAttribute('checked', true);
-        });
-        dropzone.on(Events.REMOVED_FILE, () => {
-          if (item.querySelector(Selector.DZ_PREVIEW_COVER)) {
-            item
-              .querySelector(Selector.DZ_PREVIEW_COVER)
-              .classList.remove(ClassName.DZ_PROCESSING);
-          }
-          item.classList.add(ClassName.DZ_FILE_COMPLETE);
-        });
-        dropzone.on(Events.COMPLETE, () => {
-          if (item.querySelector(Selector.DZ_PREVIEW_COVER)) {
-            item
-              .querySelector(Selector.DZ_PREVIEW_COVER)
-              .classList.remove(ClassName.DZ_PROCESSING);
-          }
-
-          item.classList.add(ClassName.DZ_FILE_COMPLETE);
-        });
+        new window.Dropzone(item, options);
       });
   };
 

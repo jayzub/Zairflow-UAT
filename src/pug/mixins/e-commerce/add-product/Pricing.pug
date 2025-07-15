@@ -28,10 +28,25 @@ mixin Pricing
           .row.g-3
             .col-12.col-lg-6
               h5.mb-2.text-body-highlight Regular price
-              input.form-control(type='number', name="price", placeholder='$', required)
+              input.form-control(
+                type='number' 
+                name="price" 
+                placeholder='$' 
+                required
+                min="0" 
+                step="0.01"
+                aria-label="Regular price"
+              )
             .col-12.col-lg-6
               h5.mb-2.text-body-highlight Sale price (optional)
-              input.form-control(type='number', name="salePrice", placeholder='$')
+              input.form-control(
+                type='number' 
+                name="salePrice" 
+                placeholder='$'
+                min="0" 
+                step="0.01"
+                aria-label="Sale price"
+              )
 
         #restockTabContent.tab-pane.fade.h-100(role='tabpanel' aria-labelledby='restockTab') 
           .d-flex.flex-column.h-100

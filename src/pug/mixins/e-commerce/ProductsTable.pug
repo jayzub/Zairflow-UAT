@@ -4,12 +4,12 @@ mixin ProductTableRow(product,index)
       .form-check.mb-0.fs-8
         input.form-check-input(type='checkbox' data-bulk-select-row!=data)
     td.align-middle.white-space-nowrap.py-0
-      a(href=`/products/${product.id}`).d-block.border.border-translucent.rounded-2
+      a(href=`/api/v1/products/${product._id}`).d-block.border.border-translucent.rounded-2
         img(src=`${product.image && product.image.url ? product.image.url : 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2'}` alt=`${product.name}` width=53)
 
     td.product.align-middle.ps-4
       //- a.fw-semibold.line-clamp-3.mb-0(href=`${CWD}${paths['e-commerce-fe-product-details']}`)=`${data.product.slice(0,138)}${data.product.length > 138 ? '...' : '' }`
-      a.fw-semibold.line-clamp-3.mb-0(href=`/products/${product.id}`)= `${product.name}`
+      a.fw-semibold.line-clamp-3.mb-0(href=`/api/v1/products/${product._id}`)= `${product.name}`
     td.price.align-middle.white-space-nowrap.text-end.fw-bold.text-body-tertiary.ps-4= `$${product.price}`
     td.category.align-middle.white-space-nowrap.text-body-quaternary.fs-9.ps-4.fw-semibold
       each cat in product.category
@@ -32,7 +32,7 @@ mixin ProductTableRow(product,index)
         a(href='#!')=`${product.vendor.name}`
     td.time.align-middle.white-space-nowrap.text-body-tertiary.text-opacity-85.ps-4= new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(product.dateCreated))
     td.align-middle.white-space-nowrap.text-end.pe-0.ps-4.btn-reveal-trigger
-      +DashboardDropdown.fs-10
+      +DashboardDropdown(product._id.toString())
 
 
 mixin ProductTable(products)

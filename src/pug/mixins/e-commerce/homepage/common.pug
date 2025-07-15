@@ -9,11 +9,14 @@ mixin Product(product)
             else
               span.fas.fa-heart.d-block-hover(data-fa-transform='down-1')
               span.far.fa-heart.d-none-hover(data-fa-transform='down-1')
-          img.img-fluid(src=`${CWD}assets/img/products/${product.image}`, alt="")
+          .product-image-container(style="aspect-ratio: 1; overflow: hidden; position: relative;")
+            - var imageSrc = product.image && product.image.startsWith('http') ? product.image : (product.image ? `${CWD}assets/img/products/${product.image}` : `${CWD}assets/img/products/1.png`)
+            img.img-fluid.w-100.h-100(src=imageSrc, alt=product.name, style="object-fit: cover; object-position: center;", onerror="this.src='#{CWD}assets/img/products/1.png'")
           if product.verified
             span.badge.text-bg-success.fs-10.product-verified-badge Verified
               span.fas.fa-check.ms-1
-        a.stretched-link(href=`${CWD}${paths['e-commerce-fe-product-details']}`)
+        - var productLink = product._id ? `/api/v1/products/${product._id}` : `${CWD}${paths['e-commerce-fe-product-details']}`
+        a.stretched-link(href=productLink)
           h6.mb-2.lh-sm.line-clamp-3.product-name=product.name
         if product.star
           p.fs-9
@@ -25,6 +28,7 @@ mixin Product(product)
           p.fs-9(class=product.extraClass)=product.extra 
         if product.extra2
           p.fs-9(class=product.extra2Class)=product.extra2
+        // Price section
         if product.salePrice
           if product.price
             .d-flex.align-items-center.mb-1
@@ -32,6 +36,8 @@ mixin Product(product)
               h3.text-body-emphasis.mb-0=`$${product.salePrice}`
           else
             h3.text-body-emphasis=`$${product.salePrice}`
+        else if product.price
+          h3.text-body-emphasis=`$${product.price}`
         if product.colors
           p.text-body-tertiary.fw-semibold.fs-9.lh-1(class=`${product.dealEndTime ? '' : 'mb-0'}`)=`${product.colors} colors`
         if product.dealEndTime

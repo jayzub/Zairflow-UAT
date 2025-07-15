@@ -1,6 +1,52 @@
-mixin ProductDescription
-  h4.mb-3 Product Title
-  input.form-control.mb-5(type='text' name="name" placeholder='Write title here...' required)
+mixin ProductDescription(options = {})
+  - const productTypes = options.productTypes || []
+  - const product = options.product || {}
+  .mb-4
+    h4.mb-3 Product Title
+    input.form-control.mb-5(type='text' name="name" placeholder='Write title here...' required value=product.name)
+
+  .mb-4
+    h4.mb-3 Product Type
+    select.form-select.mb-3#productTypeSelect(name="productType" required)
+      option(value="") Select product type...
+      each type in productTypes
+        option(value=type.value selected=product.productType === type.value)= type.label
+
+  .mb-4
+    h4.mb-3 Stock Information
+    .row.g-3
+      .col-12.col-sm-6
+        input.form-control(type='number' name="countInStock" placeholder='Count in stock' min="0" required value=product.countInStock)
+      .col-12.col-sm-6
+        input.form-control(type='number' name="price" placeholder='Price' min="0" step="0.01" required value=product.price)
+      .col-12.col-sm-6
+        input.form-control(type='number' name="salePrice" placeholder='Sale price (optional)' min="0" step="0.01" value=product.salePrice)
+  
   .mb-6
-    h4.mb-3  Product Description
-    textarea.tinymce(name='description' data-tinymce!={height: '15rem', placeholder: 'Write a description here...',})
+    h4.mb-3 Product Description
+    textarea.tinymce#description(name='description' data-tinymce!={
+      height: '15rem',
+      placeholder: 'Write a description here...',
+      plugins: 'lists link image table code help wordcount',
+      toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
+      content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
+      formats: {
+        p: { block: 'p' },
+        h1: { block: 'h1' },
+        h2: { block: 'h2' },
+        h3: { block: 'h3' },
+        h4: { block: 'h4' }
+      },
+      valid_elements: 'p[style],h1,h2,h3,h4,h5,h6,strong,em,u,ul,ol,li,a[href|target],img[src|alt],br,div',
+      valid_styles: {
+        '*': 'font-size,font-family,color,text-decoration,text-align'
+      },
+      cleanup: true,
+      cleanup_on_startup: true,
+      convert_urls: false,
+      entity_encoding: 'raw',
+      extended_valid_elements: 'span[*]',
+      force_br_newlines: false,
+      force_p_newlines: true,
+      forced_root_block: 'p'
+    })= product.description

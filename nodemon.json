@@ -1,0 +1,9 @@
+{
+    "watch": ["backend/"],
+    "ext": "js,json,pug",
+    "ignore": ["node_modules/", "public/", "live/", ".git"],
+    "exec": "node backend/server.js",
+    "env": {
+      "NODE_ENV": "development"
+    }
+  }

@@ -1,0 +1,180 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/e-commerce/edit-product/EditOrganizeCard
+include ../../../mixins/e-commerce/edit-product/EditProductDescription
+include ../../../mixins/e-commerce/edit-product/EditDisplayImage
+include ../../../mixins/e-commerce/edit-product/EditVariantCard
+
+append variables
+  - var CWD = '../../../../'
+  - var product = locals.product || {}
+  - var categories = locals.categories || []
+  - var vendors = locals.vendors || []
+  - var productTypes = locals.productTypes || []
+
+prepend styles
+  link(href=`${CWD}vendors/dropzone/dropzone.css`, rel='stylesheet')
+  link(href=`${CWD}vendors/choices/choices.min.css`, rel='stylesheet')
+  link(href=`${CWD}vendors/flatpickr/flatpickr.min.css`, rel='stylesheet')
+
+prepend scripts
+  script(src=`${CWD}vendors/tinymce/tinymce.min.js`)
+  script(src=`${CWD}vendors/dropzone/dropzone-min.js`)
+  script(src=`${CWD}vendors/choices/choices.min.js`)
+  script(src=`${CWD}vendors/flatpickr/flatpickr.min.js`)
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Debug product data
+      const productData = !{JSON.stringify(product)};
+      console.log('Product Data:', productData);
+      console.log('Product Type:', productData.productType);
+
+      // Initialize Dropzone with existing images
+      if (typeof Dropzone !== 'undefined') {
+        const existingImages = !{JSON.stringify(product.images || [])};
+        const dropzone = new Dropzone("#productImages", {
+          url: "/api/v1/products",
+          autoProcessQueue: false,
+          uploadMultiple: true,
+          parallelUploads: 5,
+          maxFiles: 5,
+          acceptedFiles: "image/*",
+          addRemoveLinks: true,
+          paramName: "images",
+          headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          }
+        });
+
+        // Add existing images to dropzone
+        existingImages.forEach(image => {
+          const mockFile = { name: image.public_id, size: 12345 };
+          dropzone.emit("addedfile", mockFile);
+          dropzone.emit("thumbnail", mockFile, image.url);
+          dropzone.emit("complete", mockFile);
+        });
+      }
+
+      // Initialize TinyMCE with existing content
+      tinymce.init({
+        selector: '.tinymce',
+        height: '15rem',
+        plugins: 'lists link image table code help wordcount',
+        toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image',
+        setup: function(editor) {
+          editor.on('init', function() {
+            const description = document.getElementById('description').value;
+            if (description) {
+              editor.setContent(description);
+            }
+          });
+        }
+      });
+
+      // Show the correct product type fields based on the selected type
+      const productTypeSelect = document.querySelector('select[name="productType"]');
+      const typeFields = document.querySelectorAll('.product-type-fields');
+      
+      function showProductTypeFields(type) {
+        console.log('Showing fields for type:', type);
+        // First hide all type fields
+        typeFields.forEach(field => {
+          field.classList.add('d-none');
+          console.log('Hiding field:', field.className);
+        });
+        
+        // Then show the appropriate field
+        if (type) {
+          const selectedType = type.toLowerCase();
+          const targetField = document.querySelector(`.${selectedType}-fields`);
+          if (targetField) {
+            targetField.classList.remove('d-none');
+            console.log(`Showing ${selectedType} fields`);
+          } else {
+            console.log(`No fields found for type: ${selectedType}`);
+          }
+        }
+      }
+
+      // Show fields for the initial product type
+      if (productTypeSelect && productTypeSelect.value) {
+        console.log('Initial product type from select:', productTypeSelect.value);
+        showProductTypeFields(productTypeSelect.value);
+      } else if (productData.productType) {
+        // If no value in select, try to get from product data
+        console.log('Using product data type:', productData.productType);
+        showProductTypeFields(productData.productType);
+        
+        // Set the select value to match the product type
+        if (productTypeSelect) {
+          productTypeSelect.value = productData.productType;
+        }
+      }
+
+      // Handle product type change
+      productTypeSelect?.addEventListener('change', function() {
+        console.log('Product type changed to:', this.value);
+        showProductTypeFields(this.value);
+      });
+
+      // Debug information
+      console.log('Product Type Select:', productTypeSelect?.value);
+      console.log('Type Fields:', typeFields.length);
+      typeFields.forEach(field => {
+        console.log('Field class:', field.className);
+      });
+
+      // Initialize variant buttons
+      document.querySelectorAll('.add-variant-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const container = this.previousElementSibling;
+          const variantItem = container.querySelector('.variant-item').cloneNode(true);
+          // Clear input values
+          variantItem.querySelectorAll('input').forEach(input => input.value = '');
+          // Update index
+          const newIndex = container.querySelectorAll('.variant-item').length;
+          variantItem.querySelectorAll('input').forEach(input => {
+            input.name = input.name.replace(/\[\d+\]/, `[${newIndex}]`);
+          });
+          container.appendChild(variantItem);
+        });
+      });
+
+      // Initialize port buttons
+      document.querySelectorAll('.add-port-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const container = this.previousElementSibling;
+          const portItem = container.querySelector('.port-item').cloneNode(true);
+          // Clear input values
+          portItem.querySelectorAll('input').forEach(input => input.value = '');
+          // Update index
+          const newIndex = container.querySelectorAll('.port-item').length;
+          portItem.querySelectorAll('input').forEach(input => {
+            input.name = input.name.replace(/\[\d+\]/, `[${newIndex}]`);
+          });
+          container.appendChild(portItem);
+        });
+      });
+    });
+
+block content
+  form.mb-9#productForm(action=`/api/v1/products/${product._id}?_method=PUT` method="POST" enctype="multipart/form-data")
+    .row.g-3.flex-between-end.mb-5
+      .col-auto
+        h2.mb-2 #{pageTitle}
+        h5.text-body-tertiary.fw-semibold Update Product
+      .col-auto
+        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' onclick="window.location.href='/api/v1/products/'") Cancel
+        button.btn.btn-primary.mb-2.mb-sm-0(type='submit') Update Product
+    .row.g-5
+      .col-12.col-xl-8
+        +EditProductDescription({ productTypes, product })
+        +EditDisplayImage({ product })
+      .col-12.col-xl-4
+        .row.g-2
+          .col-12.col-xl-12
+            +EditOrganizeCard({ categories, vendors, product }).mb-3
+          .col-12.col-xl-12
+            +EditVariantCard({ product })

@@ -1,42 +1,54 @@
-mixin OrganizeCard
+mixin OrganizeCard(options = {})
+  - const categories = options.categories || []
+  - const vendors = options.vendors || []
+  - const product = options.product || {}
+  
   .card&attributes(attributes)
     .card-body
       h4.card-title.mb-4 Organize
       .row.gx-3
         .col-12.col-sm-6.col-xl-12
           .mb-4
+            h5.mb-2.text-body-highlight Brand
+            input.form-control.mb-3(type='text' name='brand' placeholder='Enter brand name' value=product.brand)
+            
+            .form-check.mb-3
+              input.form-check-input(type='checkbox' name='isFeatured' id='isFeatured' checked=product.isFeatured)
+              label.form-check-label(for='isFeatured') Mark as Featured Product
+
+        .col-12.col-sm-6.col-xl-12
+          .mb-4
             .d-flex.flex-wrap.mb-2
               h5.mb-0.text-body-highlight.me-2 Categories
               a.fw-bold.fs-9(href='#!') Add new category
-            //- select.form-select.mb-3(aria-label='category')
-            //-   option(value='men-cloth') Men's Clothing
-            //-   option(value='women-cloth') Womens's Clothing
-            //-   option(value='kid-cloth') Kid's Clothing
-
-            .mb-3
-              each category in categories
-                .form-check
-                  input.form-check-input(type='checkbox', id=`category-${category._id}`, name='category[]', value=category._id)
-                  label.form-check-label(for=`category-${category._id}`)= category.name
+            select.form-select.mb-3(data-choices multiple data-options!={removeItemButton: true, placeholder: true} name='category')
+              if categories.length > 0
+                option(value='') Add categories...
+                each category in categories
+                  option(value=category._id selected=product.category && product.category.includes(category._id))= category.name
+              else
+                option(value='') No categories available
 
         .col-12.col-sm-6.col-xl-12
           .mb-4
             .d-flex.flex-wrap.mb-2
               h5.mb-0.text-body-highlight.me-2 Vendor
               a.fw-bold.fs-9(href='#!') Add new vendor
-            select.form-select.mb-3(aria-label='category')
-              option(value='men-cloth') Men's Clothing
-              option(value='women-cloth') Womens's Clothing
-              option(value='kid-cloth') Kid's Clothing
-        .col-12.col-sm-6.col-xl-12     
-          .mb-4
-            h5.mb-2.text-body-highlight Collection
-            input.form-control.mb-xl-3(type='text' placeholder='Collection')
+            select.form-select.mb-3(name='vendor')
+              option(value='') Select vendor...
+              if vendors.length > 0
+                each vendor in vendors
+                  option(value=vendor._id selected=product.vendor && product.vendor.toString() === vendor._id.toString())= vendor.name
+              else
+                option(value='') No vendors available
+
         .col-12.col-sm-6.col-xl-12
           .d-flex.flex-wrap.mb-2
             h5.mb-0.text-body-highlight.me-2 Tags
-            a.fw-bold.fs-9.lh-sm(href='#!') View all tags
-          select.form-select(aria-label='category')
-            option(value='men-cloth') Men's Clothing
-            option(value='women-cloth') Womens's Clothing
-            option(value='kid-cloth') Kid's Clothing
+            a.fw-bold.fs-9.lh-sm(href='#!') Add new tag
+          select.form-select.mb-3(data-choices multiple data-options!={removeItemButton: true, placeholder: true} name='tags[]')
+            option(value='') Add tags...
+            option(value='new' selected=product.tags && product.tags.includes('new')) New
+            option(value='featured' selected=product.tags && product.tags.includes('featured')) Featured
+            option(value='sale' selected=product.tags && product.tags.includes('sale')) Sale
+            option(value='trending' selected=product.tags && product.tags.includes('trending')) Trending

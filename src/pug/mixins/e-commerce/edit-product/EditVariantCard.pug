@@ -1,0 +1,254 @@
+mixin EditVariantCard(options = {})
+  - const product = options.product || {}
+  - const variants = product.variants || []
+  - const specifications = product.specifications || {}
+  - const processor = specifications.processor || {}
+  - const memory = specifications.memory || {}
+  - const display = specifications.display || {}
+  - const ports = specifications.ports || []
+  - const weight = product.weight || {}
+  - const warranty = product.warranty || {}
+  - const materialComposition = product.materialComposition || []
+  - const care = product.care || []
+  - const materials = product.materials || []
+  - const assembly = product.assembly || {}
+  - const dimensions = product.dimensions || {}
+  
+  .card&attributes(attributes)
+    .card-body
+      h4.card-title.mb-4 Product Details
+      
+      //- Electronics specific fields
+      .product-type-fields.electronics-fields(class=product.productType === 'Electronics' ? '' : 'd-none')
+        h5.mb-3 Specifications
+        .row.g-3
+          .col-12
+            h6.text-body-highlight Processor
+            input.form-control.mb-2(type='text' name='specifications.processor.name' placeholder='Processor Name' value=processor.name)
+            input.form-control.mb-2(type='number' name='specifications.processor.cores' placeholder='Number of Cores' value=processor.cores)
+            input.form-control.mb-2(type='text' name='specifications.processor.speed' placeholder='Processor Speed' value=processor.speed)
+            input.form-control.mb-2(type='text' name='specifications.processor.architecture' placeholder='Architecture' value=processor.architecture)
+
+          .col-12
+            h6.text-body-highlight Memory
+            input.form-control.mb-2(type='number' name='specifications.memory.ram' placeholder='RAM' value=memory.ram)
+            select.form-select.mb-2(name='specifications.memory.ramUnit')
+              option(value='GB' selected=memory.ramUnit === 'GB') GB
+              option(value='TB' selected=memory.ramUnit === 'TB') TB
+            input.form-control.mb-2(type='number' name='specifications.memory.storage' placeholder='Storage' value=memory.storage)
+            select.form-select.mb-2(name='specifications.memory.storageUnit')
+              option(value='GB' selected=memory.storageUnit === 'GB') GB
+              option(value='TB' selected=memory.storageUnit === 'TB') TB
+            select.form-select.mb-2(name='specifications.memory.storageType')
+              option(value='SSD' selected=memory.storageType === 'SSD') SSD
+              option(value='HDD' selected=memory.storageType === 'HDD') HDD
+              option(value='Other' selected=memory.storageType === 'Other') Other
+
+          .col-12
+            h6.text-body-highlight Display
+            input.form-control.mb-2(type='number' name='specifications.display.size' placeholder='Display Size' value=display.size)
+            input.form-control.mb-2(type='text' name='specifications.display.resolution' placeholder='Resolution' value=display.resolution)
+            input.form-control.mb-2(type='text' name='specifications.display.technology' placeholder='Display Technology' value=display.technology)
+            input.form-control.mb-2(type='number' name='specifications.display.refreshRate' placeholder='Refresh Rate (Hz)' value=display.refreshRate)
+            input.form-control.mb-2(type='number' name='specifications.display.brightness' placeholder='Brightness (nits)' value=display.brightness)
+            .form-check.mb-3
+              input.form-check-input(type='checkbox' name='specifications.display.hdr' id='hdrSupport' checked=display.hdr)
+              label.form-check-label(for='hdrSupport') HDR Support
+
+          .col-12
+            h6.text-body-highlight Ports
+            .ports-container
+              each port, index in ports
+                .port-item.mb-2
+                  input.form-control.mb-2(type='text' name=`specifications.ports[${index}].type` placeholder='Port Type' value=port.type)
+                  input.form-control.mb-2(type='number' name=`specifications.ports[${index}].quantity` placeholder='Quantity' value=port.quantity)
+              if !ports.length
+                .port-item.mb-2
+                  input.form-control.mb-2(type='text' name='specifications.ports[0].type' placeholder='Port Type')
+                  input.form-control.mb-2(type='number' name='specifications.ports[0].quantity' placeholder='Quantity')
+            button.btn.btn-phoenix-primary.w-100.mb-3.add-port-btn(type='button') Add Port
+
+          .col-12
+            h6.text-body-highlight Weight
+            .row.g-2.mb-3
+              .col-6
+                input.form-control(type='number' name='weight.value' placeholder='Weight' value=weight.value)
+              .col-6
+                select.form-select(name='weight.unit')
+                  option(value='kg' selected=weight.unit === 'kg') kg
+                  option(value='g' selected=weight.unit === 'g') g
+                  option(value='lb' selected=weight.unit === 'lb') lb
+
+          .col-12
+            h6.text-body-highlight Warranty
+            input.form-control.mb-2(type='number' name='warranty.duration' placeholder='Warranty Duration (months)' value=warranty.duration)
+            input.form-control.mb-2(type='text' name='warranty.type' placeholder='Warranty Type' value=warranty.type)
+            input.form-control.mb-2(type='text' name='warranty.coverage' placeholder='Warranty Coverage' value=warranty.coverage)
+
+        h5.mb-3.mt-3 Variants
+        .variants-container
+          each variant, index in variants
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
+              input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
+          if !variants.length
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
+              input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
+        button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
+
+      //- Clothing specific fields
+      .product-type-fields.clothing-fields(class=product.productType === 'Clothing' ? '' : 'd-none')
+        h5.mb-3 Clothing Details
+        .row.g-3
+          .col-12
+            input.form-control.mb-2(
+              type='text' 
+              name='material' 
+              placeholder='Material'
+              value=product.material
+            )
+            
+            h6.text-body-highlight Material Composition
+            .material-composition-container.mb-3
+              each composition, index in materialComposition
+                .input-group.mb-2
+                  input.form-control(
+                    type='text' 
+                    name=`materialComposition[${index}].material` 
+                    placeholder='Material'
+                    value=composition.material
+                  )
+                  input.form-control(
+                    type='number' 
+                    name=`materialComposition[${index}].percentage` 
+                    placeholder='Percentage'
+                    min='0'
+                    max='100'
+                    value=composition.percentage
+                  )
+              if !materialComposition.length
+                .input-group.mb-2
+                  input.form-control(
+                    type='text' 
+                    name='materialComposition[0].material' 
+                    placeholder='Material'
+                  )
+                  input.form-control(
+                    type='number' 
+                    name='materialComposition[0].percentage' 
+                    placeholder='Percentage'
+                    min='0'
+                    max='100'
+                  )
+            button.btn.btn-phoenix-primary.w-100.mb-3.add-composition-btn(type='button') Add Material Composition
+
+            h6.text-body-highlight Care Instructions
+            .care-instructions-container.mb-3
+              each instruction, index in care
+                .input-group.mb-2
+                  input.form-control(type='text' name=`care[${index}]` placeholder='Care Instruction' value=instruction)
+                  button.btn.btn-outline-danger(type='button' onclick='this.closest(".input-group").remove()') ×
+              if !care.length
+                .input-group.mb-2
+                  input.form-control(type='text' name='care[0]' placeholder='Care Instruction')
+                  button.btn.btn-outline-danger(type='button' onclick='this.closest(".input-group").remove()') ×
+            button.btn.btn-phoenix-primary.w-100.mb-3.add-care-btn(type='button') Add Care Instruction
+
+            input.form-control.mb-2(type='text' name='fit' placeholder='Fit Type' value=product.fit)
+            input.form-control.mb-2(type='text' name='season' placeholder='Season' value=product.season)
+            select.form-select.mb-2(name='gender')
+              option(value='' selected=!product.gender) Select gender...
+              option(value='men' selected=product.gender === 'men') Men
+              option(value='women' selected=product.gender === 'women') Women
+              option(value='unisex' selected=product.gender === 'unisex') Unisex
+              option(value='kids' selected=product.gender === 'kids') Kids
+
+        h5.mb-3.mt-3 Variants
+        .variants-container
+          each variant, index in variants
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name=`variants[${index}].size` placeholder='Size' value=variant.size)
+              input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
+              input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
+          if !variants.length
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name='variants[0].size' placeholder='Size')
+              input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
+              input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
+        button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
+
+      //- Furniture specific fields
+      .product-type-fields.furniture-fields(class=product.productType === 'Furniture' ? '' : 'd-none')
+        h5.mb-3 Furniture Details
+        .row.g-3
+          .col-12
+            h6.text-body-highlight Dimensions
+            .row.g-2
+              .col-4
+                input.form-control.mb-2(type='number' name='dimensions.length' placeholder='Length' value=dimensions.length)
+              .col-4
+                input.form-control.mb-2(type='number' name='dimensions.width' placeholder='Width' value=dimensions.width)
+              .col-4
+                input.form-control.mb-2(type='number' name='dimensions.height' placeholder='Height' value=dimensions.height)
+            select.form-select.mb-3(name='dimensions.unit')
+              option(value='cm' selected=dimensions.unit === 'cm') cm
+              option(value='in' selected=dimensions.unit === 'in') in
+
+            h6.text-body-highlight Weight
+            .row.g-2.mb-3
+              .col-6
+                input.form-control(type='number' name='weight.value' placeholder='Weight' value=weight.value)
+              .col-6
+                select.form-select(name='weight.unit')
+                  option(value='kg' selected=weight.unit === 'kg') kg
+                  option(value='lb' selected=weight.unit === 'lb') lb
+            
+            h6.text-body-highlight Materials
+            .materials-container
+              each material, index in materials
+                .material-item.mb-2
+                  input.form-control.mb-2(type='text' name=`materials[${index}].type` placeholder='Material Type' value=material.type)
+                  input.form-control.mb-2(type='text' name=`materials[${index}].description` placeholder='Material Description' value=material.description)
+              if !materials.length
+                .material-item.mb-2
+                  input.form-control.mb-2(type='text' name='materials[0].type' placeholder='Material Type')
+                  input.form-control.mb-2(type='text' name='materials[0].description' placeholder='Material Description')
+            button.btn.btn-phoenix-primary.w-100.mb-3.add-material-btn(type='button') Add Material
+
+            h6.text-body-highlight Assembly
+            .form-check.mb-2
+              input.form-check-input(type='checkbox' name='assembly.required' id='assemblyRequired' checked=assembly.required)
+              label.form-check-label(for='assemblyRequired') Assembly Required
+            input.form-control.mb-2(type='text' name='assembly.estimatedTime' placeholder='Estimated Assembly Time' value=assembly.estimatedTime)
+            .form-check.mb-3
+              input.form-check-input(type='checkbox' name='assembly.toolsIncluded' id='toolsIncluded' checked=assembly.toolsIncluded)
+              label.form-check-label(for='toolsIncluded') Tools Included
+
+            h6.text-body-highlight Warranty
+            input.form-control.mb-2(type='number' name='warranty.duration' placeholder='Warranty Duration (months)' value=warranty.duration)
+            input.form-control.mb-2(type='text' name='warranty.type' placeholder='Warranty Type' value=warranty.type)
+            input.form-control.mb-2(type='text' name='warranty.coverage' placeholder='Warranty Coverage' value=warranty.coverage)
+
+        h5.mb-3.mt-3 Variants
+        .variants-container
+          each variant, index in variants
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
+              input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
+          if !variants.length
+            .variant-item.mb-3
+              input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
+              input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
+        button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
+
+        h5.mb-3.mt-3 Additional Details
+        input.form-control.mb-2(type='text' name='style' placeholder='Style' value=product.style)
+        input.form-control.mb-2(type='text' name='capacity' placeholder='Capacity' value=product.capacity)
+        input.form-control.mb-2(type='text' name='roomType' placeholder='Room Types (comma-separated)' value=product.roomType)

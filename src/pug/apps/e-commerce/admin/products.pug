@@ -33,7 +33,7 @@ block content
       li.nav-item
         a.nav-link(href='#')
           span Published 
-          span.text-body-tertiary.fw-semibold (70348)
+          span.text-body-tertiary.fw-semibold (#{productCount})
       li.nav-item
         a.nav-link(href='#')
           span Drafts 
@@ -47,11 +47,7 @@ block content
           span Is featured 
           span.text-body-tertiary.fw-semibold (#{featuredProductsCount})
 
-    #products(data-list!={
-      valueNames: ["product", "price", "category", "tags", "vendor", "time"],
-      page: 10,
-      pagination: true
-    })
+    #products-container
       .mb-4
         .d-flex.flex-wrap.gap-3
           +Search({placeholder: 'Search products'})
@@ -89,8 +85,394 @@ block content
             button.btn.btn-link.text-body.me-4.px-0
               span.fa-solid.fa-file-export.fs-9.me-2
               | Export
-            button.btn.btn-primary#addBtn
+            a.btn.btn-primary#addBtn(href=`/${apiUrl}/products/add-product`)
               span.fas.fa-plus.me-2
               | Add product
       .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
-        +ProductTable(products)
+        #products-table
+          +ProductTable(products)
+        
+        // Loading indicator
+        #loading-indicator.text-center.py-4.d-none
+          .spinner-border.text-primary(role='status')
+            span.visually-hidden Loading...
+        
+        // Load more button (alternative to infinite scroll)
+        #load-more-container.text-center.py-4.d-none
+          button#load-more-btn.btn.btn-outline-primary
+            span.fas.fa-plus.me-2
+            | Load More Products
+          
+          // Debug button for testing
+          button#debug-btn.btn.btn-outline-secondary.ms-2
+            span.fas.fa-bug.me-2
+            | Debug Test
+
+append scripts
+  script.
+    // Infinite scroll implementation
+    class ProductLoader {
+      constructor() {
+        this.currentCursor = '#{nextCursor || ""}'; // Initialize from server data
+        this.hasNextPage = #{hasNextPage || false};
+        this.isLoading = false;
+        this.productsContainer = document.getElementById('products-table');
+        this.loadingIndicator = document.getElementById('loading-indicator');
+        this.loadMoreContainer = document.getElementById('load-more-container');
+        this.loadMoreBtn = document.getElementById('load-more-btn');
+        
+        this.init();
+      }
+      
+      init() {
+        console.log('ProductLoader initialized with:', {
+          currentCursor: this.currentCursor,
+          hasNextPage: this.hasNextPage,
+          productsContainer: this.productsContainer,
+          loadingIndicator: this.loadingIndicator,
+          loadMoreContainer: this.loadMoreContainer,
+          loadMoreBtn: this.loadMoreBtn
+        });
+        
+        // Show load more button if there are more products
+        if (this.hasNextPage) {
+          this.loadMoreContainer.classList.remove('d-none');
+          console.log('Load more button shown - there are more products');
+        } else {
+          console.log('No more products to load');
+        }
+        
+        // Set up event listeners
+        this.loadMoreBtn?.addEventListener('click', () => {
+          console.log('Load more button clicked!');
+          this.loadMore();
+        });
+        
+        // Test if button exists and is clickable
+        if (this.loadMoreBtn) {
+          console.log('Load more button found and event listener attached');
+        } else {
+          console.error('Load more button not found!');
+        }
+        
+        // Set up infinite scroll (optional - uncomment to enable)
+        // this.setupInfiniteScroll();
+      }
+      
+      setupInfiniteScroll() {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach(entry => {
+              if (entry.isIntersecting && this.hasNextPage && !this.isLoading) {
+                this.loadMore();
+              }
+            });
+          },
+          { threshold: 0.1 }
+        );
+        
+        // Observe the loading indicator
+        observer.observe(this.loadingIndicator);
+      }
+      
+      async loadMore() {
+        if (this.isLoading || !this.hasNextPage) {
+          console.log('Load more blocked:', { isLoading: this.isLoading, hasNextPage: this.hasNextPage });
+          return;
+        }
+        
+        this.isLoading = true;
+        this.showLoading();
+        
+        try {
+          // Build the URL with cursor parameter
+          const baseUrl = window.location.pathname;
+          const url = new URL(baseUrl, window.location.origin);
+          
+          // Add cursor parameter if we have one
+          if (this.currentCursor) {
+            url.searchParams.set('cursor', this.currentCursor);
+          }
+          
+          // Add timestamp to prevent caching
+          url.searchParams.set('_t', Date.now());
+          
+          console.log('Loading more products from:', url.toString());
+          console.log('Current cursor:', this.currentCursor);
+          
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log('Response status:', response.status);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const contentType = response.headers.get('content-type');
+          console.log('Content-Type:', contentType);
+          
+          let data;
+          if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+          } else {
+            // If not JSON, try to parse the HTML response
+            const text = await response.text();
+            console.log('Response text (first 500 chars):', text.substring(0, 500));
+            throw new Error('Response is not JSON. Server might not be handling AJAX request correctly.');
+          }
+          
+          console.log('Received data:', data);
+          
+          if (data.success && data.products && data.products.length > 0) {
+            console.log('Appending', data.products.length, 'products');
+            this.appendProducts(data.products);
+            this.currentCursor = data.nextCursor;
+            this.hasNextPage = data.hasNextPage;
+            
+            console.log('Updated cursor:', this.currentCursor, 'hasNextPage:', this.hasNextPage);
+            
+            // Hide load more button if no more products
+            if (!this.hasNextPage) {
+              this.loadMoreContainer.classList.add('d-none');
+              console.log('No more products, hiding load more button');
+            }
+          } else {
+            console.log('No products in response or invalid response structure');
+            console.log('Response structure:', {
+              success: data.success,
+              productsLength: data.products?.length,
+              hasNextPage: data.hasNextPage,
+              nextCursor: data.nextCursor
+            });
+            this.hasNextPage = false;
+            this.loadMoreContainer.classList.add('d-none');
+          }
+        } catch (error) {
+          console.error('Error loading products:', error);
+          this.showError(`Failed to load products: ${error.message}`);
+        } finally {
+          this.isLoading = false;
+          this.hideLoading();
+        }
+      }
+      
+      appendProducts(products) {
+        // Convert products to HTML and append to table
+        const tbody = document.getElementById('products-table-body');
+        if (!tbody) {
+          console.error('Table body not found');
+          return;
+        }
+        
+        console.log('Appending', products.length, 'products to table');
+        
+        products.forEach(product => {
+          const row = this.createProductRow(product);
+          tbody.appendChild(row);
+        });
+      }
+      
+      createProductRow(product) {
+        const row = document.createElement('tr');
+        row.className = 'position-static';
+        row.setAttribute('data-product-id', product._id);
+        
+        // Format price display
+        const priceDisplay = product.price ? `$${product.price}` : '$0.00';
+        
+        // Format category
+        const categoryDisplay = product.category && product.category.length > 0 
+          ? product.category.map(cat => `<a href="#!" class="text-decoration-none"><span class="badge badge-tag me-2 mb-2">${cat.name}</span></a>`).join('')
+          : '';
+        
+        // Format tags
+        const tagsDisplay = product.tags && product.tags.length > 0 
+          ? product.tags.map(tag => `<a href="#!" class="text-decoration-none"><span class="badge badge-tag me-2 mb-2">${tag}</span></a>`).join('')
+          : '';
+        
+        // Format vendor
+        const vendorDisplay = product.vendor 
+          ? `<a href="#!">${product.vendor.name}</a>`
+          : '';
+        
+        // Format date
+        const dateDisplay = product.dateCreated 
+          ? new Intl.DateTimeFormat('en-US', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              hour12: true 
+            }).format(new Date(product.dateCreated))
+          : 'N/A';
+        
+        row.innerHTML = `
+          <td class="fs-9 align-middle">
+            <div class="form-check mb-0 fs-8">
+              <input class="form-check-input" type="checkbox" data-bulk-select-row>
+            </div>
+          </td>
+          <td class="align-middle white-space-nowrap py-0">
+            <a href="/api/v1/products/${product._id}" class="d-block border border-translucent rounded-2">
+              <img src="${product.image?.url || 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2'}" alt="${product.name}" width="53">
+            </a>
+          </td>
+          <td class="product align-middle ps-4">
+            <a class="fw-semibold line-clamp-3 mb-0" href="/api/v1/products/${product._id}">${product.name}</a>
+          </td>
+          <td class="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">${priceDisplay}</td>
+          <td class="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
+            ${categoryDisplay}
+          </td>
+          <td class="tags align-middle review pb-2 ps-3" style="min-width:225px;">
+            ${tagsDisplay}
+          </td>
+          <td class="align-middle review fs-8 text-center ps-4">
+            <span class="fas fa-star text-warning"></span>
+          </td>
+          <td class="vendor align-middle text-start fw-semibold ps-4">
+            ${vendorDisplay}
+          </td>
+          <td class="time align-middle white-space-nowrap text-body-tertiary text-opacity-85 ps-4">${dateDisplay}</td>
+          <td class="align-middle white-space-nowrap text-end pe-0 ps-4 btn-reveal-trigger">
+            <div class="dropdown font-sans-serif position-static">
+              <button class="btn btn-link text-600 btn-sm dropdown-toggle btn-reveal" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="fas fa-ellipsis-h fs-11"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end border py-2">
+                <a class="dropdown-item" href="/api/v1/products/edit/${product._id}">Edit</a>
+                <a class="dropdown-item" href="/api/v1/products/${product._id}">View</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item text-danger" href="#!" onclick="deleteProduct('${product._id}')">Delete</a>
+              </div>
+            </div>
+          </td>
+        `;
+        return row;
+      }
+      
+      showLoading() {
+        this.loadingIndicator.classList.remove('d-none');
+        this.loadMoreBtn?.setAttribute('disabled', 'disabled');
+      }
+      
+      hideLoading() {
+        this.loadingIndicator.classList.add('d-none');
+        this.loadMoreBtn?.removeAttribute('disabled');
+      }
+      
+      showError(message) {
+        // Create and show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.innerHTML = `
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        this.productsContainer.parentNode.insertBefore(errorDiv, this.productsContainer);
+      }
+    }
+    
+    // Initialize product loader when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, initializing ProductLoader...');
+      window.productLoader = new ProductLoader();
+      
+      // Add debug button functionality
+      const debugBtn = document.getElementById('debug-btn');
+      if (debugBtn) {
+        debugBtn.addEventListener('click', () => {
+          console.log('=== DEBUG INFO ===');
+          console.log('Window productLoader:', window.productLoader);
+          console.log('Current cursor:', window.productLoader?.currentCursor);
+          console.log('Has next page:', window.productLoader?.hasNextPage);
+          console.log('Is loading:', window.productLoader?.isLoading);
+          console.log('Load more button:', document.getElementById('load-more-btn'));
+          console.log('Load more container:', document.getElementById('load-more-container'));
+          console.log('Products table body:', document.getElementById('products-table-body'));
+          
+          // Test manual AJAX request
+          console.log('Testing manual AJAX request...');
+          
+          // First test the AJAX detection endpoint
+          fetch('/api/v1/products/test-ajax', {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            console.log('Test AJAX Response status:', response.status);
+            return response.json();
+          })
+          .then(data => {
+            console.log('Test AJAX Response:', data);
+          })
+          .catch(error => {
+            console.error('Test AJAX error:', error);
+          });
+          
+          // Then test the actual products endpoint
+          fetch('/api/v1/products/?_t=' + Date.now(), {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            console.log('Products Response status:', response.status);
+            console.log('Products Response headers:', Object.fromEntries(response.headers.entries()));
+            return response.text();
+          })
+          .then(text => {
+            console.log('Products Response text (first 1000 chars):', text.substring(0, 1000));
+            try {
+              const data = JSON.parse(text);
+              console.log('Products Parsed JSON:', data);
+            } catch (e) {
+              console.log('Products Response is not valid JSON');
+            }
+          })
+          .catch(error => {
+            console.error('Products test error:', error);
+          });
+        });
+      }
+    });
+    
+    // Delete product function
+    function deleteProduct(productId) {
+      if (confirm('Are you sure you want to delete this product?')) {
+        fetch(`/api/v1/products/${productId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Remove the row from the table
+            const row = document.querySelector(`[data-product-id="${productId}"]`);
+            row?.remove();
+            // Show success message
+            alert('Product deleted successfully');
+          } else {
+            alert('Failed to delete product');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error deleting product');
+        });
+      }
+    }

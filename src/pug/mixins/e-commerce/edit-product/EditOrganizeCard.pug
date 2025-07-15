@@ -1,0 +1,57 @@
+mixin EditOrganizeCard(options = {})
+  - const categories = options.categories || []
+  - const vendors = options.vendors || []
+  - const product = options.product || {}
+  - const selectedCategories = product.category ? (Array.isArray(product.category) ? product.category.map(c => c._id.toString()) : [product.category.toString()]) : []
+  
+  .card&attributes(attributes)
+    .card-body
+      h4.card-title.mb-4 Organize
+      .row.gx-3
+        .col-12.col-sm-6.col-xl-12
+          .mb-4
+            h5.mb-2.text-body-highlight Brand
+            input.form-control.mb-3(type='text' name='brand' placeholder='Enter brand name' value=product.brand)
+            
+            .form-check.mb-3
+              input.form-check-input(type='checkbox' name='isFeatured' id='isFeatured' checked=product.isFeatured)
+              label.form-check-label(for='isFeatured') Mark as Featured Product
+
+        .col-12.col-sm-6.col-xl-12
+          .mb-4
+            .d-flex.flex-wrap.mb-2
+              h5.mb-0.text-body-highlight.me-2 Categories
+              a.fw-bold.fs-9(href='#!') Add new category
+            select.form-select.mb-3(data-choices multiple data-options!={removeItemButton: true, placeholder: true} name='category')
+              if categories.length > 0
+                option(value='') Add categories...
+                each category in categories
+                  - const isSelected = selectedCategories.includes(category._id.toString())
+                  option(value=category._id selected=isSelected)= category.name
+              else
+                option(value='') No categories available
+
+        .col-12.col-sm-6.col-xl-12
+          .mb-4
+            .d-flex.flex-wrap.mb-2
+              h5.mb-0.text-body-highlight.me-2 Vendor
+              a.fw-bold.fs-9(href='#!') Add new vendor
+            select.form-select.mb-3(name='vendor')
+              option(value='') Select vendor...
+              if vendors.length > 0
+                each vendor in vendors
+                  - const isSelected = product.vendor && (typeof product.vendor === 'object' ? product.vendor._id.toString() === vendor._id.toString() : product.vendor.toString() === vendor._id.toString())
+                  option(value=vendor._id selected=isSelected)= vendor.name
+              else
+                option(value='') No vendors available
+
+        .col-12.col-sm-6.col-xl-12
+          .d-flex.flex-wrap.mb-2
+            h5.mb-0.text-body-highlight.me-2 Tags
+            a.fw-bold.fs-9.lh-sm(href='#!') Add new tag
+          select.form-select.mb-3(data-choices multiple data-options!={removeItemButton: true, placeholder: true} name='tags[]')
+            option(value='') Add tags...
+            option(value='new' selected=product.tags && product.tags.includes('new')) New
+            option(value='featured' selected=product.tags && product.tags.includes('featured')) Featured
+            option(value='sale' selected=product.tags && product.tags.includes('sale')) Sale
+            option(value='trending' selected=product.tags && product.tags.includes('trending')) Trending
