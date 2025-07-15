@@ -21,15 +21,7 @@ append variables
   - var disableHorizontalNavbarShape = true;
   - var disableVerticalNavbarAppearance = true;
   - var disableHorizontalNavbarAppearance = true;
-  - var product = product || { 
-      description: '', 
-      image: { url: '' }, 
-      specificationSections: [], 
-      rating: 0, 
-      numReviews: 0, 
-      reviews: [],
-      _id: ''
-    };
+
 
 prepend styles
   link(href=`${CWD}vendors/swiper/swiper-bundle.min.css`, rel='stylesheet')
@@ -68,33 +60,36 @@ block ecomContent
         .col-12.col-lg-7.col-xl-8 
           #productTabContent.tab-content
             #tab-description.tab-pane.pe-lg-6.pe-xl-12.fade.show.active.text-body-emphasis(role='tabpanel' aria-labelledby='description-tab')
-              p.mb-5!= product.description
-              a(href=product.image.url data-gallery=`gallery-description`)
-                img.img-fluid.mb-5.rounded-3(src=product.image.url, alt="")
+              if product && product.description
+                p.mb-5!= product.description
+              if product && product.image && product.image.url
+                a(href=product.image.url data-gallery=`gallery-description`)
+                  img.img-fluid.mb-5.rounded-3(src=product.image.url, alt="")
             #tab-specification.tab-pane.pe-lg-6.pe-xl-12.fade(role='tabpanel' aria-labelledby='specification-tab')
-              each section in product.specificationSections
-                h3.mb-0.ms-4.fw-bold= section.title
-                table.table
-                  thead
-                    tr
-                      th(style='width: 40%') 
-                      th(style='width: 60%')
-                  tbody
-                    each spec in section.specs
+              if product && product.specificationSections
+                each section in product.specificationSections
+                  h3.mb-0.ms-4.fw-bold= section.title
+                  table.table
+                    thead
                       tr
-                        td.bg-body-highlight.align-middle
-                          h6.mb-0.text-body.text-uppercase.fw-bolder.px-4.fs-9.lh-sm= spec.label
-                        td.px-5.mb-0= spec.value
+                        th(style='width: 40%') 
+                        th(style='width: 60%')
+                    tbody
+                      each spec in section.specs
+                        tr
+                          td.bg-body-highlight.align-middle
+                            h6.mb-0.text-body.text-uppercase.fw-bolder.px-4.fs-9.lh-sm= spec.label
+                          td.px-5.mb-0= spec.value
             #tab-reviews.tab-pane.fade(role='tabpanel' aria-labelledby='reviews-tab')
               .bg-body-emphasis.rounded-3.p-4.border.border-translucent
                 .row.g-3.justify-content-between.mb-4
                   .col-auto
                     .d-flex.align-items-center.flex-wrap
-                      h2.fw-bolder.me-3 #{product.rating}
+                      h2.fw-bolder.me-3 #{product ? product.rating || 0 : 0}
                         span.fs-8.text-body-quaternary.fw-bold /5
                       .me-3
-                        +Rating(product.rating).fs-6
-                      p.text-body.mb-0.fw-semibold.fs-7 #{product.numReviews} ratings and #{product.reviews.length} reviews
+                        +Rating(product ? product.rating || 0 : 0).fs-6
+                      p.text-body.mb-0.fw-semibold.fs-7 #{product ? product.numReviews || 0 : 0} ratings and #{product && product.reviews ? product.reviews.length : 0} reviews
                   .col-auto
                     button.btn.btn-primary.rounded-pill(data-bs-toggle="modal" data-bs-target="#reviewModal") Rate this product
 
@@ -106,7 +101,7 @@ block ecomContent
                         h5.modal-title.fs-8.mb-0 Your rating
                         button.btn.p-0.fs-10(type='button' data-bs-dismiss='modal' aria-label='Close') &times;
 
-                      form#reviewForm(action=`/api/products/${product._id}/reviews` method='POST')
+                      form#reviewForm(action=`/api/products/${product ? product._id || '' : ''}/reviews` method='POST')
                         .mb-3(data-rater!={starSize:32, step: .5})
                           input#rating(type='hidden' name='rating' required)
                         .mb-3
@@ -136,7 +131,7 @@ block ecomContent
                           button.btn.btn-primary.rounded-pill(type='submit') Submit Review
 
                 // Reviews List
-                if product.reviews && product.reviews.length > 0
+                if product && product.reviews && product.reviews.length > 0
                   .mt-4
                     each review in product.reviews
                       .review.border-bottom.border-translucent.py-3

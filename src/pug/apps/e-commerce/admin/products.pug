@@ -19,14 +19,7 @@ append variables
         active: true
       },
     ];
-  - var categories = categories || [];
-  - var products = products || [];
-  - var pageTitle = pageTitle || 'Products';
-  - var productCount = productCount || 0;
-  - var featuredProductsCount = featuredProductsCount || 0;
-  - var apiUrl = apiUrl || 'api/v1';
-  - var nextCursor = nextCursor || '';
-  - var hasNextPage = hasNextPage || false;
+
 
 block content
   .mb-9
@@ -66,9 +59,10 @@ block content
                   | Category
                   span.fas.fa-angle-down.ms-2
                 ul.dropdown-menu
-                  each category in categories	
-                    li
-                      a.dropdown-item(href='#') #{category.name}
+                  if categories && categories.length > 0
+                    each category in categories	
+                      li
+                        a.dropdown-item(href='#') #{category.name}
                   li
                     hr.dropdown-divider
                   li
@@ -98,7 +92,11 @@ block content
               | Add product
       .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
         #products-table
-          +ProductTable(products)
+          if products && products.length > 0
+            +ProductTable(products)
+          else
+            .text-center.py-4
+              p.text-body-secondary No products available
         
         // Loading indicator
         #loading-indicator.text-center.py-4.d-none
