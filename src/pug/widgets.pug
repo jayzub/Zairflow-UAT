@@ -1,11 +1,4 @@
 extends layouts/LayoutTheme
-include mixins/widgets/WidgetNavbar
-include mixins/widgets/Stats
-include mixins/widgets/Tables
-include mixins/widgets/ECommerce
-include mixins/widgets/Users
-include mixins/widgets/Forms
-include mixins/widgets/Others
 
 prepend styles
   link(href=`${CWD}vendors/choices/choices.min.css`, rel='stylesheet')
@@ -30,11 +23,6 @@ append scripts
   script(src=`${CWD}assets/js/crm-analytics.js`)
 
 block content
-  +WidgetNavbar
-  .mb-9(data-bs-spy="scroll" data-bs-target="#widgets-scrollspy")
-    +Stats
-    +Tables
-    +ECommerce
-    +Users
-    +Forms
-    +Others
+  .mb-9
+    h1.text-center.mb-5 Widgets Page
+    p.text-center This page has been simplified for the e-commerce focus.
