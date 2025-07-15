@@ -154,12 +154,9 @@ mixin TasksList
 			},
 		];
 
-	+TodoSearchBar('justify-content-start').mb-3
-	each tasks,index in taskList
-		+TodoListItem(tasks,index)
-	a.fw-bold.fs-9.mt-4(href='#!')
-		span.fas.fa-plus.me-1
-		| Add new task
+	// Todo functionality removed for e-commerce focus
+	.text-center.py-4
+		p.text-body-secondary Tasks functionality has been simplified for e-commerce focus.
 
 mixin FilesAttachments
 	.border-top.border-dashed.pt-3.pb-4
