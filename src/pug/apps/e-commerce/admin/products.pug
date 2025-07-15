@@ -19,6 +19,14 @@ append variables
         active: true
       },
     ];
+  - var categories = categories || [];
+  - var products = products || [];
+  - var pageTitle = pageTitle || 'Products';
+  - var productCount = productCount || 0;
+  - var featuredProductsCount = featuredProductsCount || 0;
+  - var apiUrl = apiUrl || 'api/v1';
+  - var nextCursor = nextCursor || '';
+  - var hasNextPage = hasNextPage || false;
 
 block content
   .mb-9

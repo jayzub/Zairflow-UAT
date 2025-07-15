@@ -21,6 +21,15 @@ append variables
   - var disableHorizontalNavbarShape = true;
   - var disableVerticalNavbarAppearance = true;
   - var disableHorizontalNavbarAppearance = true;
+  - var product = product || { 
+      description: '', 
+      image: { url: '' }, 
+      specificationSections: [], 
+      rating: 0, 
+      numReviews: 0, 
+      reviews: [],
+      _id: ''
+    };
 
 prepend styles
   link(href=`${CWD}vendors/swiper/swiper-bundle.min.css`, rel='stylesheet')
