@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Interactions
 
 append variables
 
@@ -31,7 +30,9 @@ block component
       descriptionClass:'mt-2'
 
     }).my-5
-      +InteractionsTextSelection
+      .text-center.py-8
+        h4.text-body-secondary Text Selection
+        p.text-body-quaternary Text selection functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Pointer events',
@@ -39,5 +40,7 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +InteractionsPointerEvents
+      .text-center.py-8
+        h4.text-body-secondary Pointer Events
+        p.text-body-quaternary Pointer events functionality has been simplified for e-commerce focus.
 

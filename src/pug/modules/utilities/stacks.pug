@@ -1,6 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Stacks
-
 
 append variables
 
@@ -47,7 +45,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StacksVerticalLayout
+      .text-center.py-8
+        h4.text-body-secondary Vertical Layout
+        p.text-body-quaternary Vertical layout functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Horizontal',
@@ -55,7 +55,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StacksHorizontalLayout
+      .text-center.py-8
+        h4.text-body-secondary Horizontal Layout
+        p.text-body-quaternary Horizontal layout functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Margin utilities',
@@ -63,7 +65,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StacksMerginUtilities
+      .text-center.py-8
+        h4.text-body-secondary Margin Utilities
+        p.text-body-quaternary Margin utilities functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Vertical rules',
@@ -71,7 +75,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StacksVerticalRules
+      .text-center.py-8
+        h4.text-body-secondary Vertical Rules
+        p.text-body-quaternary Vertical rules functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Stack buttons',
@@ -79,7 +85,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StackButtons
+      .text-center.py-8
+        h4.text-body-secondary Stack Buttons
+        p.text-body-quaternary Stack buttons functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Inline form',
@@ -87,4 +95,6 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StacksInlineForm
+      .text-center.py-8
+        h4.text-body-secondary Inline Form
+        p.text-body-quaternary Inline form functionality has been simplified for e-commerce focus.

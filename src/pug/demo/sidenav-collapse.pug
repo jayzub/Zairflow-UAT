@@ -1,4 +1,4 @@
-extends ../dashboard/project-management
+extends ../layouts/LayoutTheme
 
 append variables
   - var attrsHtml = Object.assign(attrsHtml, { class: 'navbar-vertical-collapsed' })
@@ -10,5 +10,12 @@ append headScripts
       window.config.set({
         phoenixIsNavbarVerticalCollapsed: true
       });
+
+block content
+  .container-fluid
+    .row
+      .col-12
+        h1.mb-4 Demo: Sidenav Collapse
+        p.text-body-secondary This is a demo page showing collapsed sidenav layout.
 
 block afterWrapperContent

@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Overflow
 
 append variables
 
@@ -26,5 +25,7 @@ block component
       anchor: true,
       descriptionClass:'mt-2'
     }).my-5.overflow-docs.overflow-hidden(style="min-height: 250px;")
-      +OverflowExample
+      .text-center.py-8
+        h4.text-body-secondary Overflow Example
+        p.text-body-quaternary Overflow example functionality has been simplified for e-commerce focus.
 

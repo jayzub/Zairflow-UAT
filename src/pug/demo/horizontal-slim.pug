@@ -1,4 +1,4 @@
-extends ../dashboard/project-management
+extends ../layouts/LayoutTheme
 
 
 append variables
@@ -26,6 +26,13 @@ append headScripts
         phoenixNavbarTopStyle: 'darker'
       });
 
+
+block content
+  .container-fluid
+    .row
+      .col-12
+        h1.mb-4 Demo: Horizontal Slim Navigation
+        p.text-body-secondary This is a demo page showing horizontal slim navigation layout.
 
 block navbarVertical
 

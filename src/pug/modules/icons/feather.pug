@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/icons/IconCards
 
 append variables
   -
@@ -310,12 +309,21 @@ block component
       span.text-danger(data-feather='bell' style="height: 70px; width: 70px;")
 
     .card.border.mb-3(data-list!={valueNames: ['icon-list-item']})
-      +IconListHeader
+      .card-header.bg-body-highlight.py-3
+        .row.flex-between-center
+          .col-auto
+            h5.mb-0.text-body-highlight Feather Icons
+          .col-auto.d-flex
+            .input-group.input-group-sm.flex-nowrap
+              span.input-group-text.border-0.bg-transparent
+                span.fa-solid.fa-search.text-body-quaternary
+              input.form-control.form-control-sm.border-0.px-2.fs-9.bg-transparent(type='text' placeholder='Search icons' aria-label='Search icons')
       .card-body
         .row.list#icon-list
-          each value, index in icons
-            +IconCard(value)
-              span.text-body.fs-5(data-feather=value)
+          .col-12
+            .text-center.py-8
+              h4.text-body-secondary Icon components simplified
+              p.text-body-quaternary Icon card functionality has been simplified for e-commerce focus.
 
 
 

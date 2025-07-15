@@ -1,6 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Grid
-
 
 append variables
 
@@ -51,7 +49,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridTable
+      .text-center.py-8
+        h4.text-body-secondary Grid Options
+        p.text-body-quaternary Grid options functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Equal-width',
@@ -59,7 +59,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridEqualWidth
+      .text-center.py-8
+        h4.text-body-secondary Equal Width
+        p.text-body-quaternary Equal width functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Column width',
@@ -67,7 +69,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridColumnWidth
+      .text-center.py-8
+        h4.text-body-secondary Column Width
+        p.text-body-quaternary Column width functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Stacked to horizontal',
@@ -75,15 +79,19 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +StackedToHorizontal
+      .text-center.py-8
+        h4.text-body-secondary Stacked to Horizontal
+        p.text-body-quaternary Stacked to horizontal functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Mix and match',
-      description: `Don’t want your columns to simply stack in some grid tiers? Use a combination of different classes for each tier as needed. See the example below for a better idea of how it all works.`,
+      description: `Don't want your columns to simply stack in some grid tiers? Use a combination of different classes for each tier as needed. See the example below for a better idea of how it all works.`,
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridMixAndMatch
+      .text-center.py-8
+        h4.text-body-secondary Mix and Match
+        p.text-body-quaternary Mix and match functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Row columns',
@@ -91,7 +99,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridRowColumns
+      .text-center.py-8
+        h4.text-body-secondary Row Columns
+        p.text-body-quaternary Row columns functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Nesting',
@@ -99,4 +109,6 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +GridNesting
+      .text-center.py-8
+        h4.text-body-secondary Nesting
+        p.text-body-quaternary Nesting functionality has been simplified for e-commerce focus.

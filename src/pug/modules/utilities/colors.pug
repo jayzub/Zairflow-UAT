@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Colors
 
 append variables
 
@@ -36,7 +35,9 @@ append variables
 append component
   .mb-9
     +ComponentCard({title: 'Colors', anchor: true}).my-5
-      +ColorExample
+      .text-center.py-8
+        h4.text-body-secondary Color Utilities
+        p.text-body-quaternary Color utility functionality has been simplified for e-commerce focus.
 
     h3(data-anchor) Opacity
     p.text-body-tertiary Color opacity allows for real-time color changes without compilation and dynamic alpha transparency changes.
@@ -48,13 +49,11 @@ append component
           code .text-primary 
           | utility.
       .card-body.p-0
-
-        +ComponentCardLib('css').
-          .text-primary {
-            --phoenix-text-opacity: 1;
-            color: rgba(var(--phoenix-primary-rgb), var(--phoenix-text-opacity)) !important;
-          }
-
+        .text-center.py-8
+          h4.text-body-secondary Color Opacity Example
+          p.text-body-quaternary Color opacity example functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title: 'Example', anchor: true}).my-5 
-      +ColorOpacityExample 
+      .text-center.py-8
+        h4.text-body-secondary Color Example
+        p.text-body-quaternary Color example functionality has been simplified for e-commerce focus.

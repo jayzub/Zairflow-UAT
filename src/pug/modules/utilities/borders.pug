@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Borders
 
 append variables
 
@@ -49,39 +48,53 @@ append variables
 append component
   .mb-9
     +ComponentCard({title: 'Border', anchor: true, hideNavTab: true}).my-5
-      +BorderDoc
+      .text-center.py-8
+        h4.text-body-secondary Border Utilities
+        p.text-body-quaternary Border utility functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title: 'Additive', anchor: true}).my-5.border-component
-      +BorderAdditive
+      .text-center.py-8
+        h4.text-body-secondary Additive Borders
+        p.text-body-quaternary Additive border functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title: 'Subtractive', anchor: true}).my-5.border-component
-      +BorderSubtractive
+      .text-center.py-8
+        h4.text-body-secondary Subtractive Borders
+        p.text-body-quaternary Subtractive border functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Border Color', 
       anchor: true,
       description: 'Change the border color using utilities built on our theme colors. The most used border colors utility class of this themes are <code>.border</code> and <code>.border-translucent</code>.'
       }).my-5.border-component
-      +BorderColorWidth
+      .text-center.py-8
+        h4.text-body-secondary Border Color
+        p.text-body-quaternary Border color functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Border Width',
       anchor: true,
       description: 'You can control border width using helper classes <code>border-{1|2|3|4|5}</code>. In addition, you can also use <code> border-top-2</code>, <code> border-end-2</code>, <code> border-bottom-2</code>, <code> border-start-2</code>'
       }).my-5.border-component
-      +BorderWidth
+      .text-center.py-8
+        h4.text-body-secondary Border Width
+        p.text-body-quaternary Border width functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Border Radius',
       anchor: true,
       description: 'Add classes to an element to easily round its corners.'
       }).my-5.border-component
-      +BorderRadius
+      .text-center.py-8
+        h4.text-body-secondary Border Radius
+        p.text-body-quaternary Border radius functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Border Sizes',
       anchor: true,
       description: 'Use the scaling classes for larger or smaller rounded corners. Sizes range from <code>0</code> to <code>3</code>, and can be configured by modifying the utilities API.'
       }).my-5.border-component
-      +BorderRadiusSizeDemo
+      .text-center.py-8
+        h4.text-body-secondary Border Sizes
+        p.text-body-quaternary Border size functionality has been simplified for e-commerce focus.
 

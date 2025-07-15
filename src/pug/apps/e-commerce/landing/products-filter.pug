@@ -214,13 +214,13 @@ block ecomContent
 					.collapse.show#collapseAvailability
 						.mb-2
 							.form-check.mb-0
-								input.form-check-input.mt-0#inStockInput(type='checkbox' name='stock' value='inStock' checked=currentFilters.stock.includes('inStock'))
+								input.form-check-input.mt-0#inStockInput(type='checkbox' name='stock' value='inStock' checked=currentFilters && currentFilters.stock && currentFilters.stock.includes('inStock'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='inStockInput') In stock
 							.form-check.mb-0
 								input.form-check-input.mt-0#preBookInput(type='checkbox' name='stock' value='preBook')
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='preBookInput') Pre-book
 							.form-check.mb-0
-								input.form-check-input.mt-0#outOfStockInput(type='checkbox' name='stock' value='outOfStock' checked=currentFilters.stock.includes('outOfStock'))
+								input.form-check-input.mt-0#outOfStockInput(type='checkbox' name='stock' value='outOfStock' checked=currentFilters && currentFilters.stock && currentFilters.stock.includes('outOfStock'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='outOfStockInput') Out of stock
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseColorFamily' role='button' aria-expanded='true' aria-controls='collapseColorFamily')
@@ -230,10 +230,11 @@ block ecomContent
 
 					.collapse.show#collapseColorFamily
 						.mb-2
-							each color in colors
-								.form-check.mb-0
-									input.form-check-input.mt-0(id=`color-${color}` type='checkbox' name='colors' value=color checked=currentFilters.colors.includes(color))
-									label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`color-${color}`)= color
+							if colors && colors.length > 0
+								each color in colors
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`color-${color}` type='checkbox' name='colors' value=color checked=currentFilters && currentFilters.colors && currentFilters.colors.includes(color))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`color-${color}`)= color
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseBrands' role='button' aria-expanded='true' aria-controls='collapseBrands')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -242,10 +243,11 @@ block ecomContent
 
 					.collapse.show#collapseBrands
 						.mb-2
-							each brand in brands
-								.form-check.mb-0
-									input.form-check-input.mt-0(id=`brand-${brand}` type='checkbox' name='brands' value=brand checked=currentFilters.brands.includes(brand))
-									label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`brand-${brand}`)= brand
+							if brands && brands.length > 0
+								each brand in brands
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`brand-${brand}` type='checkbox' name='brands' value=brand checked=currentFilters && currentFilters.brands && currentFilters.brands.includes(brand))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`brand-${brand}`)= brand
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseCategories' role='button' aria-expanded='true' aria-controls='collapseCategories')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -254,10 +256,11 @@ block ecomContent
 
 					.collapse.show#collapseCategories
 						.mb-2
-							each category in categories
-								.form-check.mb-0
-									input.form-check-input.mt-0(id=`category-${category._id}` type='checkbox' name='categories' value=category._id checked=currentFilters.categories.includes(category._id.toString()))
-									label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`category-${category._id}`)= category.name
+							if categories && categories.length > 0
+								each category in categories
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`category-${category._id}` type='checkbox' name='categories' value=category._id checked=currentFilters && currentFilters.categories && currentFilters.categories.includes(category._id.toString()))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`category-${category._id}`)= category.name
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapsePriceRange' role='button' aria-expanded='true' aria-controls='collapsePriceRange')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -266,8 +269,8 @@ block ecomContent
 					.collapse.show#collapsePriceRange
 						.d-flex.justify-content-between.mb-3
 							.input-group.me-2
-								input.form-control(type='text' name='minPrice' aria-label='Min price' placeholder='Min' value=currentFilters.minPrice)
-								input.form-control(type='text' name='maxPrice' aria-label='Max price' placeholder='Max' value=currentFilters.maxPrice)
+								input.form-control(type='text' name='minPrice' aria-label='Min price' placeholder='Min' value=currentFilters ? currentFilters.minPrice || '' : '')
+								input.form-control(type='text' name='maxPrice' aria-label='Max price' placeholder='Max' value=currentFilters ? currentFilters.maxPrice || '' : '')
 							button.btn.btn-phoenix-primary.px-3(type='button') Go
 
 					a.btn.px-0.y-4.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseRating' role='button' aria-expanded='true' aria-controls='collapseRating')
@@ -276,22 +279,22 @@ block ecomContent
 							span.fa-solid.fa-angle-down.toggle-icon.text-body-quaternary
 					.collapse.show#collapseRating
 						.d-flex.align-items-center.mb-1
-							input.form-check-input.me-3#flexRadio1(type='radio' name='rating' value='5' checked=currentFilters.rating === '5')
+							input.form-check-input.me-3#flexRadio1(type='radio' name='rating' value='5' checked=currentFilters && currentFilters.rating === '5')
 							+Rating(5).fs-9.me-1
 						.d-flex.align-items-center.mb-1
-							input.form-check-input.me-3#flexRadio2(type='radio' name='rating' value='4' checked=currentFilters.rating === '4')
+							input.form-check-input.me-3#flexRadio2(type='radio' name='rating' value='4' checked=currentFilters && currentFilters.rating === '4')
 							+Rating(4).fs-9.me-1
 							p.ms-1.mb-0 &amp; above
 						.d-flex.align-items-center.mb-1
-							input.form-check-input.me-3#flexRadio3(type='radio' name='rating' value='3' checked=currentFilters.rating === '3')
+							input.form-check-input.me-3#flexRadio3(type='radio' name='rating' value='3' checked=currentFilters && currentFilters.rating === '3')
 							+Rating(3).fs-9.me-1
 							p.ms-1.mb-0 &amp; above 
 						.d-flex.align-items-center.mb-1
-							input.form-check-input.me-3#flexRadio4(type='radio' name='rating' value='2' checked=currentFilters.rating === '2')
+							input.form-check-input.me-3#flexRadio4(type='radio' name='rating' value='2' checked=currentFilters && currentFilters.rating === '2')
 							+Rating(2).fs-9.me-1
 							p.ms-1.mb-0 &amp; above
 						.d-flex.align-items-center.mb-3
-							input.form-check-input.me-3#flexRadio5(type='radio' name='rating' value='1' checked=currentFilters.rating === '1')
+							input.form-check-input.me-3#flexRadio5(type='radio' name='rating' value='1' checked=currentFilters && currentFilters.rating === '1')
 							+Rating(1).fs-9.me-1
 							p.ms-1.mb-0 &amp; above	
 
@@ -303,13 +306,13 @@ block ecomContent
 					.collapse.show#collapseProductType
 						.mb-2
 							.form-check.mb-0
-								input.form-check-input.mt-0#electronicsInput(type='checkbox' name='productType' value='Electronics' checked=currentFilters.productType.includes('Electronics'))
+								input.form-check-input.mt-0#electronicsInput(type='checkbox' name='productType' value='Electronics' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Electronics'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='electronicsInput') Electronics
 							.form-check.mb-0
-								input.form-check-input.mt-0#clothingInput(type='checkbox' name='productType' value='Clothing' checked=currentFilters.productType.includes('Clothing'))
+								input.form-check-input.mt-0#clothingInput(type='checkbox' name='productType' value='Clothing' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Clothing'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='clothingInput') Clothing
 							.form-check.mb-0
-								input.form-check-input.mt-0#furnitureInput(type='checkbox' name='productType' value='Furniture' checked=currentFilters.productType.includes('Furniture'))
+								input.form-check-input.mt-0#furnitureInput(type='checkbox' name='productType' value='Furniture' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Furniture'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='furnitureInput') Furniture
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseSpecialOffers' role='button' aria-expanded='true' aria-controls='collapseSpecialOffers')
@@ -320,20 +323,26 @@ block ecomContent
 					.collapse.show#collapseSpecialOffers
 						.mb-2
 							.form-check.mb-0
-								input.form-check-input.mt-0#featuredInput(type='checkbox' name='featured' value='true' checked=currentFilters.featured)
+								input.form-check-input.mt-0#featuredInput(type='checkbox' name='featured' value='true' checked=currentFilters && currentFilters.featured)
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='featuredInput') Featured Products
 							.form-check.mb-0
-								input.form-check-input.mt-0#onSaleInput(type='checkbox' name='onSale' value='true' checked=currentFilters.onSale)
+								input.form-check-input.mt-0#onSaleInput(type='checkbox' name='onSale' value='true' checked=currentFilters && currentFilters.onSale)
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='onSaleInput') On Sale
 
 				.phoenix-offcanvas-backdrop.d-lg-none(data-phoenix-backdrop style='top: 92px')
 
 			.col-lg-9.col-xxl-10
 				.row.gx-3.gy-6.mb-8
-					each product in products
-						.col-12.col-sm-6.col-md-4.col-xxl-2
-							.product-card-container.h-100
-								+Product(product)
+					if products && products.length > 0
+						each product in products
+							.col-12.col-sm-6.col-md-4.col-xxl-2
+								.product-card-container.h-100
+									+Product(product)
+					else
+						.col-12
+							.text-center.py-8
+								h4.text-body-secondary No products found
+								p.text-body-quaternary Try adjusting your filters or search criteria
 
 				.d-flex.justify-content-end
 					nav(aria-label='Page navigation example')

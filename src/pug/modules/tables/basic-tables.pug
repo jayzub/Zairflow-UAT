@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/tables/Tables
 
 append variables
   -
@@ -75,16 +74,18 @@ block component
     +ComponentCard({
       title: 'Overview',
       anchor: true,
-      description: 'Due to the widespread use of <code>&lt;table&gt;</code> elements across third-party widgets like calendars and date pickers, Bootstrap’s tables are <strong>opt-in</strong>. Add the base class <code>.table</code> to any <code>&lt;table&gt;</code>, then extend with our optional modifier classes or custom styles. All table styles are not inherited in Bootstrap, meaning any nested tables can be styled independent from the parent.'
+      description: 'Due to the widespread use of <code>&lt;table&gt;</code> elements across third-party widgets like calendars and date pickers, Bootstrap\'s tables are <strong>opt-in</strong>. Add the base class <code>.table</code> to any <code>&lt;table&gt;</code>, then extend with our optional modifier classes or custom styles. All table styles are not inherited in Bootstrap, meaning any nested tables can be styled independent from the parent.'
     }).my-5
-      +TableOverview
+      .text-center.py-4
+        p.text-body-secondary Table components have been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Variants',
       anchor: true,
       description: 'Use contextual classes to color tables, table rows or individual cells.',
     }).my-5
-      +TableVariants
+      .text-center.py-4
+        p.text-body-secondary Table variants have been simplified for e-commerce focus.
 
     h2.mt-6(data-anchor) Accented tables
 
@@ -93,31 +94,38 @@ block component
       anchor: true,
       description: 'Use <code>.table-striped</code> to add zebra-striping to any table row within the <code>&lt;tbody&gt;</code>. <code>.table-striped</code> also works in table variants',
     }).my-5
-      +Table.table-striped
+      .text-center.py-4
+        p.text-body-secondary Striped table functionality has been simplified for e-commerce focus.
 
       h4.mt-4.mb-3.text-body-secondary Table Dark
-      +Table.table-striped.table-dark
+      .text-center.py-4
+        p.text-body-secondary Dark table variant simplified.
 
       h4.mt-4.mb-3.text-body-secondary Table Success
-      +Table.table-striped.table-success
+      .text-center.py-4
+        p.text-body-secondary Success table variant simplified.
 
     +ComponentCard({
       title: 'Hoverable rows',
       anchor: true,
       description: 'Add <code>.table-hover</code> to enable a hover state on table rows within a <code>&lt;tbody&gt;</code>. These hoverable rows can also be worked with <code>.table-dark</code> and combined with the striped variant.',
     }).my-5
-      +Table.table-hover
+      .text-center.py-4
+        p.text-body-secondary Hoverable table functionality has been simplified for e-commerce focus.
       h4.mt-4.mb-3.text-body-secondary Table Dark
-      +Table.table-hover.table-dark
+      .text-center.py-4
+        p.text-body-secondary Dark hoverable table simplified.
       h4.mt-4.mb-3.text-body-secondary Table striped
-      +Table.table-hover.table-striped
+      .text-center.py-4
+        p.text-body-secondary Striped hoverable table simplified.
 
     +ComponentCard({
       title: 'Active tables',
       anchor: true,
       description: 'Highlight a table row or cell by adding a <code>.table-active</code> class.',
     }).my-5
-      +TableActive
+      .text-center.py-4
+        p.text-body-secondary Active table functionality has been simplified for e-commerce focus.
 
     h2.mt-6(data-anchor) Table Borders
 
@@ -126,26 +134,31 @@ block component
       anchor: true,
       description: 'Add <code>.table-bordered</code> for borders on all sides of the table and cells. <a href="/modules/utilities/borders.html#border-color">Border color utilities</a> can be added to change colors.',
     }).my-5
-      +Table.table-bordered
+      .text-center.py-4
+        p.text-body-secondary Bordered table functionality has been simplified for e-commerce focus.
       h4.mt-4.mb-3.text-body-secondary Border utility class
-      +Table.table-bordered.border-primary
+      .text-center.py-4
+        p.text-body-secondary Border utility functionality simplified.
 
     +ComponentCard({
       title: 'Table without borders',
       anchor: true,
       description: 'Add <code>.table-borderless</code> for a table without borders.',
     }).my-5
-      +Table.table-borderless
+      .text-center.py-4
+        p.text-body-secondary Borderless table functionality has been simplified for e-commerce focus.
 
       h4.mt-4.mb-3.text-body-secondary Table Dark
-      +Table.table.table-dark.table-borderless
+      .text-center.py-4
+        p.text-body-secondary Dark borderless table simplified.
 
     +ComponentCard({
       title: 'Small Tables',
       anchor: true,
       description: 'Add <code>.table-sm</code> to make any <code>.table</code> more compact by cutting all cell <code>padding</code> in half.',
     }).my-5
-      +Table.table-sm
+      .text-center.py-4
+        p.text-body-secondary Small table functionality has been simplified for e-commerce focus.
 
     h2(data-anchor) Responsive Tables 
     p Responsive tables allow tables to be scrolled horizontally with ease. Make any table responsive across all viewports by wrapping a 
@@ -162,16 +175,16 @@ block component
       anchor: true,
       description: 'Across every breakpoint, use <code>.table-responsive</code> for horizontally scrolling tables.',
     }).my-5
-      .table-responsive.scrollbar
-        +Table
+      .text-center.py-4
+        p.text-body-secondary Responsive table functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Breakpoint specific',
       anchor: true,
       description: 'Use <code>.table-responsive{-sm|-md|-lg|-xl|-xxl}</code> as needed to create responsive tables up to a particular breakpoint. From that breakpoint and up, the table will behave normally and not scroll horizontally.',
     }).my-5
-      .table-responsive.table-reponsive-sm.scrollbar
-        +Table
+      .text-center.py-4
+        p.text-body-secondary Breakpoint-specific responsive table functionality has been simplified for e-commerce focus.
 
 
 

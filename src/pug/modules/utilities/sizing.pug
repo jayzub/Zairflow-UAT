@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Sizing
 
 append variables
   -
@@ -28,12 +27,18 @@ append variables
 append component
   .mb-9
     +ComponentCard({title: 'Width (relative to parent)'}).my-5
-      +SizingWidth
+      .text-center.py-8
+        h4.text-body-secondary Sizing Width
+        p.text-body-quaternary Sizing width functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title: 'Height (relative to parent)'}).my-5
-      +SizingHeight
+      .text-center.py-8
+        h4.text-body-secondary Sizing Height
+        p.text-body-quaternary Sizing height functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title: 'Special classes (relative to viewport)', hideNavTab: true}).my-5
-      +SizingSpecial
+      .text-center.py-8
+        h4.text-body-secondary Sizing Special
+        p.text-body-quaternary Sizing special functionality has been simplified for e-commerce focus.
 
 

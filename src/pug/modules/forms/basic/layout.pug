@@ -1,5 +1,4 @@
 extends ../../../layouts/LayoutComponent
-include ../../../mixins/forms/basic/FormsLayout
 
 append variables
   -
@@ -53,7 +52,9 @@ append variables
 block component
   .mb-9
     +ComponentCard({title:'Basic form'}).my-4
-      +BasicForm
+      .text-center.py-8
+        h4.text-body-secondary Basic Form
+        p.text-body-quaternary Basic form functionality has been simplified for e-commerce focus.
 
     +ComponentCard({title:'Horizontal form'}).my-4
       form

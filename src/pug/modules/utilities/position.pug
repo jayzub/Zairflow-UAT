@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Position
 
 append variables
 
@@ -33,7 +32,9 @@ block component
         h3(data-anchor).mb-2 Position values 
         p.text-body-tertiary Quick positioning classes are available, though they are not responsive.
       .card-body
-        +PositionDemo
+        .text-center.py-8
+          h4.text-body-secondary Position Demo
+          p.text-body-quaternary Position demo functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Arrange Elements',
@@ -41,7 +42,9 @@ block component
       description: `Arrange elements easily with the edge positioning utilities. The format is <code>{property}-{position}. </code> has special utility class <code>.all-0 </code>to give full height/width to child element of parent element.`,
       descriptionClass: '.mt-2.mb-0'
     }).my-5
-      +PositionArrangeElementsDemo
+      .text-center.py-8
+        h4.text-body-secondary Arrange Elements
+        p.text-body-quaternary Arrange elements functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Center Elements',
@@ -49,5 +52,7 @@ block component
       description: `In addition, you can also center the elements with the transform utility classes <code>.translate-middle</code>, <code>.translate-middle-x </code>, <code>.translate-middle-y</code>. Responsive variations also exist for <code>transform-middle</code>, For example: <code>transform-{xxl|xl|lg|md|sm}-middle-{x|y}</code>.`,
       descriptionClass: '.mt-2.mb-0'
     }).my-5
-      +PositionCenterElementsDemo
+      .text-center.py-8
+        h4.text-body-secondary Center Elements
+        p.text-body-quaternary Center elements functionality has been simplified for e-commerce focus.
 

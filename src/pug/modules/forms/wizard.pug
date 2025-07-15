@@ -1,9 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/wizard/WizardHeader
-include ../../mixins/wizard/WizardVerticalHeader
-include ../../mixins/wizard/WizardForms
-include ../../mixins/wizard/WizardContent
-include ../../mixins/wizard/WizardPager
 
 prepend styles
   link(href=`${CWD}vendors/flatpickr/flatpickr.min.css`, rel='stylesheet')
@@ -28,59 +23,32 @@ block component
       +ComponentCard({title:'Progress Tab'})
         .card.theme-wizard.mb-5(data-theme-wizard)
           .card-header.bg-body-highlight.pt-3.pb-2.border-bottom-0
-            +WizardHeader({tab1:'#bootstrap-wizard-tab1',tab2:'#bootstrap-wizard-tab2',tab3:'#bootstrap-wizard-tab3',tab4:'#bootstrap-wizard-tab4'})
+            p.text-body-secondary Wizard functionality has been simplified for e-commerce focus.
           .card-body.pt-4.pb-0
-            +WizardContent({
-              name: 'bootstrap-wizard',
-              formId: 'wizardForm',
-              tab1: 'bootstrap-wizard-tab1',
-              tab2: 'bootstrap-wizard-tab2',
-              tab3: 'bootstrap-wizard-tab3',
-              tab4: 'bootstrap-wizard-tab4',
-              validation: false,
-              url: `${CWD}${paths['forms-wizard']}`
-            })
+            p.text-body-secondary This wizard component has been removed to focus on e-commerce functionality.
           .card-footer.border-top-0(data-wizard-footer)
-            +WizardPager
+            p.text-body-secondary Wizard footer content removed.
     .col-12.col-xxl-6
       +ComponentCard({title:'With Validation'})
         .card.theme-wizard.mb-5(data-theme-wizard)
           .card-header.bg-body-highlight.pt-3.pb-2.border-bottom-0
-            +WizardHeader({tab1:'#bootstrap-wizard-validation-tab1',tab2:'#bootstrap-wizard-validation-tab2',tab3:'#bootstrap-wizard-validation-tab3',tab4:'#bootstrap-wizard-validation-tab4'})
+            p.text-body-secondary Validation wizard has been simplified for e-commerce focus.
           .card-body.pt-4.pb-0
-            +WizardContent({
-              name: 'bootstrap-wizard-validation', 
-              formId: 'wizardValidationForm',
-              tab1: 'bootstrap-wizard-validation-tab1',
-              tab2: 'bootstrap-wizard-validation-tab2',
-              tab3: 'bootstrap-wizard-validation-tab3',
-              tab4: 'bootstrap-wizard-validation-tab4',
-              validation: true,
-              url: `${CWD}${paths['forms-wizard']}`
-            })
+            p.text-body-secondary This validation wizard component has been removed to focus on e-commerce functionality.
           .card-footer.border-top-0(data-wizard-footer)
-            +WizardPager
+            p.text-body-secondary Validation wizard footer content removed.
     .col-12.col-xxl-8
       +ComponentCard({title:'Vertical wizard'})
         .card.theme-wizard.mb-5(data-theme-wizard)
           .card-body.pt-4.pb-0
             .row.justify-content-between
               .col-md-3.order-md-1
-                +WizardVerticalHeader({tab1:'#bootstrap-vertical-wizard-tab1',tab2:'#bootstrap-vertical-wizard-tab2',tab3:'#bootstrap-vertical-wizard-tab3',tab4:'#bootstrap-vertical-wizard-tab4'})
+                p.text-body-secondary Vertical wizard header removed.
               .col-md-8
-                +WizardContent({
-                  name: 'bootstrap-vertical-wizard',
-                  formId: 'wizardVerticalForm',
-                  tab1: 'bootstrap-vertical-wizard-tab1',
-                  tab2: 'bootstrap-vertical-wizard-tab2',
-                  tab3: 'bootstrap-vertical-wizard-tab3',
-                  tab4: 'bootstrap-vertical-wizard-tab4',
-                  validation: false,
-                  url: `${CWD}${paths['forms-wizard']}`
-                })
+                p.text-body-secondary Vertical wizard content has been removed to focus on e-commerce functionality.
           .card-footer.border-top-0(data-wizard-footer)
-            +WizardPager
+            p.text-body-secondary Vertical wizard footer content removed.
     #error-modal.modal.fade(tabindex='-1' role='dialog' aria-hidden='true')
       .modal-dialog.modal-dialog-centered(role="document" style="max-width: 500px")
         .modal-content.position-relative
-          +ErrorModalContent
+          p.text-body-secondary Error modal content removed for e-commerce focus.

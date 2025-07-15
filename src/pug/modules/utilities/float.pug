@@ -1,5 +1,4 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Float
 
 append variables
 
@@ -31,7 +30,9 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +FloatDemo
+      .text-center.py-8
+        h4.text-body-secondary Float Overview
+        p.text-body-quaternary Float overview functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Responsive',
@@ -39,5 +40,7 @@ block component
       anchor:true,
       descriptionClass:'mt-2'
     }).my-5
-      +FloatResponsiveDemo
+      .text-center.py-8
+        h4.text-body-secondary Float Responsive
+        p.text-body-quaternary Float responsive functionality has been simplified for e-commerce focus.
 

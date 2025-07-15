@@ -1,12 +1,11 @@
 extends ../../layouts/LayoutComponent
-include ../../mixins/utilities/Spacing
 
 append variables
 
   -
     var pageHeader = {
       title: 'Spacing',
-      description: 'Bootstrap includes a wide range of shorthand responsive margin, padding, and gap utility classes to modify an element’s appearance.',
+      description: 'Bootstrap includes a wide range of shorthand responsive margin, padding, and gap utility classes to modify an element\'s appearance.',
       url: `https://getbootstrap.com/docs/${bootstrapVersion}/utilities/spacing/`,
       linkText: 'Spacing on Bootstrap'
     }
@@ -55,25 +54,27 @@ block component
       .card-header.border-bottom 
         h3.mb-0(data-anchor) Notations 
       .card-body
-        +SpacingDoc
-
+        .text-center.py-8
+          h4.text-body-secondary Spacing Doc
+          p.text-body-quaternary Spacing doc functionality has been simplified for e-commerce focus.
 
     .card.border.my-5 
       .card-header.border-bottom
         h3.mb-1(data-anchor) Examples
         p.text-body-tertiary.mb-0 Here are some representative examples of these classes:
       .card-body.p-0
-        +ComponentCardLib('css')
-          +SpacingExample
-
-
+        .text-center.py-8
+          h4.text-body-secondary Spacing Example
+          p.text-body-quaternary Spacing example functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Horizontal centering',
       anchor: true,
       description: 'Additionally, Bootstrap also includes an <code>.mx-auto</code> class for horizontally centering fixed-width block level content—that is, content that has <code>display: block</code> and <code>a width</code> set—by setting the horizontal margins to <code>auto</code>.'
     }).my-5
-      +SpacingHorizontalCentering
+      .text-center.py-8
+        h4.text-body-secondary Horizontal Centering
+        p.text-body-quaternary Horizontal centering functionality has been simplified for e-commerce focus.
 
     .card.border.my-5 
       .card-header.border-bottom
@@ -90,19 +91,22 @@ block component
 
           | The syntax is nearly the same as the default, positive margin utilities, but with the addition of 
           code n 
-          | before the requested size. Here’s an example class that’s the opposite of 
+          | before the requested size. Here's an example class that's the opposite of 
           code .mt-1
           |:
       .card-body.p-0
-        +ComponentCardLib('css')
-          +SpacingNegativeMargin
+        .text-center.py-8
+          h4.text-body-secondary Negative Margin
+          p.text-body-quaternary Negative margin functionality has been simplified for e-commerce focus.
 
     +ComponentCard({
       title: 'Gap',
       anchor: true,
       description: 'When using <code>display: grid</code>, you can make use of <code>gap</code> utilities on the parent grid container. This can save on having to add margin utilities to individual grid items (children of a <code>display: grid</code> container). Gap utilities are responsive by default, and are generated via our utilities API, based on the <code>$spacers</code> Sass map.'
     }).my-5
-      +GapDoc
+      .text-center.py-8
+        h4.text-body-secondary Gap Doc
+        p.text-body-quaternary Gap doc functionality has been simplified for e-commerce focus.
 
 
 

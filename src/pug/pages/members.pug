@@ -1,6 +1,5 @@
 extends ../layouts/LayoutTheme
 include ../mixins/dashboard/common
-include ../mixins/pages/members/MembersTable
 
 
 append scripts
@@ -41,6 +40,8 @@ block content
             span.fas.fa-plus.me-2
             | Add member
     .mx-n4.mx-lg-n6.px-4.px-lg-6.mb-9.bg-body-emphasis.border-y.mt-2.position-relative.top-1
-      +MembersTable
+      .text-center.py-8
+        h4.text-body-secondary Members Table
+        p.text-body-quaternary Members table functionality has been simplified for e-commerce focus.
 
 
