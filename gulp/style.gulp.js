@@ -47,16 +47,20 @@ gulp.task('style', () => {
     .pipe(gulpIf(paths.rtl, rtlcss()))
     .pipe(gulpIf(paths.rtl, rename({ suffix: '-rtl.min' })));
 
-  return (
-    merge(
-      expandedStream,
-      ltrCompressedStream,
-      rtlExpandedStream,
-      rtlCompressedStream
-    )
-      // .pipe(sourcemaps.write('.'))
-      .pipe(gulpIf(!isProd, sourcemaps.write('.')))
-      .pipe(gulp.dest(`${baseDir}/${paths.style.dest}`))
-      .pipe(gulpIf(browserSync, browserSync.stream()))
-  );
+  const mergedStream = merge(
+    expandedStream,
+    ltrCompressedStream,
+    rtlExpandedStream,
+    rtlCompressedStream
+  )
+    // .pipe(sourcemaps.write('.'))
+    .pipe(gulpIf(!isProd, sourcemaps.write('.')))
+    .pipe(gulp.dest(`${baseDir}/${paths.style.dest}`));
+
+  // Only add browserSync stream if available
+  if (browserSync && browserSync.stream) {
+    return mergedStream.pipe(browserSync.stream());
+  }
+
+  return mergedStream;
 });
