@@ -1,0 +1,152 @@
+doctype html
+html(lang="en")
+  head
+    title= title
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    include ../partials/links
+
+  body.animsition
+    // Header
+    include ../partials/header
+    
+    // Cart
+    include ../partials/cart
+    
+    // Product
+    .bg0.m-t-23.p-b-140
+      .container
+        .flex-w.flex-sb-m.p-b-52
+          .flex-w.flex-l-m.filter-tope-group.m-tb-10
+            button.stext-106.cl6.hov1.bor3.trans-04.m-r-32.m-tb-5.how-active1(data-filter="*") All Products
+            
+            //- Loop through categories to create buttons
+            each category in categories
+              button.stext-106.cl6.hov1.bor3.trans-04.m-r-32.m-tb-5(data-filter=`.${category.name.toLowerCase().replace(/\s+/g, '')}`)
+                = category.name
+
+          .flex-w.flex-c-m.m-tb-10
+            .flex-c-m.stext-106.cl6.size-104.bor4.pointer.hov-btn3.trans-04.m-r-8.m-tb-4.js-show-filter
+              i.icon-filter.cl2.m-r-6.fs-15.trans-04.zmdi.zmdi-filter-list
+              i.icon-close-filter.cl2.m-r-6.fs-15.trans-04.zmdi.zmdi-close.dis-none
+              | Filter
+
+            .flex-c-m.stext-106.cl6.size-105.bor4.pointer.hov-btn3.trans-04.m-tb-4.js-show-search
+              i.icon-search.cl2.m-r-6.fs-15.trans-04.zmdi.zmdi-search
+              i.icon-close-search.cl2.m-r-6.fs-15.trans-04.zmdi.zmdi-close.dis-none
+              | Search
+
+          // Search product
+          .dis-none.panel-search.w-full.p-t-10.p-b-15
+            .bor8.dis-flex.p-l-15
+              button.size-113.flex-c-m.fs-16.cl2.hov-cl1.trans-04
+                i.zmdi.zmdi-search
+              input.mtext-107.cl2.size-114.plh2.p-r-15(type="text" name="search-product" placeholder="Search")
+
+          // Filter
+          .dis-none.panel-filter.w-full.p-t-10
+            .wrap-filter.flex-w.bg6.w-full.p-lr-40.p-t-27.p-lr-15-sm
+              .filter-col1.p-r-15.p-b-27
+                .mtext-102.cl2.p-b-15 Sort By
+                ul
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") Default
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") Popularity
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") Average rating
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04.filter-link-active(href="#") Newness
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") Price: Low to High
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") Price: High to Low
+
+              .filter-col2.p-r-15.p-b-27
+                .mtext-102.cl2.p-b-15 Price
+                ul
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04.filter-link-active(href="#") All
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") $0.00 - $50.00
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") $50.00 - $100.00
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") $100.00 - $150.00
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") $150.00 - $200.00
+                  li.p-b-6
+                    a.filter-link.stext-106.trans-04(href="#") $200.00+
+
+              .filter-col3.p-r-15.p-b-27
+                .mtext-102.cl2.p-b-15 Color
+                ul
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #222;")
+                      i.zmdi.zmdi-circle
+                    a.filter-link.stext-106.trans-04(href="#") Black
+
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #4272d7;")
+                      i.zmdi.zmdi-circle
+                    a.filter-link.stext-106.trans-04.filter-link-active(href="#") Blue
+
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #b3b3b3;")
+                      i.zmdi.zmdi-circle
+                    a.filter-link.stext-106.trans-04(href="#") Grey
+
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #00ad5f;")
+                      i.zmdi.zmdi-circle
+                    a.filter-link.stext-106.trans-04(href="#") Green
+
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #fa4251;")
+                      i.zmdi.zmdi-circle
+                    a.filter-link.stext-106.trans-04(href="#") Red
+
+                  li.p-b-6
+                    span.fs-15.lh-12.m-r-6(style="color: #aaa;")
+                      i.zmdi.zmdi-circle-o
+                    a.filter-link.stext-106.trans-04(href="#") White
+
+              .filter-col4.p-b-27
+                .mtext-102.cl2.p-b-15 Tags
+                .flex-w.p-t-4.m-r--5
+                  a.flex-c-m.stext-107.cl6.size-301.bor7.p-lr-15.hov-tag1.trans-04.m-r-5.m-b-5(href="#") Fashion
+                  a.flex-c-m.stext-107.cl6.size-301.bor7.p-lr-15.hov-tag1.trans-04.m-r-5.m-b-5(href="#") Lifestyle
+                  a.flex-c-m.stext-107.cl6.size-301.bor7.p-lr-15.hov-tag1.trans-04.m-r-5.m-b-5(href="#") Denim
+                  a.flex-c-m.stext-107.cl6.size-301.bor7.p-lr-15.hov-tag1.trans-04.m-r-5.m-b-5(href="#") Streetstyle
+                  a.flex-c-m.stext-107.cl6.size-301.bor7.p-lr-15.hov-tag1.trans-04.m-r-5.m-b-5(href="#") Crafts
+
+        include ../partials/productList
+
+        // Display pagination links
+        .pagination
+          if currentPage > 1
+            a(href=`${api}/products?page=${currentPage - 1}&limit=10`) < Previous
+          
+          span
+            each pageNum in pageRange
+              if pageNum === currentPage
+                strong= pageNum
+              else
+                a(href=`${api}/products?page=${pageNum}&limit=10`)= pageNum
+          
+          if currentPage < totalPages
+            a(href=`${api}/products?page=${currentPage + 1}&limit=10`) Next >
+
+    // Footer
+    include ../partials/footer
+
+    // Back to top
+    #myBtn.btn-back-to-top
+      span.symbol-btn-back-to-top
+        i.zmdi.zmdi-chevron-up
+
+    // Modal1
+    include ../partials/productModal
+
+    //===============================================================================================
+    include ../partials/scripts 
