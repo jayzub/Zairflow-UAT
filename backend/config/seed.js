@@ -7,7 +7,7 @@ const Clothing = require('../models/products/clothing');
 const Furniture = require('../models/products/furniture');
 const Vendor = require('../models/vendor');
 const Review = require('../models/reviews/review');
-const User = require('../models/User');
+const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 
 mongoose.connect(process.env.DB_URL);
