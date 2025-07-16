@@ -8,8 +8,10 @@ const morgan = require('morgan');
 const cors = require('cors');
 const path = require('path');
 
-// Environment Variables
-dotenv.config();
+// Environment Variables - Load .env file only in development
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const API_URL = process.env.API_URL || '/api/v1';
 
@@ -91,7 +93,6 @@ app.use(`${API_URL}/orders`, orderRoute);
 
 // Database Connection
 const connectToDatabase = require('./config/database');
-connectToDatabase();
 
 // Export the app for server and testing
-module.exports = app;
+module.exports = { app, connectToDatabase };
