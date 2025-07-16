@@ -1,5 +1,5 @@
 const gulp = require('gulp');
-const del = require('del');
+const { rimraf } = require('rimraf');
 
 const {
   dependencies,
@@ -86,7 +86,7 @@ gulp.task('vendor:clean', () => {
   );
   const targetedDirectories = [...directories, 'temp'];
 
-  return del(targetedDirectories);
+  return rimraf(targetedDirectories);
 });
 
 gulp.task('vendor', gulp.series('vendor:clean', 'vendor:move'));
