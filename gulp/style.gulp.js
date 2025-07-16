@@ -57,6 +57,6 @@ gulp.task('style', () => {
       // .pipe(sourcemaps.write('.'))
       .pipe(gulpIf(!isProd, sourcemaps.write('.')))
       .pipe(gulp.dest(`${baseDir}/${paths.style.dest}`))
-      .pipe(browserSync.stream())
+      .pipe(gulpIf(browserSync, browserSync.stream()))
   );
 });
