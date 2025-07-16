@@ -10,9 +10,12 @@ const uglify = require('@lopatnov/rollup-plugin-uglify');
 
 const {
   paths,
-  browserSync: { reload },
+  browserSync,
   isProd
 } = require('./utils');
+
+// Only use reload if browserSync is available
+const reload = browserSync ? browserSync.reload : () => {};
 
 async function buildPlugin(file) {
   const bundle = await rollup.rollup({
