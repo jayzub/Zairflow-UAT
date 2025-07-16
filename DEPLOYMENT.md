@@ -1,63 +1,109 @@
-# Deployment Guide for Griffin Platform
+# Griffin Platform Deployment Guide
 
-## Environment Variables Required
+## Render Deployment
+
+This guide will help you deploy the Griffin e-commerce platform on Render.
+
+### Prerequisites
+
+1. **MongoDB Database**: You'll need a MongoDB database. We recommend using MongoDB Atlas (free tier):
+   - Go to [MongoDB Atlas](https://www.mongodb.com/atlas/database)
+   - Create a free account
+   - Create a new cluster
+   - Get your connection string
+
+### Environment Variables
 
 Set these environment variables in your Render dashboard:
 
-### Database Configuration
-- `MONGODB_URI`: Your MongoDB connection string (e.g., MongoDB Atlas URI)
+1. Go to your Render service dashboard
+2. Navigate to the "Environment" tab
+3. Add the following variables:
 
-### JWT Configuration
-- `JWT_SECRET`: A secure random string for JWT token signing
+```
+DB_URL=mongodb+srv://username:password@cluster.mongodb.net/griffin?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key-here
+API_URL=/api/v1
+NODE_ENV=production
+```
 
-### Cloudinary Configuration (for image uploads)
-- `CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name
-- `CLOUDINARY_API_KEY`: Your Cloudinary API key
-- `CLOUDINARY_API_SECRET`: Your Cloudinary API secret
+### Build Configuration
 
-### API Configuration
-- `API_URL`: API base URL (default: `/api/v1`)
+The project uses the following build configuration in `render.yaml`:
 
-### Server Configuration
-- `PORT`: Server port (Render will set this automatically)
-- `NODE_ENV`: Environment (set to `production` for Render)
+```yaml
+services:
+  - type: web
+    name: griffin-platform
+    env: node
+    buildCommand: npm run build:render
+    startCommand: npm run start:render
+    envVars:
+      - key: NODE_ENV
+        value: production
+```
 
-## Render Deployment Steps
+### Build Process
 
-1. **Connect your GitHub repository** to Render
-2. **Create a new Web Service** and select your repository
-3. **Configure the service**:
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm run start:render`
-   - **Environment**: Node
-   - **Plan**: Free (or choose your preferred plan)
+The build process:
+1. Installs dependencies
+2. Compiles Pug templates to HTML
+3. Processes SCSS to CSS
+4. Copies vendor files
+5. Builds the frontend assets
 
-4. **Add Environment Variables** in the Render dashboard using the list above
+### Database Setup
 
-5. **Deploy** - Render will automatically build and deploy your application
+After deployment, you may want to seed your database with sample data:
 
-## Local Development Setup
+1. Set up your MongoDB connection
+2. The application will automatically create collections when needed
+3. You can run the seed script manually if needed
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Database Connection Error**: Make sure `DB_URL` is set correctly
+2. **Build Failures**: Check that all dependencies are in the main `package.json`
+3. **Port Issues**: The app runs on port 10000 by default
+
+#### Getting Help
+
+- Check the Render logs for detailed error messages
+- Ensure all environment variables are set correctly
+- Verify your MongoDB connection string is valid
+
+### Local Development
+
+For local development:
 
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Create a `.env` file with the environment variables listed above
-4. Start development server: `npm run dev`
+2. Run `npm install`
+3. Create a `.env` file with your configuration
+4. Run `npm run dev` for development mode
+5. Run `npm run build` to build for production
 
-## Features
+### File Structure
 
-- **E-commerce Product Management**: Add, edit, delete products
-- **Product Filtering**: Advanced filtering with categories, brands, prices
-- **Admin Dashboard**: Manage products, categories, and orders
-- **Image Upload**: Cloudinary integration for product images
-- **Responsive Design**: Mobile-friendly interface
-- **Real-time Updates**: AJAX-powered product loading
+```
+griffin/
+├── backend/          # Node.js/Express backend
+├── src/             # Source files (Pug, SCSS)
+├── public/          # Built frontend files
+├── gulp/            # Build tasks
+└── package.json     # Dependencies and scripts
+```
 
-## API Endpoints
+### API Endpoints
 
-- `GET /api/v1/products` - Get all products
-- `POST /api/v1/products` - Create new product
-- `GET /api/v1/products/:id` - Get product by ID
-- `PUT /api/v1/products/:id` - Update product
-- `DELETE /api/v1/products/:id` - Delete product
-- `GET /api/v1/categories` - Get all categories
-- `GET /api/v1/orders` - Get all orders 
+The API is available at `/api/v1/`:
+
+- `/api/v1/products` - Product management
+- `/api/v1/categories` - Category management  
+- `/api/v1/users` - User management
+- `/api/v1/orders` - Order management
+
+### Health Check
+
+The application provides a health check endpoint at `/health` for monitoring. 
