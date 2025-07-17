@@ -90,6 +90,18 @@ block content
             a.btn.btn-primary#addBtn(href=`/${apiUrl}/products/add-product`)
               span.fas.fa-plus.me-2
               | Add product
+      
+      // Products per page selector
+      .d-flex.justify-content-between.align-items-center.mb-3
+        .d-flex.align-items-center
+          span.text-body-secondary.me-2 Show
+          select#products-per-page.form-select.form-select-sm.w-auto.me-2(name='limit')
+            option(value='10', selected=limit == 10) 10
+            option(value='20', selected=limit == 20) 20
+            option(value='50', selected=limit == 50) 50
+          span.text-body-secondary products per page
+        .text-body-secondary
+          | Showing #{(currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} products
       .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
         #products-table
           if products && products.length > 0
@@ -110,17 +122,36 @@ block content
             | Load More Products
           
           // Debug button for testing
-          button#debug-btn.btn.btn-outline-secondary.ms-2
-            span.fas.fa-bug.me-2
-            | Debug Test
+          // button#debug-btn.btn.btn-outline-secondary.ms-2
+          //   span.fas.fa-bug.me-2
+          //   | Debug Test
+
+        // Pagination bar
+        if totalPages > 1
+          nav.mt-4(aria-label='Product pagination')
+            ul.pagination.justify-content-center
+              li.page-item(class=hasPrevPage ? '' : 'disabled')
+                a.page-link(href=`?page=${currentPage - 1}&limit=${limit}` aria-label='Previous')
+                  span(aria-hidden='true') &laquo;
+              each pageNum in pageRange
+                if pageNum === '...'
+                  li.page-item.disabled
+                    span.page-link &hellip;
+                else
+                  li.page-item(class=pageNum === currentPage ? 'active' : '')
+                    a.page-link(href=`?page=${pageNum}&limit=${limit}`) #{pageNum}
+              li.page-item(class=hasNextPage ? '' : 'disabled')
+                a.page-link(href=`?page=${currentPage + 1}&limit=${limit}` aria-label='Next')
+                  span(aria-hidden='true') &raquo;
 
 append scripts
   script.
     // Infinite scroll implementation
     class ProductLoader {
       constructor() {
-        this.currentCursor = '#{nextCursor || ""}'; // Initialize from server data
-        this.hasNextPage = #{hasNextPage || false};
+        this.currentPage = !{typeof currentPage !== 'undefined' ? currentPage : 1}; // Initialize from server data
+        this.totalPages = !{typeof totalPages !== 'undefined' ? totalPages : 1};
+        this.hasNextPage = !{typeof hasNextPage !== 'undefined' ? hasNextPage : false};
         this.isLoading = false;
         this.productsContainer = document.getElementById('products-table');
         this.loadingIndicator = document.getElementById('loading-indicator');
@@ -132,7 +163,8 @@ append scripts
       
       init() {
         console.log('ProductLoader initialized with:', {
-          currentCursor: this.currentCursor,
+          currentPage: this.currentPage,
+          totalPages: this.totalPages,
           hasNextPage: this.hasNextPage,
           productsContainer: this.productsContainer,
           loadingIndicator: this.loadingIndicator,
@@ -140,12 +172,12 @@ append scripts
           loadMoreBtn: this.loadMoreBtn
         });
         
-        // Show load more button if there are more products
+        // Show load more button if there are more pages
         if (this.hasNextPage) {
           this.loadMoreContainer.classList.remove('d-none');
-          console.log('Load more button shown - there are more products');
+          console.log('Load more button shown - there are more pages');
         } else {
-          console.log('No more products to load');
+          console.log('No more pages to load');
         }
         
         // Set up event listeners
@@ -191,20 +223,19 @@ append scripts
         this.showLoading();
         
         try {
-          // Build the URL with cursor parameter
+          // Build the URL with page parameter
           const baseUrl = window.location.pathname;
           const url = new URL(baseUrl, window.location.origin);
           
-          // Add cursor parameter if we have one
-          if (this.currentCursor) {
-            url.searchParams.set('cursor', this.currentCursor);
-          }
+          // Add page parameter for next page
+          const nextPage = this.currentPage + 1;
+          url.searchParams.set('page', nextPage);
           
           // Add timestamp to prevent caching
           url.searchParams.set('_t', Date.now());
           
           console.log('Loading more products from:', url.toString());
-          console.log('Current cursor:', this.currentCursor);
+          console.log('Current page:', this.currentPage, 'Next page:', nextPage);
           
           const response = await fetch(url, {
             method: 'GET',
@@ -240,15 +271,16 @@ append scripts
           if (data.success && data.products && data.products.length > 0) {
             console.log('Appending', data.products.length, 'products');
             this.appendProducts(data.products);
-            this.currentCursor = data.nextCursor;
+            this.currentPage = data.currentPage;
+            this.totalPages = data.totalPages;
             this.hasNextPage = data.hasNextPage;
             
-            console.log('Updated cursor:', this.currentCursor, 'hasNextPage:', this.hasNextPage);
+            console.log('Updated page:', this.currentPage, 'hasNextPage:', this.hasNextPage);
             
-            // Hide load more button if no more products
+            // Hide load more button if no more pages
             if (!this.hasNextPage) {
               this.loadMoreContainer.classList.add('d-none');
-              console.log('No more products, hiding load more button');
+              console.log('No more pages, hiding load more button');
             }
           } else {
             console.log('No products in response or invalid response structure');
@@ -256,7 +288,8 @@ append scripts
               success: data.success,
               productsLength: data.products?.length,
               hasNextPage: data.hasNextPage,
-              nextCursor: data.nextCursor
+              currentPage: data.currentPage,
+              totalPages: data.totalPages
             });
             this.hasNextPage = false;
             this.loadMoreContainer.classList.add('d-none');
@@ -393,64 +426,15 @@ append scripts
       console.log('DOM loaded, initializing ProductLoader...');
       window.productLoader = new ProductLoader();
       
-      // Add debug button functionality
-      const debugBtn = document.getElementById('debug-btn');
-      if (debugBtn) {
-        debugBtn.addEventListener('click', () => {
-          console.log('=== DEBUG INFO ===');
-          console.log('Window productLoader:', window.productLoader);
-          console.log('Current cursor:', window.productLoader?.currentCursor);
-          console.log('Has next page:', window.productLoader?.hasNextPage);
-          console.log('Is loading:', window.productLoader?.isLoading);
-          console.log('Load more button:', document.getElementById('load-more-btn'));
-          console.log('Load more container:', document.getElementById('load-more-container'));
-          console.log('Products table body:', document.getElementById('products-table-body'));
-          
-          // Test manual AJAX request
-          console.log('Testing manual AJAX request...');
-          
-          // First test the AJAX detection endpoint
-          fetch('/api/v1/products/test-ajax', {
-            headers: {
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => {
-            console.log('Test AJAX Response status:', response.status);
-            return response.json();
-          })
-          .then(data => {
-            console.log('Test AJAX Response:', data);
-          })
-          .catch(error => {
-            console.error('Test AJAX error:', error);
-          });
-          
-          // Then test the actual products endpoint
-          fetch('/api/v1/products/?_t=' + Date.now(), {
-            headers: {
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => {
-            console.log('Products Response status:', response.status);
-            console.log('Products Response headers:', Object.fromEntries(response.headers.entries()));
-            return response.text();
-          })
-          .then(text => {
-            console.log('Products Response text (first 1000 chars):', text.substring(0, 1000));
-            try {
-              const data = JSON.parse(text);
-              console.log('Products Parsed JSON:', data);
-            } catch (e) {
-              console.log('Products Response is not valid JSON');
-            }
-          })
-          .catch(error => {
-            console.error('Products test error:', error);
-          });
+      // Handle products per page dropdown
+      const productsPerPageSelect = document.getElementById('products-per-page');
+      if (productsPerPageSelect) {
+        productsPerPageSelect.addEventListener('change', (e) => {
+          const newLimit = e.target.value;
+          const currentUrl = new URL(window.location);
+          currentUrl.searchParams.set('limit', newLimit);
+          currentUrl.searchParams.set('page', 1); // Reset to first page when changing limit
+          window.location.href = currentUrl.toString();
         });
       }
     });
