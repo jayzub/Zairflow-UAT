@@ -1399,7 +1399,7 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
 
     const result = {
         pageTitle: 'Products Filter',
-        products: transformedProducts,
+        products: Array.isArray(transformedProducts) ? transformedProducts : [],
         categories: categories.map(cat => ({ name: cat.name, _id: cat._id })),
         brands: brands.filter(Boolean),
         colors: allColors,
