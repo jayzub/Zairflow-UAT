@@ -61,8 +61,8 @@ exports.testAjax = asyncHandler(async (req, res) => {
 
 // Fetch all products with pagination
 exports.getAllProducts = asyncHandler(async (req, res) => {
-    const limit = parseInt(req.query.limit, 10) || 50;
-    const cursor = req.query.cursor || null;
+    const limit = parseInt(req.query.limit, 10) ||10;
+    const page = parseInt(req.query.page, 10) || 1;
     const sort = req.query.sort || 'dateCreated';
     const order = req.query.order === 'asc' ? 1 : -1;
     const filter = req.query.categories
@@ -82,22 +82,21 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
                          req.headers['accept'] === 'application/json';
     
     // Check Node cache (only for non-AJAX requests)
-    const cacheKey = `products:${JSON.stringify({ cursor, limit, sort, order, filter, isAjax: isAjaxRequest })}`;
+    const cacheKey = `products:${JSON.stringify({ page, limit, sort, order, filter, isAjax: isAjaxRequest })}`;
     const cachedResult = myCache.get(cacheKey);
 
     if (cachedResult && !isAjaxRequest) {
         return respondWithViewOrJson(req, res, 'admin/products', cachedResult);
     }
 
-    // Cursor-based pagination
-    if (cursor) {
-        filter._id = { $gt: cursor };
-    }
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
 
     const aggregationPipeline = [
         { $match: filter },
         { $sort: { [sort]: order, _id: 1 } },
-        { $limit: limit + 1 }, // Fetch one extra to determine if there are more results
+        { $skip: skip },
+        { $limit: limit },
         {
             $lookup: {
                 from: 'categories',
@@ -160,12 +159,10 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
         Category.find(),
     ]);
 
-    const hasNextPage = productList.length > limit;
-    if (hasNextPage) {
-        productList.pop(); // Remove the extra item
-    }
-
-    const nextCursor = hasNextPage ? productList[productList.length - 1]._id : null;
+    // Calculate pagination info
+    const totalPages = Math.ceil(productCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     // Convert MongoDB Decimal128 to string for price fields
     const serializedProducts = productList.map(product => ({
@@ -175,51 +172,69 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
         // Convert any other Decimal128 fields here
     }));
 
+    // Helper to generate page range for pagination bar
+    function getPageRange(current, total) {
+        const delta = 2; // how many pages to show around current
+        const range = [];
+        const rangeWithDots = [];
+        let l;
+        for (let i = 1; i <= total; i++) {
+            if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                range.push(i);
+            }
+        }
+        for (let i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push(l + 1);
+                } else if (i - l > 2) {
+                    rangeWithDots.push('...');
+                }
+            }
+            rangeWithDots.push(i);
+            l = i;
+        }
+        return rangeWithDots;
+    }
+
     const result = {
         pageTitle: 'Product List',
         products: serializedProducts,
         categories: categories.map(cat => cat.toObject()), // Convert to plain objects
-        nextCursor,
+        currentPage: page,
+        totalPages,
         hasNextPage,
+        hasPrevPage,
         productCount,
+        limit,
         featuredProductsCount,
+        pageRange: getPageRange(page, totalPages),
         api: process.env.API_URL || '/api/v1',
     };
 
     // Cache the result
     myCache.set(cacheKey, result);
 
-    console.log('Request details:', {
-        xhr: req.xhr,
-        xRequestedWith: req.headers['x-requested-with'],
-        accept: req.headers['accept'],
-        isAjaxRequest: isAjaxRequest,
-        url: req.url,
-        method: req.method
-    });
-    
     if (isAjaxRequest) {
         // Return JSON for AJAX requests (infinite scroll)
-        console.log('Returning JSON response for AJAX request');
-        
         // Set headers to prevent caching for AJAX requests
         res.set({
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
         });
-        
         return res.json({
             success: true,
             products: serializedProducts,
-            nextCursor,
+            currentPage: page,
+            totalPages,
             hasNextPage,
+            hasPrevPage,
             productCount,
             api: process.env.API_URL || '/api/v1'
         });
     } else {
         // Return full page for regular requests
-        console.log('Returning full page response for regular request');
         return respondWithViewOrJson(req, res, 'admin/products', result);
     }
 });
@@ -1142,8 +1157,8 @@ exports.deleteReview = asyncHandler(async (req, res) => {
 
 // Get products filter page (UI page)
 exports.getProductsFilterPage = asyncHandler(async (req, res) => {
-    const limit = parseInt(req.query.limit, 10) || 50;
-    const cursor = req.query.cursor || null;
+    const limit = parseInt(req.query.limit, 10) || 24;
+    const page = parseInt(req.query.page, 10) || 1;
     const sort = req.query.sort || 'dateCreated';
     const order = req.query.order === 'asc' ? 1 : -1;
     
@@ -1207,23 +1222,19 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         filter.salePrice = { $exists: true, $gt: 0 };
     }
 
-    // Check Node cache
-    const cacheKey = `productsFilter:${JSON.stringify({ cursor, limit, sort, order, filter })}`;
-    const cachedResult = myCache.get(cacheKey);
+    // Check if this is an AJAX request
+    const isAjaxRequest = req.xhr || 
+                         req.headers['x-requested-with'] === 'XMLHttpRequest' ||
+                         req.headers['accept'] === 'application/json';
 
-    if (cachedResult) {
-        return res.render('landing/products-filter', cachedResult);
-    }
-
-    // Cursor-based pagination
-    if (cursor) {
-        filter._id = { $gt: cursor };
-    }
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
 
     const aggregationPipeline = [
         { $match: filter },
         { $sort: { [sort]: order, _id: 1 } },
-        { $limit: limit + 1 },
+        { $skip: skip },
+        { $limit: limit },
         {
             $lookup: {
                 from: 'categories',
@@ -1270,6 +1281,7 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         }
     ];
 
+    // Get total count for pagination
     const [productList, productCount, categories, brands] = await Promise.all([
         BaseProduct.aggregate(aggregationPipeline),
         BaseProduct.countDocuments(filter),
@@ -1277,12 +1289,35 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         BaseProduct.distinct('brand')
     ]);
 
-    const hasNextPage = productList.length > limit;
-    if (hasNextPage) {
-        productList.pop(); // Remove the extra item
-    }
+    // Pagination info
+    const totalPages = Math.ceil(productCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page >1
 
-    const nextCursor = hasNextPage ? productList[productList.length - 1]._id : null;
+    // Helper to generate page range for pagination bar (same as admin)
+    function getPageRange(current, total) {
+        const delta = 2;
+        const range = [];
+        const rangeWithDots = [];
+        let l;
+        for (let i = 1; i <= total; i++) {
+            if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                range.push(i);
+            }
+        }
+        for (let i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push(l + 1);
+                } else if (i - l > 2) {
+                    rangeWithDots.push('...');
+                }
+            }
+            rangeWithDots.push(i);
+            l = i;
+        }
+        return rangeWithDots;
+    }
 
     // Transform products to match the expected format for the template
     const transformedProducts = productList.map(product => {
@@ -1293,7 +1328,6 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
             const salePrice = parseFloat(product.salePrice.toString());
             discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
         }
-
         // Get available colors from variants or base product
         let availableColors = [];
         if (product.variants && product.variants.length > 0) {
@@ -1301,28 +1335,18 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         } else if (product.color) {
             availableColors = [product.color];
         }
-
         // Get main image
-        const mainImage = product.image?.url || (product.images && product.images[0]?.url) || '1.png';
-        
-        // Debug log for first product
-        if (productList.indexOf(product) === 0) {
-            console.log('Sample product data:', {
-                originalImage: product.image,
-                originalImages: product.images,
-                mainImage: mainImage,
-                name: product.name
-            });
-        }
-
+        const mainImage = (product.image && product.image.url) ||
+                          (product.images && product.images[0] && product.images[0].url) ||
+                          '1.png';
         return {
             _id: product._id,
-            image: mainImage, // Use the full URL directly
+            image: mainImage,
             name: product.name,
             star: Math.round(product.rating || 0),
             rated: product.numReviews || 0,
             price: product.price ? product.price.toString() : '0.00',
-            salePrice: product.salePrice && parseFloat(product.salePrice.toString()) > 0 
+            salePrice: product.salePrice && parseFloat(product.salePrice.toString()) > 0
                 ? product.salePrice.toString() 
                 : null,
             off: discountPercentage ? `${discountPercentage}%` : null,
@@ -1335,7 +1359,40 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         };
     });
 
-    // Get unique colors for filter
+    if (isAjaxRequest) {
+        // Return JSON for AJAX requests (load more)
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+        
+        return res.json({
+            success: true,
+            products: transformedProducts,
+            currentPage: page,
+            totalPages,
+            hasNextPage,
+            hasPrevPage,
+            productCount,
+            limit,
+            currentFilters: {
+                categories: req.query.categories ? req.query.categories.split(',') : [],
+                brands: req.query.brands ? req.query.brands.split(',') : [],
+                colors: req.query.colors ? req.query.colors.split(',') : [],
+                minPrice: req.query.minPrice,
+                maxPrice: req.query.maxPrice,
+                stock: req.query.stock ? req.query.stock.split(',') : [],
+                rating: req.query.rating,
+                productType: req.query.productType ? req.query.productType.split(',') : [],
+                featured: req.query.featured === 'true',
+                onSale: req.query.onSale === true
+            },
+            api: process.env.API_URL || '/api/v1'
+        });
+    }
+
+    // Get unique colors for filter (only for full page requests)
     const colors = await BaseProduct.distinct('color');
     const variantColors = await BaseProduct.distinct('variants.color');
     const allColors = [...new Set([...colors, ...variantColors])].filter(Boolean);
@@ -1346,9 +1403,13 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         categories: categories.map(cat => ({ name: cat.name, _id: cat._id })),
         brands: brands.filter(Boolean),
         colors: allColors,
-        nextCursor,
-        hasNextPage,
         productCount,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        pageRange: getPageRange(page, totalPages),
+        limit,
         currentFilters: {
             categories: req.query.categories ? req.query.categories.split(',') : [],
             brands: req.query.brands ? req.query.brands.split(',') : [],
@@ -1361,11 +1422,8 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
             featured: req.query.featured === 'true',
             onSale: req.query.onSale === 'true'
         },
-        api: process.env.API_URL || '/api/v1',
+        api: process.env.API_URL || '/api/v1'
     };
-
-    // Cache the result
-    myCache.set(cacheKey, result);
 
     res.render('landing/products-filter', result);
 });

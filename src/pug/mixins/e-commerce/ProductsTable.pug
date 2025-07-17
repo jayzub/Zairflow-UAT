@@ -62,17 +62,3 @@ mixin ProductTable(products)
         each product, index in products
           +ProductTableRow(product,index)
   .row.align-items-center.justify-content-between.py-2.pe-0.fs-9
-    .col-auto.d-flex
-      p.mb-0.d-none.d-sm-block.me-3.fw-semibold.text-body(data-list-info)
-      a.fw-semibold(href='#!' data-list-view="*")
-        | View all
-        span.fas.fa-angle-right.ms-1(data-fa-transform='down-1')
-      a.fw-semibold.d-none(href='#!' data-list-view="less")
-        | View Less
-        span.fas.fa-angle-right.ms-1(data-fa-transform='down-1')
-    .col-auto.d-flex
-      button.page-link(data-list-pagination="prev")
-        span.fas.fa-chevron-left
-      ul.mb-0.pagination
-      button.page-link.pe-0(data-list-pagination="next")
-        span.fas.fa-chevron-right
