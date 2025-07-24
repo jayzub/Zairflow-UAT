@@ -1,5 +1,6 @@
 append variables
   - const apiUrl = 'api/v1';
+  - const adminUrl = 'admin';
   - var title = 'Griffin';
   - var theme = `${name}-${version}`;
   - var bootstrapVersion = '5.3';
@@ -103,12 +104,12 @@ append variables
             pages: [
               {
                 name: 'add-product',
-                path: `${apiUrl}/products/add-product`,
+                path: `${adminUrl}/products/add`,
                 pathName: 'e-commerce-add-product',
               },
               {
                 name: 'products',
-                path: `${apiUrl}/products/`,
+                path: `${adminUrl}/products`,
                 pathName: 'e-commerce-products',
               },
               {

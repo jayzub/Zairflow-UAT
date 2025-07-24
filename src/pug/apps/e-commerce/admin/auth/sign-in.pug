@@ -1,0 +1,170 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../layouts/LayoutCardAuth
+
+block wrapperContent
+  +LayoutCardBasic({img:37, page: 'sign-in'})
+    .auth-form-box
+      .text-center.mb-7
+        a(href=`${CWD}${paths['default-dashboard']}`).d-flex.flex-center.text-decoration-none.mb-4
+          +Logo({text:false,width:58}).fw-bolder.fs-3.d-inline-block
+        h3.text-body-highlight Admin Sign In
+        p.text-body-tertiary Access your e-commerce admin dashboard
+      
+      //- Remove social buttons for admin login
+      .position-relative
+        hr.bg-body-secondary.mt-5.mb-4
+        .divider-content-center.bg-body-emphasis Enter your credentials
+      
+      form#adminSignInForm
+        .mb-3.text-start
+          label.form-label(for='email') Email address
+          .form-icon-container
+            input#email.form-control.form-icon-input(type='email' placeholder='admin@example.com' required)
+            span.fas.fa-user.text-body.fs-9.form-icon
+        
+        .mb-3.text-start
+          label.form-label(for='password') Password
+          .form-icon-container(data-password)
+            input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input required)
+            span.fas.fa-key.text-body.fs-9.form-icon
+            button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+              span.uil.uil-eye.show
+              span.uil.uil-eye-slash.hide
+        
+        .row.flex-between-center.mb-7
+          .col-auto
+            .form-check.mb-0
+              input#rememberMe.form-check-input(type='checkbox' checked='checked')
+              label.form-check-label.mb-0(for='rememberMe') Remember me
+          .col-auto
+            a.fs-9.fw-semibold(href=`${CWD}${paths['card-forgot-password']}`) Forgot Password?
+        
+        button.btn.btn-primary.w-100.mb-3(type='submit') Sign In
+        
+        //- Loading spinner (hidden by default)
+        .text-center.mb-3.d-none#loadingSpinner
+          .spinner-border.spinner-border-sm.text-primary.me-2(role='status')
+          span Signing in...
+        
+        //- Error message container
+        .alert.alert-danger.d-none#errorMessage(role='alert')
+          span#errorText
+        
+        //- Success message container
+        .alert.alert-success.d-none#successMessage(role='alert')
+          span#successText
+      
+      .text-center
+        a.fs-9.fw-bold(href=`${CWD}${paths['card-signup']}`) Create an admin account
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('adminSignInForm');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const errorText = document.getElementById('errorText');
+      const successText = document.getElementById('successText');
+      
+      // Hide messages initially
+      function hideMessages() {
+        errorMessage.classList.add('d-none');
+        successMessage.classList.add('d-none');
+      }
+      
+      // Show error message
+      function showError(message) {
+        hideMessages();
+        errorText.textContent = message;
+        errorMessage.classList.remove('d-none');
+      }
+      
+      // Show success message
+      function showSuccess(message) {
+        hideMessages();
+        successText.textContent = message;
+        successMessage.classList.remove('d-none');
+      }
+      
+      // Show/hide loading spinner
+      function setLoading(loading) {
+        if (loading) {
+          loadingSpinner.classList.remove('d-none');
+          form.querySelector('button[type="submit"]').disabled = true;
+        } else {
+          loadingSpinner.classList.add('d-none');
+          form.querySelector('button[type="submit"]').disabled = false;
+        }
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        // Basic validation
+        if (!email || !password) {
+          showError('Please fill in all fields');
+          return;
+        }
+        
+        if (!email.includes('@')) {
+          showError('Please enter a valid email address');
+          return;
+        }
+        
+        setLoading(true);
+        hideMessages();
+        
+        try {
+          const response = await fetch('/api/v1/users/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              email: email,
+              password: password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            // Store token in localStorage
+            localStorage.setItem('adminToken', data.token);
+            localStorage.setItem('adminUser', JSON.stringify({
+              email: data.user,
+              isAdmin: true
+            }));
+            
+            showSuccess('Sign in successful! Redirecting...');
+            
+            // Redirect to admin dashboard after a short delay
+            setTimeout(() => {
+              window.location.href = '/admin/dashboard';
+            }, 1500);
+            
+          } else {
+            showError(data.message || 'Sign in failed. Please check your credentials.');
+          }
+          
+        } catch (error) {
+          console.error('Sign in error:', error);
+          showError('Network error. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      });
+      
+      // Check if user is already logged in
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        // Redirect to dashboard if already logged in
+        window.location.href = '/admin/dashboard';
+      }
+    }); 

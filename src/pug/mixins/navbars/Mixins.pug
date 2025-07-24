@@ -7,14 +7,15 @@ mixin LinkLooper(config)
     p.nav-link.mb-0.fw-bold=config.title
   each page in config.vars
     - var pageName = page.label ? page.label : page.name
+    - var isApiRoute = page.path && (page.path.startsWith('api/') || page.path.startsWith('admin/'))
     if config.dropdownItem
-      a.dropdown-item.fw-semibold(href=page.name !== 'modal' ? `${CWD}${page.path}.html` : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
+      a.dropdown-item.fw-semibold(href=page.name !== 'modal' ? (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`) : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
         +cleanText(pageName)
         if page.badge
           span.badge.rounded-pill.ms-2(class=`badge-subtle-${page.badge.type}`)=page.badge.text
 
     else
-      a.nav-link.fw-semibold(href=page.name !== 'modal' ? `${CWD}${page.path}.html` : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
+      a.nav-link.fw-semibold(href=page.name !== 'modal' ? (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`) : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
         +cleanText(pageName)
         if page.badge
           span.badge.rounded-pill.ms-2(class=`badge-subtle-${page.badge.type}`)=page.badge.text
@@ -503,7 +504,8 @@ mixin TopNavDropdownItem(page)
 mixin TopNavDropdownLink(config)
   - var config = Object.assign({}, config)
   - var { url, icon,iconSet, text, badge, hasHash, isDisabled, depth } = config;
-  - var href = hasHash ? text!=='modal' ? `${CWD}${url}.html` : `${CWD}${url}` : url
+  - var isApiRoute = url.startsWith('api/') || url.startsWith('admin/');
+  - var href = hasHash ? text!=='modal' ? (isApiRoute ? `${CWD}${url}` : `${CWD}${url}.html`) : `${CWD}${url}` : url
 
   a.dropdown-item(href=href class=`${isDisabled ? 'nav-link-disable' :  href.includes(`${pathName}.html`) ? 'active' : ''}`)
     .dropdown-item-wrapper
@@ -551,7 +553,8 @@ mixin TopNavMegaMenuIitemsLooper(config)
 
 mixin TopNavMegaMenuIitems(config)
   - var path= config.path
-  - var href = `${CWD}${path}.html`
+  - var isApiRoute = path.startsWith('api/') || path.startsWith('admin/');
+  - var href = isApiRoute ? `${CWD}${path}` : `${CWD}${path}.html`
   a.dropdown-link(href=href class=href.includes(`${pathName}.html`) ? 'active' : '')
     +cleanText(config.name)
 

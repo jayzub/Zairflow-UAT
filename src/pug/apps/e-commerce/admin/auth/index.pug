@@ -1,0 +1,36 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../layouts/LayoutCardAuth
+
+block wrapperContent
+  +LayoutCardBasic({img:37, page: 'sign-in'})
+    .auth-form-box
+      .text-center.mb-7
+        a(href=`${CWD}${paths['default-dashboard']}`).d-flex.flex-center.text-decoration-none.mb-4
+          +Logo({text:false,width:58}).fw-bolder.fs-3.d-inline-block
+        h3.text-body-highlight Admin Authentication
+        p.text-body-tertiary Choose your authentication option
+      
+      .d-grid.gap-3
+        a.btn.btn-primary.btn-lg(href='/admin/auth/sign-in')
+          i.fas.fa-sign-in-alt.me-2
+          | Sign In
+        a.btn.btn-outline-primary.btn-lg(href='/admin/auth/sign-up')
+          i.fas.fa-user-plus.me-2
+          | Create Account
+        a.btn.btn-outline-secondary.btn-lg(href='/admin/auth/forgot-password')
+          i.fas.fa-key.me-2
+          | Forgot Password
+      
+      .text-center.mt-4
+        a.fs-9.fw-bold(href='/') Back to Main Site
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is already logged in
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        // Redirect to dashboard if already logged in
+        window.location.href = '/admin/dashboard';
+      }
+    }); 

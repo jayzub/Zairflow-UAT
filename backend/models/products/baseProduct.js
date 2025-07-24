@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
 
 const baseProductSchema = new mongoose.Schema({
+    // Store isolation - every product belongs to a store
+    store: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Store',
+        required: true,
+        index: true
+    },
     name: { type: String, required: true },
     description: { type: String, required: true },
     image: {
@@ -47,11 +54,17 @@ const baseProductSchema = new mongoose.Schema({
     },
     numReviews: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
     dateCreated: { type: Date, default: Date.now },
     countInStock: { type: Number, default: 0, min: 0, max: 255 },
+    // SEO fields
+    metaTitle: { type: String },
+    metaDescription: { type: String },
+    slug: { type: String, unique: true, sparse: true }
 }, { 
     discriminatorKey: 'productType',
-    toJSON: { virtuals: true }
+    toJSON: { virtuals: true },
+    timestamps: true
 });
 
 // Virtuals
@@ -60,11 +73,13 @@ baseProductSchema.virtual('id').get(function () {
 });
 
 // Indexes
-baseProductSchema.index({ isFeatured: 1 });
-baseProductSchema.index({ category: 1 });
-baseProductSchema.index({ brand: 1 });
+baseProductSchema.index({ store: 1, isFeatured: 1 });
+baseProductSchema.index({ store: 1, category: 1 });
+baseProductSchema.index({ store: 1, brand: 1 });
+baseProductSchema.index({ store: 1, isActive: 1 });
 baseProductSchema.index({ name: 'text', description: 'text' });
 baseProductSchema.index({ tags: 1 });
+baseProductSchema.index({ slug: 1 });
 
 const BaseProduct = mongoose.model('Product', baseProductSchema);
 

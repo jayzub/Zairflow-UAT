@@ -15,15 +15,20 @@ const categoryAttributeSchema = new mongoose.Schema({
 
 const categorySchema = mongoose.Schema(
     {
+        // Store isolation - categories belong to stores
+        store: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Store',
+            required: true,
+            index: true
+        },
         name: { 
             type: String, 
-            required: true,
-            unique: true
+            required: true
         },
         slug: { 
             type: String, 
-            required: true,
-            unique: true 
+            required: true
         },
         description: { type: String },
         icon: { 
@@ -86,9 +91,12 @@ categorySchema.virtual('productsCount', {
 });
 
 // Indexes
-categorySchema.index({ parent: 1 });
-categorySchema.index({ slug: 1 });
-categorySchema.index({ displayOrder: 1 });
+categorySchema.index({ store: 1, parent: 1 });
+categorySchema.index({ store: 1, slug: 1 });
+categorySchema.index({ store: 1, displayOrder: 1 });
+categorySchema.index({ store: 1, isActive: 1 });
+// Compound unique index for store + slug combination
+categorySchema.index({ store: 1, slug: 1 }, { unique: true });
 
 // Example usage of the model:
 const Category = mongoose.model('Category', categorySchema);

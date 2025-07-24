@@ -3,7 +3,7 @@ include Mixins
 mixin LinkTopParent(config)
   - var config = Object.assign({}, config)
   - var { url, icon,iconSet, text, badge, hasHash, isDisabled, depth, dot, innerPage, newtab } = config;
-  - var isApiRoute = url.startsWith('api/');
+  - var isApiRoute = url.startsWith('api/') || url.startsWith('admin/');
   - var href = hasHash ? text!=='modal' ? (isApiRoute ? `${CWD}${url}` : `${CWD}${url}.html`) : `${CWD}${url}` : url
   a.nav-link(
     href=href

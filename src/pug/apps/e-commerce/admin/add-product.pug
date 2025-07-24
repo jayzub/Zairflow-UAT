@@ -161,7 +161,7 @@ append scripts
       let dropzone;
       if (!document.querySelector("#productImages.dz-clickable")) {
         dropzone = new Dropzone("#productImages", {
-          url: "/api/v1/products",
+          url: "/admin/products",
           autoProcessQueue: false,
           uploadMultiple: true,
           parallelUploads: 5,
@@ -171,7 +171,8 @@ append scripts
           paramName: "images",
           headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-          }
+          },
+          withCredentials: true // Add this line for authentication
         });
       } else {
         dropzone = Dropzone.forElement("#productImages");
@@ -186,7 +187,7 @@ append scripts
       // Discard button handler
       discardBtn?.addEventListener('click', function() {
         if (confirm('Are you sure you want to discard this product?')) {
-          window.location.href = '/api/v1/products/';
+          window.location.href = '/admin/products';
         }
       });
 
@@ -222,6 +223,20 @@ append scripts
       async function submitForm(formData) {
         try {
           console.log('Submitting form data...');
+          
+          // Check if user is authenticated
+          const authCheck = await fetch('/api/v1/users/profile', {
+            method: 'GET',
+            credentials: 'include'
+          });
+          
+          if (!authCheck.ok) {
+            console.error('Authentication failed:', authCheck.status);
+            alert('Authentication failed. Please log in again.');
+            window.location.href = '/admin/auth/sign-in';
+            return;
+          }
+          
           publishBtn.disabled = true;
           publishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publishing...';
 
@@ -521,16 +536,37 @@ append scripts
             console.log(`${key}: ${value}`);
           }
 
-          const response = await fetch('/api/v1/products', {
+          const response = await fetch('/admin/products', {
             method: 'POST',
-            body: cleanedFormData
+            body: cleanedFormData,
+            credentials: 'include' // Add this line for authentication
           });
 
-          const result = await response.json();
+          console.log('Response status:', response.status);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const contentType = response.headers.get('content-type');
+          console.log('Content-Type:', contentType);
+
+          let result;
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          } else {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 500));
+            throw new Error('Server returned non-JSON response. Check authentication.');
+          }
+
           console.log('Server response:', result);
 
           if (result.success) {
-            window.location.href = '/api/v1/products/';
+            window.location.href = '/admin/products';
           } else {
             throw new Error(result.error || 'Error creating product');
           }
@@ -548,7 +584,7 @@ append variables
   - 
 
 block content
-  form.mb-9#productForm(action="/api/v1/products" method="POST" enctype="multipart/form-data")
+  form.mb-9#productForm(action="/admin/products" method="POST" enctype="multipart/form-data")
     .row.g-3.flex-between-end.mb-5
       .col-auto
         h2.mb-2 #{pageTitle}

@@ -243,7 +243,8 @@ append scripts
               'Accept': 'application/json',
               'X-Requested-With': 'XMLHttpRequest',
               'Content-Type': 'application/json'
-            }
+            },
+            credentials: 'include'
           });
           
           console.log('Response status:', response.status);
