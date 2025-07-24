@@ -6,7 +6,7 @@ const Electronics = require('../models/products/electronics');
 const Clothing = require('../models/products/clothing');
 const Furniture = require('../models/products/furniture');
 const Vendor = require('../models/vendor');
-const Review = require('../models/reviews/review');
+const Review = require('../models/review');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 
