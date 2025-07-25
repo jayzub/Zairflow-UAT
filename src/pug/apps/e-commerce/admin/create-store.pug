@@ -1,0 +1,406 @@
+extends ../../../layouts/LayoutTheme
+include ../../../layouts/LayoutSimpleAuth
+
+block wrapperContent
+  +LayoutBasic({logo:false, columnClass:'col-xl-8 col-xxl-6'})
+    .text-center.mb-6.mx-auto
+      img.mb-7.d-dark-none(src=`${CWD}assets/img/spot-illustrations/1.png` alt='phoenix')
+      img.mb-7.d-light-none(src=`${CWD}assets/img/spot-illustrations/dark_1.png` alt='phoenix')
+      .mb-6
+        h4.text-body-highlight Create New Store
+        p.text-body-tertiary Set up your e-commerce store
+      
+      .position-relative
+        hr.bg-body-secondary.mt-5.mb-4
+        .divider-content-center.bg-body-emphasis Store Information
+      
+      form#createStoreForm
+        //- Basic Store Information
+        .mb-4
+          h5.text-body-highlight.mb-3 Basic Information
+          
+          .mb-3
+            label.form-label(for='storeName') Store Name *
+            input#storeName.form-control(type='text' placeholder='My Awesome Store' required)
+            .form-text The name of your store that customers will see
+        
+          .mb-3
+            label.form-label(for='storeDescription') Store Description
+            textarea#storeDescription.form-control(rows='3' placeholder='Tell customers about your store...')
+            .form-text A brief description of what your store offers
+        
+        //- Contact Information
+        .mb-4
+          h5.text-body-highlight.mb-3 Contact Information
+          
+          .mb-3
+            label.form-label(for='contactEmail') Contact Email *
+            .form-icon-container
+              input#contactEmail.form-control.form-icon-input(type='email' placeholder='contact@mystore.com' required)
+              span.fas.fa-envelope.text-body.fs-9.form-icon
+            .form-text Primary contact email for your store
+        
+          .mb-3
+            label.form-label(for='contactPhone') Contact Phone
+            .form-icon-container
+              input#contactPhone.form-control.form-icon-input(type='tel' placeholder='+1234567890')
+              span.fas.fa-phone.text-body.fs-9.form-icon
+            .form-text Phone number for customer support
+        
+          .mb-3
+            label.form-label(for='contactAddress') Street Address
+            input#contactAddress.form-control(type='text' placeholder='123 Main Street')
+        
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='contactCity') City
+              input#contactCity.form-control(type='text' placeholder='New York')
+            .col-sm-6
+              label.form-label(for='contactState') State/Province
+              input#contactState.form-control(type='text' placeholder='NY')
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='contactZip') ZIP/Postal Code
+              input#contactZip.form-control(type='text' placeholder='10001')
+            .col-sm-6
+              label.form-label(for='contactCountry') Country
+              select#contactCountry.form-select
+                option(value='US' selected) United States
+                option(value='CA') Canada
+                option(value='GB') United Kingdom
+                option(value='AU') Australia
+                option(value='DE') Germany
+                option(value='FR') France
+                option(value='JP') Japan
+                option(value='IN') India
+        
+        //- Store Settings
+        .mb-4
+          h5.text-body-highlight.mb-3 Store Settings
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='currency') Currency *
+              select#currency.form-select(required)
+                option(value='USD' selected) USD - US Dollar
+                option(value='EUR') EUR - Euro
+                option(value='GBP') GBP - British Pound
+                option(value='CAD') CAD - Canadian Dollar
+                option(value='AUD') AUD - Australian Dollar
+                option(value='JPY') JPY - Japanese Yen
+                option(value='INR') INR - Indian Rupee
+            
+            .col-sm-6
+              label.form-label(for='timezone') Timezone *
+              select#timezone.form-select(required)
+                option(value='America/New_York' selected) Eastern Time (ET)
+                option(value='America/Chicago') Central Time (CT)
+                option(value='America/Denver') Mountain Time (MT)
+                option(value='America/Los_Angeles') Pacific Time (PT)
+                option(value='Europe/London') London (GMT)
+                option(value='Europe/Paris') Paris (CET)
+                option(value='Asia/Tokyo') Tokyo (JST)
+                option(value='UTC') UTC
+        
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='language') Language *
+              select#language.form-select(required)
+                option(value='en' selected) English
+                option(value='es') Spanish
+                option(value='fr') French
+                option(value='de') German
+                option(value='it') Italian
+                option(value='pt') Portuguese
+                option(value='ja') Japanese
+                option(value='zh') Chinese
+            
+            .col-sm-6
+              label.form-label(for='taxRate') Tax Rate (%)
+              input#taxRate.form-control(type='number' min='0' max='100' step='0.1' placeholder='8.5')
+              .form-text Sales tax rate as a percentage
+        
+          .row.g-3.mb-3
+            .col-sm-6
+              .form-check
+                input#shippingEnabled.form-check-input(type='checkbox' checked)
+                label.form-check-label(for='shippingEnabled')
+                  | Enable Shipping
+                  .form-text Allow customers to select shipping options
+            
+            .col-sm-6
+              .form-check
+                input#reviewsEnabled.form-check-input(type='checkbox' checked)
+                label.form-check-label(for='reviewsEnabled')
+                  | Enable Reviews
+                  .form-text Allow customers to leave product reviews
+        
+        //- Theme Settings
+        .mb-4
+          h5.text-body-highlight.mb-3 Theme Settings
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='primaryColor') Primary Color
+              input#primaryColor.form-control(type='color' value='#007bff')
+              .form-text Main brand color for your store
+            
+            .col-sm-6
+              label.form-label(for='secondaryColor') Secondary Color
+              input#secondaryColor.form-control(type='color' value='#6c757d')
+              .form-text Secondary color for accents
+        
+          .mb-3
+            label.form-label(for='fontFamily') Font Family
+            select#fontFamily.form-select
+              option(value='Arial, sans-serif' selected) Arial
+              option(value='Helvetica, sans-serif') Helvetica
+              option(value='Georgia, serif') Georgia
+              option(value='Times New Roman, serif') Times New Roman
+              option(value='Verdana, sans-serif') Verdana
+              option(value='Courier New, monospace') Courier New
+        
+        //- Terms and Submit
+        .mb-3
+          .form-check
+            input#terms.form-check-input(type='checkbox' required)
+            label.form-check-label(for='terms')
+              | I agree to the 
+              a(href='#') terms and conditions
+              |  and 
+              a(href='#') privacy policy
+        
+        button.btn.btn-primary.w-100.mb-3(type='submit') Create Store
+        
+        //- Loading spinner (hidden by default)
+        .text-center.mb-3.d-none#loadingSpinner
+          .spinner-border.spinner-border-sm.text-primary.me-2(role='status')
+          span Creating store...
+        
+        //- Error message container
+        .alert.alert-danger.d-none#errorMessage(role='alert')
+          span#errorText
+        
+        //- Success message container
+        .alert.alert-success.d-none#successMessage(role='alert')
+          span#successText
+      
+      .d-grid.mt-4
+        a.btn.btn-outline-primary(href='/')
+          span.fas.fa-angle-left.me-2
+          | Back to Main Site
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('createStoreForm');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const errorText = document.getElementById('errorText');
+      const successText = document.getElementById('successText');
+      
+      // Hide messages initially
+      function hideMessages() {
+        errorMessage.classList.add('d-none');
+        successMessage.classList.add('d-none');
+      }
+      
+      // Show error message
+      function showError(message) {
+        hideMessages();
+        errorText.textContent = message;
+        errorMessage.classList.remove('d-none');
+      }
+      
+      // Show success message
+      function showSuccess(message) {
+        hideMessages();
+        successText.textContent = message;
+        successMessage.classList.remove('d-none');
+      }
+      
+      // Show/hide loading spinner
+      function setLoading(loading) {
+        if (loading) {
+          loadingSpinner.classList.remove('d-none');
+          form.querySelector('button[type="submit"]').disabled = true;
+        } else {
+          loadingSpinner.classList.add('d-none');
+          form.querySelector('button[type="submit"]').disabled = false;
+        }
+      }
+      
+      // Validate email format
+      function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Get form values
+        const storeName = document.getElementById('storeName').value.trim();
+        const storeDescription = document.getElementById('storeDescription').value.trim();
+        const contactEmail = document.getElementById('contactEmail').value.trim();
+        const contactPhone = document.getElementById('contactPhone').value.trim();
+        const contactAddress = document.getElementById('contactAddress').value.trim();
+        const contactCity = document.getElementById('contactCity').value.trim();
+        const contactState = document.getElementById('contactState').value.trim();
+        const contactZip = document.getElementById('contactZip').value.trim();
+        const contactCountry = document.getElementById('contactCountry').value;
+        const currency = document.getElementById('currency').value;
+        const timezone = document.getElementById('timezone').value;
+        const language = document.getElementById('language').value;
+        const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+        const shippingEnabled = document.getElementById('shippingEnabled').checked;
+        const reviewsEnabled = document.getElementById('reviewsEnabled').checked;
+        const primaryColor = document.getElementById('primaryColor').value;
+        const secondaryColor = document.getElementById('secondaryColor').value;
+        const fontFamily = document.getElementById('fontFamily').value;
+        const terms = document.getElementById('terms').checked;
+        
+        // Basic validation
+        if (!storeName) {
+          showError('Store name is required');
+          return;
+        }
+        
+        if (!contactEmail) {
+          showError('Contact email is required');
+          return;
+        }
+        
+        if (!validateEmail(contactEmail)) {
+          showError('Please enter a valid email address');
+          return;
+        }
+        
+        if (!terms) {
+          showError('Please agree to the terms and conditions');
+          return;
+        }
+        
+        setLoading(true);
+        hideMessages();
+        
+        try {
+          // Prepare store data
+          const storeData = {
+            name: storeName,
+            description: storeDescription,
+            contactInfo: {
+              email: contactEmail,
+              phone: contactPhone || undefined,
+              address: {
+                street: contactAddress || undefined,
+                city: contactCity || undefined,
+                state: contactState || undefined,
+                zipCode: contactZip || undefined,
+                country: contactCountry
+              }
+            },
+            settings: {
+              currency: currency,
+              timezone: timezone,
+              language: language,
+              taxRate: taxRate,
+              shippingEnabled: shippingEnabled,
+              reviewsEnabled: reviewsEnabled
+            },
+            theme: {
+              primaryColor: primaryColor,
+              secondaryColor: secondaryColor,
+              fontFamily: fontFamily
+            }
+          };
+          
+          // Remove undefined values
+          Object.keys(storeData.contactInfo.address).forEach(key => {
+            if (storeData.contactInfo.address[key] === undefined) {
+              delete storeData.contactInfo.address[key];
+            }
+          });
+          
+          if (storeData.contactInfo.phone === undefined) {
+            delete storeData.contactInfo.phone;
+          }
+          
+          const response = await fetch('/api/v1/stores', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify(storeData)
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            showSuccess('Store created successfully! Redirecting to dashboard...');
+            
+            // Store the user email for future use
+            if (data.data && data.data.contactInfo && data.data.contactInfo.email) {
+              localStorage.setItem('userEmail', data.data.contactInfo.email);
+            }
+            
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              window.location.href = '/admin/dashboard';
+            }, 2000);
+            
+          } else {
+            showError(data.message || data.error || 'Store creation failed. Please try again.');
+          }
+          
+        } catch (error) {
+          console.error('Create store error:', error);
+          showError('Network error. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      });
+      
+      // Check if user is authenticated
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        // Redirect to sign in if not authenticated
+        window.location.href = '/admin/auth/sign-in';
+        return;
+      }
+      
+      // Check if user already has stores (if so, redirect to dashboard)
+      async function checkUserStores() {
+        try {
+          const response = await fetch('/api/v1/stores/my-stores', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data && data.data.length > 0) {
+              // User already has stores, redirect to dashboard
+              window.location.href = '/admin/dashboard';
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user stores:', error);
+        }
+      }
+      
+      // Check user stores on page load
+      checkUserStores();
+      
+      // Auto-fill contact email with user's email if available
+      const userEmail = localStorage.getItem('userEmail');
+      if (userEmail && !document.getElementById('contactEmail').value) {
+        document.getElementById('contactEmail').value = userEmail;
+      }
+    }); 

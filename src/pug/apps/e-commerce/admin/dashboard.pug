@@ -49,9 +49,9 @@ block wrapperContent
                 .card-body.text-center
                   .fs-1.text-info.mb-2
                     i.fas.fa-store
-                  h5.card-title Stores
-                  p.card-text.text-muted Manage your stores
-                  a.btn.btn-info.btn-sm(href='stores') View Stores
+                  h5.card-title Store
+                  p.card-text.text-muted Manage your store
+                  a.btn.btn-info.btn-sm(href='stores') View Store
 
 block append scripts
   script.
@@ -63,6 +63,38 @@ block append scripts
         window.location.href = '/admin/auth/sign-in';
         return;
       }
+      
+      // Check if user has stores
+      async function checkUserStores() {
+        try {
+          const response = await fetch('/api/v1/stores/my-stores', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.success || !data.data || data.data.length === 0) {
+              // User has no stores, redirect to create-store
+              window.location.href = '/admin/create-store';
+              return;
+            }
+          } else {
+            // Error checking stores, redirect to create-store as fallback
+            window.location.href = '/admin/create-store';
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking user stores:', error);
+          // Error checking stores, redirect to create-store as fallback
+          window.location.href = '/admin/create-store';
+          return;
+        }
+      }
+      
+      // Check user stores on page load
+      checkUserStores();
       
       // Handle logout
       document.getElementById('logoutBtn').addEventListener('click', function() {
