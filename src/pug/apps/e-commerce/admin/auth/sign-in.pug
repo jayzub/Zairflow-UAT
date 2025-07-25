@@ -55,7 +55,7 @@ block wrapperContent
           span#successText
       
       .text-center
-        a.fs-9.fw-bold(href=`${CWD}${paths['card-signup']}`) Create an admin account
+        a.fs-9.fw-bold(href='/admin/auth/sign-up') Create an account
 
 block append scripts
   script.
@@ -144,9 +144,33 @@ block append scripts
             
             showSuccess('Sign in successful! Redirecting...');
             
-            // Redirect to admin dashboard after a short delay
-            setTimeout(() => {
-              window.location.href = '/admin/dashboard';
+            // Check if user has stores and redirect accordingly
+            setTimeout(async () => {
+              try {
+                const storeResponse = await fetch('/api/v1/stores/my-stores', {
+                  headers: {
+                    'Authorization': `Bearer ${data.token}`
+                  }
+                });
+                
+                if (storeResponse.ok) {
+                  const storeData = await storeResponse.json();
+                  if (storeData.success && storeData.data && storeData.data.length > 0) {
+                    // User has stores, redirect to dashboard
+                    window.location.href = '/admin/dashboard';
+                  } else {
+                    // User has no stores, redirect to create-store
+                    window.location.href = '/admin/create-store';
+                  }
+                } else {
+                  // Fallback to dashboard
+                  window.location.href = '/admin/dashboard';
+                }
+              } catch (error) {
+                console.error('Error checking stores:', error);
+                // Fallback to dashboard
+                window.location.href = '/admin/dashboard';
+              }
             }, 1500);
             
           } else {

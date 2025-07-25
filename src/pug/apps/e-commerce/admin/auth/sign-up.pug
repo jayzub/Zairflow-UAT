@@ -95,7 +95,7 @@ block wrapperContent
           span#successText
       
       .text-center
-        a.fs-9.fw-bold(href=`${CWD}${paths['card-signin']}`) Already have an account? Sign in
+        a.fs-9.fw-bold(href='/admin/auth/sign-in') Already have an account? Sign in
 
 block append scripts
   script.
@@ -223,11 +223,16 @@ block append scripts
           const data = await response.json();
           
           if (response.ok && data.success) {
-            showSuccess('Account created successfully! Redirecting to sign in...');
+            showSuccess('Account created successfully! Redirecting to create store...');
             
-            // Redirect to sign in page after a short delay
+            // Store the user email for future use
+            if (data.user && data.user.email) {
+              localStorage.setItem('userEmail', data.user.email);
+            }
+            
+            // Redirect to create store page after a short delay
             setTimeout(() => {
-              window.location.href = '/admin/auth/sign-in';
+              window.location.href = '/admin/create-store';
             }, 2000);
             
           } else {
