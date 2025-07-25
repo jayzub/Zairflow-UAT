@@ -7,4 +7,4 @@ const respondWithViewOrJson = (req, res, view, data) => {
     }
 };
 
-module.exports = { respondWithViewOrJson };
+export default { respondWithViewOrJson };

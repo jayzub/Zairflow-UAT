@@ -3,7 +3,7 @@ const User = require('../models/user');
 const Customer = require('../models/customer');
 const Product = require('../models/products/baseProduct');
 const Order = require('../models/order');
-const { asyncHandler } = require('../middleware/asyncHandler');
+const { asyncHandler } = require('../middleware/asyncHandler').default;
 
 /**
  * Get platform overview statistics
