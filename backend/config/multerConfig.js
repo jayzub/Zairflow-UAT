@@ -1,32 +1,8 @@
-// const multer = require('multer');
-// const { FILE_TYPE_MAP } = require('./constants');
-
-// exports.storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         const isValid = FILE_TYPE_MAP[file.mimetype];
-//         const uploadError = isValid ? null : new Error('Invalid Image Type');
-//         cb(uploadError, 'public/uploads');
-//     },
-//     filename: (req, file, cb) => {
-//         const fileName = file.originalname.replace(/\s/g, '-');
-//         const extension = FILE_TYPE_MAP[file.mimetype];
-//         cb(null, `${fileName}-${Date.now()}.${extension}`);
-//     },
-// });
-
-
 const { v4: uuidv4 } = require('uuid');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('./cloudinary'); // Use the pre-configured Cloudinary instance
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 const { FILE_TYPE_MAP } = require('../utils/constants');
-
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // Configure Multer to use Cloudinary
 exports.storage = new CloudinaryStorage({
