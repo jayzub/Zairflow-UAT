@@ -5,6 +5,7 @@ const multer = require('multer');
 const { storage } = require('../config/multerConfig');
 const { requireAuth } = require('../middleware/jwt');
 const { extractStore, requireStoreAccess, addStoreFilter } = require('../middleware/storeIsolation');
+const { requirePermission, requireMinimumRole, requireRole } = require('../middleware/rbac');
 const User = require('../models/user');
 
 // Import admin controller functions
@@ -22,31 +23,6 @@ const {
 } = require('../controllers/adminController');
 
 const upload = multer({ storage });
-
-// Debug route to check store isolation
-router.get('/debug/store-info', requireAuth, (req, res) => {
-    res.json({
-        user: {
-            id: req.user._id,
-            email: req.user.email,
-            isPlatformAdmin: req.user.isPlatformAdmin,
-            ownedStores: req.user.ownedStores,
-            adminStores: req.user.adminStores
-        },
-        store: req.store ? {
-            id: req.store._id,
-            name: req.store.name,
-            slug: req.store.slug,
-            owner: req.store.owner
-        } : null,
-        headers: {
-            host: req.get('host'),
-            'x-store-slug': req.headers['x-store-slug']
-        },
-        query: req.query,
-        params: req.params
-    });
-});
 
 // Admin authentication pages (no store isolation needed)
 router.get('/auth', (req, res) => {
@@ -107,8 +83,13 @@ router.get('/dashboard', requireAuth, checkUserStores, extractStore, requireStor
 router.get('/dashboard/stats', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getDashboardStats);
 
 // Admin store management pages (no store isolation needed for creating stores)
-router.get('/create-store', requireAuth, (req, res) => {
+router.get('/create-store', requireAuth, requirePermission('store:create'), (req, res) => {
     res.render('admin/create-store');
+});
+
+// Admin user management pages (no store isolation needed for creating admins)
+router.get('/create-admin', requireAuth, requirePermission('user:create_admin'), (req, res) => {
+    res.render('admin/create-admin');
 });
 
 // Admin product management pages and API endpoints (with store isolation)

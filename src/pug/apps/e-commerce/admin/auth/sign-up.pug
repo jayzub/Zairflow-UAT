@@ -38,11 +38,8 @@ block wrapperContent
         
         .mb-3
           label.form-label(for='role') Role
-          select#role.form-select(required)
-            option(value='') Select a role
-            option(value='store_owner') Store Owner
-            option(value='store_admin') Store Admin
-            option(value='platform_admin') Platform Admin
+          select#role.form-select(required disabled)
+            option(value='store_owner' selected) Store Owner
         
         .mb-3
           label.form-label(for='position') Position (Optional)
@@ -165,7 +162,7 @@ block append scripts
         const lastName = document.getElementById('lastName').value;
         const email = document.getElementById('email').value;
         const phone = document.getElementById('phone').value;
-        const role = document.getElementById('role').value;
+        const role = 'store_owner'; // Fixed role for sign-up
         const position = document.getElementById('position').value;
         const department = document.getElementById('department').value;
         const password = document.getElementById('password').value;
@@ -173,7 +170,7 @@ block append scripts
         const terms = document.getElementById('terms').checked;
         
         // Basic validation
-        if (!firstName || !lastName || !email || !phone || !role || !password || !confirmPassword) {
+        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
           showError('Please fill in all required fields');
           return;
         }
@@ -216,7 +213,7 @@ block append scripts
               role: role,
               position: position || undefined,
               department: department || undefined,
-              isAdmin: role === 'platform_admin'
+              isAdmin: false
             })
           });
           

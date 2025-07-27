@@ -5,7 +5,8 @@ const {
     // getAllProducts,
     getProductById,
     getProductsByCategory,
-    getProductsFilterPage,
+    getStoreProducts,
+    getAllProductsMarketplace,
     testAjax,
 } = require('../controllers/productController');
 const { storage } = require('../config/multerConfig');
@@ -275,7 +276,8 @@ const upload = multer({ storage });
 
 // Define routes - SPECIFIC ROUTES FIRST (before parameterized routes)
 router.get('/test-ajax', testAjax);
-router.get('/filter', getProductsFilterPage);
+router.get('/marketplace', getAllProductsMarketplace); // Main product browsing route
+router.get('/store/:storeSlug', getStoreProducts); // Store-specific products
 router.get('/category/:categoryId', getProductsByCategory);
 
 // PARAMETERIZED ROUTES LAST (after specific routes)

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const { requireAuth } = require('../middleware/jwt');
+const { requirePermission, requireMinimumRole, requireRole } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -142,9 +143,47 @@ router.post('/register', userController.register);
  */
 router.get('/', requireAuth, userController.getAllUsers);
 
-// Move /profile routes above /:id routes
+// Move /profile and /me routes above /:id routes
 router.get('/profile', requireAuth, userController.getCurrentUser);
 router.put('/profile', requireAuth, userController.updateCurrentUser);
+
+// Test route to check if basic auth is working
+router.get('/test', requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Auth working',
+    user: {
+      id: req.user._id,
+      email: req.user.email,
+      role: req.user.role,
+      isPlatformAdmin: req.user.isPlatformAdmin
+    }
+  });
+});
+
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/me', requireAuth, userController.getCurrentUser);
 
 /**
  * @swagger
@@ -338,6 +377,98 @@ router.put('/:id', requireAuth, userController.updateUser);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /users/create-store-admin:
+ *   post:
+ *     summary: Create a new store admin (Store Owner only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - phone
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Jane Smith"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "jane@store.com"
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "password123"
+ *               phone:
+ *                 type: string
+ *                 example: "+1234567890"
+ *               position:
+ *                 type: string
+ *                 example: "Store Manager"
+ *               department:
+ *                 type: string
+ *                 example: "Sales"
+ *     responses:
+ *       201:
+ *         description: Store admin created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - Only store owners can create store admins
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/me', requireAuth, userController.getCurrentUser);
+
+router.post('/create-store-admin', requireAuth, requirePermission('user:create_admin'), userController.createStoreAdmin);
+
 router.post('/change-password', requireAuth, userController.changePassword);
 
 module.exports = router;

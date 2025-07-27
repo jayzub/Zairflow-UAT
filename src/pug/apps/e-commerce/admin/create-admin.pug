@@ -1,0 +1,341 @@
+extends ../../../layouts/LayoutTheme
+include ../../../layouts/LayoutSimpleAuth
+
+block wrapperContent
+  +LayoutBasic({logo:false, columnClass:'col-xl-8 col-xxl-6'})
+    .text-center.mb-6.mx-auto
+      img.mb-7.d-dark-none(src=`${CWD}assets/img/spot-illustrations/1.png` alt='phoenix')
+      img.mb-7.d-light-none(src=`${CWD}assets/img/spot-illustrations/dark_1.png` alt='phoenix')
+      .mb-6
+        h4.text-body-highlight Create Store Admin
+        p.text-body-tertiary Add a new administrator to your store
+      
+      .position-relative
+        hr.bg-body-secondary.mt-5.mb-4
+        .divider-content-center.bg-body-emphasis Admin Information
+      
+      form#createAdminForm
+        //- Basic Admin Information
+        .mb-4
+          h5.text-body-highlight.mb-3 Basic Information
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              label.form-label(for='firstName') First Name *
+              input#firstName.form-control(type='text' placeholder='John' required)
+            .col-sm-6
+              label.form-label(for='lastName') Last Name *
+              input#lastName.form-control(type='text' placeholder='Doe' required)
+          
+          .mb-3
+            label.form-label(for='email') Email Address *
+            .form-icon-container
+              input#email.form-control.form-icon-input(type='email' placeholder='admin@mystore.com' required)
+              span.fas.fa-envelope.text-body.fs-9.form-icon
+            .form-text This will be their login email
+        
+          .mb-3
+            label.form-label(for='phone') Phone Number *
+            .form-icon-container
+              input#phone.form-control.form-icon-input(type='tel' placeholder='+1234567890' required)
+              span.fas.fa-phone.text-body.fs-9.form-icon
+        
+        //- Admin Details
+        .mb-4
+          h5.text-body-highlight.mb-3 Admin Details
+          
+          .mb-3
+            label.form-label(for='position') Position
+            input#position.form-control(type='text' placeholder='Store Manager')
+            .form-text Their job title or position
+        
+          .mb-3
+            label.form-label(for='department') Department
+            input#department.form-control(type='text' placeholder='Sales')
+            .form-text Their department or area of responsibility
+        
+        //- Security
+        .mb-4
+          h5.text-body-highlight.mb-3 Security
+          
+          .mb-3
+            label.form-label(for='password') Password *
+            .form-icon-container(data-password)
+              input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input required)
+              span.fas.fa-key.text-body.fs-9.form-icon
+              button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                span.uil.uil-eye.show
+                span.uil.uil-eye-slash.hide
+            .form-text Minimum 6 characters with uppercase, lowercase, and number
+        
+          .mb-3
+            label.form-label(for='confirmPassword') Confirm Password *
+            .form-icon-container(data-password)
+              input#confirmPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm Password' data-password-input required)
+              span.fas.fa-key.text-body.fs-9.form-icon
+              button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                span.uil.uil-eye.show
+                span.uil.uil-eye-slash.hide
+        
+        //- Permissions
+        .mb-4
+          h5.text-body-highlight.mb-3 Permissions
+          p.text-body-tertiary.mb-3 Store admins can manage products, orders, customers, and categories. They cannot modify store settings or add other admins.
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              .form-check
+                input#manageProducts.form-check-input(type='checkbox' checked disabled)
+                label.form-check-label(for='manageProducts')
+                  | Manage Products
+                  .form-text Create, edit, and delete products
+            .col-sm-6
+              .form-check
+                input#manageOrders.form-check-input(type='checkbox' checked disabled)
+                label.form-check-label(for='manageOrders')
+                  | Manage Orders
+                  .form-text Process and manage customer orders
+          
+          .row.g-3.mb-3
+            .col-sm-6
+              .form-check
+                input#manageCustomers.form-check-input(type='checkbox' checked disabled)
+                label.form-check-label(for='manageCustomers')
+                  | Manage Customers
+                  .form-text View and manage customer data
+            .col-sm-6
+              .form-check
+                input#manageCategories.form-check-input(type='checkbox' checked disabled)
+                label.form-check-label(for='manageCategories')
+                  | Manage Categories
+                  .form-text Create and manage product categories
+        
+        //- Terms and Submit
+        .mb-3
+          .form-check
+            input#terms.form-check-input(type='checkbox' required)
+            label.form-check-label(for='terms')
+              | I agree to create this admin account and they will receive an email invitation
+        
+        button.btn.btn-primary.w-100.mb-3(type='submit') Create Store Admin
+        
+        //- Loading spinner (hidden by default)
+        .text-center.mb-3.d-none#loadingSpinner
+          .spinner-border.spinner-border-sm.text-primary.me-2(role='status')
+          span Creating admin account...
+        
+        //- Error message container
+        .alert.alert-danger.d-none#errorMessage(role='alert')
+          span#errorText
+        
+        //- Success message container
+        .alert.alert-success.d-none#successMessage(role='alert')
+          span#successText
+      
+      .d-grid.mt-4
+        a.btn.btn-outline-primary(href='/admin/dashboard')
+          span.fas.fa-angle-left.me-2
+          | Back to Dashboard
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('createAdminForm');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const errorMessage = document.getElementById('errorMessage');
+      const successMessage = document.getElementById('successMessage');
+      const errorText = document.getElementById('errorText');
+      const successText = document.getElementById('successText');
+      
+      // Hide messages initially
+      function hideMessages() {
+        errorMessage.classList.add('d-none');
+        successMessage.classList.add('d-none');
+      }
+      
+      // Show error message
+      function showError(message) {
+        hideMessages();
+        errorText.textContent = message;
+        errorMessage.classList.remove('d-none');
+      }
+      
+      // Show success message
+      function showSuccess(message) {
+        hideMessages();
+        successText.textContent = message;
+        successMessage.classList.remove('d-none');
+      }
+      
+      // Show/hide loading spinner
+      function setLoading(loading) {
+        if (loading) {
+          loadingSpinner.classList.remove('d-none');
+          form.querySelector('button[type="submit"]').disabled = true;
+        } else {
+          loadingSpinner.classList.add('d-none');
+          form.querySelector('button[type="submit"]').disabled = false;
+        }
+      }
+      
+      // Password validation
+      function validatePassword(password) {
+        const minLength = 6;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        
+        if (password.length < minLength) {
+          return 'Password must be at least 6 characters long';
+        }
+        if (!hasUpperCase || !hasLowerCase) {
+          return 'Password must contain both uppercase and lowercase letters';
+        }
+        if (!hasNumbers) {
+          return 'Password must contain at least one number';
+        }
+        return null;
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const position = document.getElementById('position').value.trim();
+        const department = document.getElementById('department').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const terms = document.getElementById('terms').checked;
+        
+        // Basic validation
+        if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
+          showError('Please fill in all required fields');
+          return;
+        }
+        
+        if (!email.includes('@')) {
+          showError('Please enter a valid email address');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          showError('Passwords do not match');
+          return;
+        }
+        
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+          showError(passwordError);
+          return;
+        }
+        
+        if (!terms) {
+          showError('Please agree to create this admin account');
+          return;
+        }
+        
+        setLoading(true);
+        hideMessages();
+        
+        try {
+          // First, get the user's stores to find the store ID
+          const storeResponse = await fetch('/api/v1/stores/my-stores', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            }
+          });
+          
+          let storeId = null;
+          if (storeResponse.ok) {
+            const storeData = await storeResponse.json();
+            if (storeData.success && storeData.data && storeData.data.length > 0) {
+              // Use the first store (assuming store owners have one primary store)
+              storeId = storeData.data[0]._id;
+            }
+          }
+          
+          const response = await fetch('/api/v1/users/create-store-admin', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+            },
+            body: JSON.stringify({
+              name: `${firstName} ${lastName}`,
+              email: email,
+              password: password,
+              phone: phone,
+              position: position || undefined,
+              department: department || undefined,
+              storeId: storeId
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.success) {
+            showSuccess('Store admin created successfully! Redirecting to dashboard...');
+            
+            // Redirect to dashboard after a short delay
+            setTimeout(() => {
+              window.location.href = '/admin/dashboard';
+            }, 2000);
+            
+          } else {
+            showError(data.message || 'Admin creation failed. Please try again.');
+          }
+          
+        } catch (error) {
+          console.error('Create admin error:', error);
+          showError('Network error. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      });
+      
+      // Check if user is authenticated and has permission
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        // Redirect to sign in if not authenticated
+        window.location.href = '/admin/auth/sign-in';
+        return;
+      }
+      
+      // Check if user has permission to create admins
+      async function checkCreateAdminPermission() {
+        try {
+          const userResponse = await fetch('/api/v1/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            if (userData.success && userData.data) {
+              const user = userData.data;
+              
+              // Only store owners and platform admins can create admins
+              if (user.role !== 'store_owner' && !user.isPlatformAdmin) {
+                alert('Access denied. Only store owners and platform admins can create store admins.');
+                window.location.href = '/admin/dashboard';
+                return;
+              }
+            }
+          } else {
+            // If we can't get user data, redirect to dashboard
+            window.location.href = '/admin/dashboard';
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking permissions:', error);
+          window.location.href = '/admin/dashboard';
+          return;
+        }
+      }
+      
+      // Check permissions on page load
+      checkCreateAdminPermission();
+    }); 

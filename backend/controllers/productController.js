@@ -40,201 +40,6 @@ exports.testAjax = asyncHandler(async (req, res) => {
     }
 });
 
-/*
-// Fetch all products with pagination
-exports.getAllProducts = asyncHandler(async (req, res) => {
-    const limit = parseInt(req.query.limit, 10) ||10;
-    const page = parseInt(req.query.page, 10) || 1;
-    const sort = req.query.sort || 'dateCreated';
-    const order = req.query.order === 'asc' ? 1 : -1;
-    
-    // Build filter with store isolation
-    let filter = { isActive: true };
-    
-    // Add store filter if available
-    if (req.store) {
-        filter.store = req.store._id;
-    }
-    
-    // Add category filter if provided
-    if (req.query.categories) {
-        filter.category = { $in: req.query.categories.split(',') };
-    }
-
-    // Add price range filter if provided
-    if (req.query.minPrice || req.query.maxPrice) {
-        filter.price = {};
-        if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
-        if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
-    }
-
-    // Check if this is an AJAX request
-    const isAjaxRequest = req.xhr || 
-                         req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-                         req.headers['accept'] === 'application/json';
-    
-    // Check Node cache (only for non-AJAX requests)
-    const cacheKey = `products:${JSON.stringify({ page, limit, sort, order, filter, isAjax: isAjaxRequest })}`;
-    const cachedResult = myCache.get(cacheKey);
-
-    if (cachedResult && !isAjaxRequest) {
-        return respondWithViewOrJson(req, res, 'admin/products', cachedResult);
-    }
-
-    // Calculate skip value for pagination
-    const skip = (page - 1) * limit;
-
-    const aggregationPipeline = [
-        { $match: filter },
-        { $sort: { [sort]: order, _id: 1 } },
-        { $skip: skip },
-        { $limit: limit },
-        {
-            $lookup: {
-                from: 'categories',
-                localField: 'category',
-                foreignField: '_id',
-                as: 'category'
-            }
-        },
-        {
-            $lookup: {
-                from: 'vendors',
-                localField: 'vendor',
-                foreignField: '_id',
-                as: 'vendor'
-            }
-        },
-        {
-            $unwind: {
-                path: '$vendor',
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $project: {
-                name: 1,
-                price: 1,
-                salePrice: 1,
-                category: 1,
-                image: 1,
-                images: 1,
-                vendor: 1,
-                tags: 1,
-                brand: 1,
-                productType: 1,
-                variants: 1,
-                specifications: 1,
-                dimensions: 1,
-                weight: 1,
-                materials: 1,
-                assembly: 1,
-                material: 1,
-                materialComposition: 1,
-                care: 1,
-                fit: 1,
-                season: 1,
-                gender: 1,
-                measurements: 1,
-                dateCreated: 1,
-                isFeatured: 1,
-                countInStock: 1,
-                status: 1
-            }
-        }
-    ];
-
-    // Add store filter to categories query
-    const categoryFilter = req.store ? { store: req.store._id, isActive: true } : { isActive: true };
-    
-    const [productList, productCount, featuredProductsCount, categories] = await Promise.all([
-        BaseProduct.aggregate(aggregationPipeline),
-        BaseProduct.countDocuments(filter),
-        BaseProduct.countDocuments({ ...filter, isFeatured: true }),
-        Category.find(categoryFilter),
-    ]);
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(productCount / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    // Convert MongoDB Decimal128 to string for price fields
-    const serializedProducts = productList.map(product => ({
-        ...product,
-        price: product.price ? product.price.toString() : null,
-        salePrice: product.salePrice ? product.salePrice.toString() : null,
-        // Convert any other Decimal128 fields here
-    }));
-
-    // Helper to generate page range for pagination bar
-    function getPageRange(current, total) {
-        const delta = 2; // how many pages to show around current
-        const range = [];
-        const rangeWithDots = [];
-        let l;
-        for (let i = 1; i <= total; i++) {
-            if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
-                range.push(i);
-            }
-        }
-        for (let i of range) {
-            if (l) {
-                if (i - l === 2) {
-                    rangeWithDots.push(l + 1);
-                } else if (i - l > 2) {
-                    rangeWithDots.push('...');
-                }
-            }
-            rangeWithDots.push(i);
-            l = i;
-        }
-        return rangeWithDots;
-    }
-
-    const result = {
-        pageTitle: 'Product List',
-        products: serializedProducts,
-        categories: categories.map(cat => cat.toObject()), // Convert to plain objects
-        currentPage: page,
-        totalPages,
-        hasNextPage,
-        hasPrevPage,
-        productCount,
-        limit,
-        featuredProductsCount,
-        pageRange: getPageRange(page, totalPages),
-        api: process.env.API_URL || '/api/v1',
-    };
-
-    // Cache the result
-    myCache.set(cacheKey, result);
-
-    if (isAjaxRequest) {
-        // Return JSON for AJAX requests (infinite scroll)
-        // Set headers to prevent caching for AJAX requests
-        res.set({
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        });
-        return res.json({
-            success: true,
-            products: serializedProducts,
-            currentPage: page,
-            totalPages,
-            hasNextPage,
-            hasPrevPage,
-            productCount,
-            api: process.env.API_URL || '/api/v1'
-        });
-    } else {
-        // Return full page for regular requests
-        return respondWithViewOrJson(req, res, 'admin/products', result);
-    }
-});
-
-*/
 
 // Fetch product by ID
 exports.getProductById = asyncHandler(async (req, res) => {
@@ -674,15 +479,29 @@ exports.deleteReview = asyncHandler(async (req, res) => {
     }
 });
 
-// Get products filter page (UI page)
-exports.getProductsFilterPage = asyncHandler(async (req, res) => {
+
+
+// Get products for a specific store
+exports.getStoreProducts = asyncHandler(async (req, res) => {
+    const { storeSlug } = req.params;
     const limit = parseInt(req.query.limit, 10) || 24;
     const page = parseInt(req.query.page, 10) || 1;
     const sort = req.query.sort || 'dateCreated';
     const order = req.query.order === 'asc' ? 1 : -1;
     
+    // First, find the store
+    const Store = require('../models/store');
+    const store = await Store.findOne({ slug: storeSlug, isActive: true });
+    
+    if (!store) {
+        return res.status(404).json({ 
+            success: false, 
+            message: 'Store not found' 
+        });
+    }
+    
     // Build filter based on query parameters
-    const filter = {};
+    const filter = { store: store._id };
     
     // Category filter
     if (req.query.categories) {
@@ -804,16 +623,16 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
     const [productList, productCount, categories, brands] = await Promise.all([
         BaseProduct.aggregate(aggregationPipeline),
         BaseProduct.countDocuments(filter),
-        Category.find().select('name _id'),
-        BaseProduct.distinct('brand')
+        Category.find({ store: store._id }).select('name _id'),
+        BaseProduct.distinct('brand', { store: store._id })
     ]);
 
     // Pagination info
     const totalPages = Math.ceil(productCount / limit);
     const hasNextPage = page < totalPages;
-    const hasPrevPage = page >1
+    const hasPrevPage = page > 1;
 
-    // Helper to generate page range for pagination bar (same as admin)
+    // Helper to generate page range for pagination bar
     function getPageRange(current, total) {
         const delta = 2;
         const range = [];
@@ -895,6 +714,11 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
             hasPrevPage,
             productCount,
             limit,
+            store: {
+                name: store.name,
+                slug: store.slug,
+                description: store.description
+            },
             currentFilters: {
                 categories: req.query.categories ? req.query.categories.split(',') : [],
                 brands: req.query.brands ? req.query.brands.split(',') : [],
@@ -905,19 +729,26 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
                 rating: req.query.rating,
                 productType: req.query.productType ? req.query.productType.split(',') : [],
                 featured: req.query.featured === 'true',
-                onSale: req.query.onSale === true
+                onSale: req.query.onSale === 'true'
             },
             api: process.env.API_URL || '/api/v1'
         });
     }
 
     // Get unique colors for filter (only for full page requests)
-    const colors = await BaseProduct.distinct('color');
-    const variantColors = await BaseProduct.distinct('variants.color');
+    const colors = await BaseProduct.distinct('color', { store: store._id });
+    const variantColors = await BaseProduct.distinct('variants.color', { store: store._id });
     const allColors = [...new Set([...colors, ...variantColors])].filter(Boolean);
 
     const result = {
-        pageTitle: 'Products Filter',
+        pageTitle: `${store.name} - Products`,
+        store: {
+            name: store.name,
+            slug: store.slug,
+            description: store.description,
+            logo: store.logo,
+            banner: store.banner
+        },
         products: Array.isArray(transformedProducts) ? transformedProducts : [],
         categories: categories.map(cat => ({ name: cat.name, _id: cat._id })),
         brands: brands.filter(Boolean),
@@ -944,5 +775,310 @@ exports.getProductsFilterPage = asyncHandler(async (req, res) => {
         api: process.env.API_URL || '/api/v1'
     };
 
-    res.render('landing/products-filter', result);
+    res.render('landing/store-products', result);
+});
+
+// Get all products across all stores (marketplace view)
+exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
+    const limit = parseInt(req.query.limit, 10) || 24;
+    const page = parseInt(req.query.page, 10) || 1;
+    const sort = req.query.sort || 'dateCreated';
+    const order = req.query.order === 'asc' ? 1 : -1;
+    
+    // Build filter based on query parameters
+    const filter = { isActive: true }; // Only active products
+    
+    // Store filter
+    if (req.query.stores) {
+        const Store = require('../models/store');
+        const storeSlugs = req.query.stores.split(',');
+        const stores = await Store.find({ slug: { $in: storeSlugs }, isActive: true });
+        const storeIds = stores.map(store => store._id);
+        filter.store = { $in: storeIds };
+    }
+    
+    // Category filter
+    if (req.query.categories) {
+        filter.category = { $in: req.query.categories.split(',') };
+    }
+    
+    // Brand filter
+    if (req.query.brands) {
+        filter.brand = { $in: req.query.brands.split(',') };
+    }
+    
+    // Price range filter
+    if (req.query.minPrice || req.query.maxPrice) {
+        filter.price = {};
+        if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
+        if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
+    }
+    
+    // Stock filter
+    if (req.query.stock) {
+        const stockFilters = req.query.stock.split(',');
+        if (stockFilters.includes('inStock')) {
+            filter.countInStock = { $gt: 0 };
+        } else if (stockFilters.includes('outOfStock')) {
+            filter.countInStock = { $lte: 0 };
+        }
+    }
+    
+    // Rating filter
+    if (req.query.rating) {
+        const minRating = parseFloat(req.query.rating);
+        filter.rating = { $gte: minRating };
+    }
+    
+    // Product type filter
+    if (req.query.productType) {
+        filter.productType = { $in: req.query.productType.split(',') };
+    }
+    
+    // Color filter
+    if (req.query.colors) {
+        const colors = req.query.colors.split(',');
+        filter.$or = [
+            { color: { $in: colors } },
+            { 'variants.color': { $in: colors } }
+        ];
+    }
+    
+    // Featured products filter
+    if (req.query.featured === 'true') {
+        filter.isFeatured = true;
+    }
+    
+    // Sale products filter
+    if (req.query.onSale === 'true') {
+        filter.salePrice = { $exists: true, $gt: 0 };
+    }
+
+    // Check if this is an AJAX request
+    const isAjaxRequest = req.xhr || 
+                         req.headers['x-requested-with'] === 'XMLHttpRequest' ||
+                         req.headers['accept'] === 'application/json';
+
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+
+    const aggregationPipeline = [
+        { $match: filter },
+        { $sort: { [sort]: order, _id: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+            $lookup: {
+                from: 'categories',
+                localField: 'category',
+                foreignField: '_id',
+                as: 'category'
+            }
+        },
+        {
+            $lookup: {
+                from: 'vendors',
+                localField: 'vendor',
+                foreignField: '_id',
+                as: 'vendor'
+            }
+        },
+        {
+            $lookup: {
+                from: 'stores',
+                localField: 'store',
+                foreignField: '_id',
+                as: 'store'
+            }
+        },
+        {
+            $unwind: {
+                path: '$vendor',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: '$store',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                price: 1,
+                salePrice: 1,
+                category: 1,
+                image: 1,
+                images: 1,
+                vendor: 1,
+                store: 1,
+                tags: 1,
+                brand: 1,
+                productType: 1,
+                variants: 1,
+                rating: 1,
+                numReviews: 1,
+                countInStock: 1,
+                isFeatured: 1,
+                color: 1,
+                dateCreated: 1
+            }
+        }
+    ];
+
+    // Get total count for pagination
+    const [productList, productCount, categories, brands, stores] = await Promise.all([
+        BaseProduct.aggregate(aggregationPipeline),
+        BaseProduct.countDocuments(filter),
+        Category.find().select('name _id'),
+        BaseProduct.distinct('brand'),
+        require('../models/store').find({ isActive: true }).select('name slug')
+    ]);
+
+    // Pagination info
+    const totalPages = Math.ceil(productCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    // Helper to generate page range for pagination bar
+    function getPageRange(current, total) {
+        const delta = 2;
+        const range = [];
+        const rangeWithDots = [];
+        let l;
+        for (let i = 1; i <= total; i++) {
+            if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                range.push(i);
+            }
+        }
+        for (let i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push(l + 1);
+                } else if (i - l > 2) {
+                    rangeWithDots.push('...');
+                }
+            }
+            rangeWithDots.push(i);
+            l = i;
+        }
+        return rangeWithDots;
+    }
+
+    // Transform products to match the expected format for the template
+    const transformedProducts = productList.map(product => {
+        // Calculate discount percentage
+        let discountPercentage = null;
+        if (product.salePrice && parseFloat(product.salePrice.toString()) > 0 && product.price) {
+            const originalPrice = parseFloat(product.price.toString());
+            const salePrice = parseFloat(product.salePrice.toString());
+            discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+        }
+        // Get available colors from variants or base product
+        let availableColors = [];
+        if (product.variants && product.variants.length > 0) {
+            availableColors = [...new Set(product.variants.map(v => v.color))].filter(Boolean);
+        } else if (product.color) {
+            availableColors = [product.color];
+        }
+        // Get main image
+        const mainImage = (product.image && product.image.url) ||
+                          (product.images && product.images[0] && product.images[0].url) ||
+                          '1.png';
+        return {
+            _id: product._id,
+            image: mainImage,
+            name: product.name,
+            star: Math.round(product.rating || 0),
+            rated: product.numReviews || 0,
+            price: product.price ? product.price.toString() : '0.00',
+            salePrice: product.salePrice && parseFloat(product.salePrice.toString()) > 0
+                ? product.salePrice.toString() 
+                : null,
+            off: discountPercentage ? `${discountPercentage}%` : null,
+            colors: availableColors.length,
+            verified: product.isFeatured || false,
+            wishListed: false, // This would be determined by user session
+            extra: product.countInStock > 0 ? 'In stock' : 'Out of stock',
+            extraClass: product.countInStock > 10 ? 'text-body-tertiary mb-2' : 'text-body-highlight fw-bold mb-2',
+            dealEndTime: product.isFeatured ? 'Limited time' : null,
+            store: product.store ? {
+                name: product.store.name,
+                slug: product.store.slug
+            } : null
+        };
+    });
+
+    if (isAjaxRequest) {
+        // Return JSON for AJAX requests (load more)
+        res.set({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+        
+        return res.json({
+            success: true,
+            products: transformedProducts,
+            currentPage: page,
+            totalPages,
+            hasNextPage,
+            hasPrevPage,
+            productCount,
+            limit,
+            currentFilters: {
+                stores: req.query.stores ? req.query.stores.split(',') : [],
+                categories: req.query.categories ? req.query.categories.split(',') : [],
+                brands: req.query.brands ? req.query.brands.split(',') : [],
+                colors: req.query.colors ? req.query.colors.split(',') : [],
+                minPrice: req.query.minPrice,
+                maxPrice: req.query.maxPrice,
+                stock: req.query.stock ? req.query.stock.split(',') : [],
+                rating: req.query.rating,
+                productType: req.query.productType ? req.query.productType.split(',') : [],
+                featured: req.query.featured === 'true',
+                onSale: req.query.onSale === 'true'
+            },
+            api: process.env.API_URL || '/api/v1'
+        });
+    }
+
+    // Get unique colors for filter (only for full page requests)
+    const colors = await BaseProduct.distinct('color');
+    const variantColors = await BaseProduct.distinct('variants.color');
+    const allColors = [...new Set([...colors, ...variantColors])].filter(Boolean);
+
+    const result = {
+        pageTitle: 'Marketplace - All Products',
+        products: Array.isArray(transformedProducts) ? transformedProducts : [],
+        categories: categories.map(cat => ({ name: cat.name, _id: cat._id })),
+        brands: brands.filter(Boolean),
+        stores: stores.map(store => ({ name: store.name, slug: store.slug })),
+        colors: allColors,
+        productCount,
+        currentPage: page,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+        pageRange: getPageRange(page, totalPages),
+        limit,
+        currentFilters: {
+            stores: req.query.stores ? req.query.stores.split(',') : [],
+            categories: req.query.categories ? req.query.categories.split(',') : [],
+            brands: req.query.brands ? req.query.brands.split(',') : [],
+            colors: req.query.colors ? req.query.colors.split(',') : [],
+            minPrice: req.query.minPrice,
+            maxPrice: req.query.maxPrice,
+            stock: req.query.stock ? req.query.stock.split(',') : [],
+            rating: req.query.rating,
+            productType: req.query.productType ? req.query.productType.split(',') : [],
+            featured: req.query.featured === 'true',
+            onSale: req.query.onSale === 'true'
+        },
+        api: process.env.API_URL || '/api/v1'
+    };
+
+    res.render('landing/marketplace-products', result);
 });

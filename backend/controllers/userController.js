@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { asyncHandler } = require('../middleware/asyncHandler').default;
+const { requirePermission, requireMinimumRole } = require('../middleware/rbac');
 
 /**
  * Admin user login
@@ -257,6 +258,92 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Create store admin (Store Owner only)
+ */
+const createStoreAdmin = asyncHandler(async (req, res) => {
+    const { name, email, password, phone, position, department, storeId } = req.body;
+    
+    // Check if user is authenticated and has permission
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: 'Authentication required'
+        });
+    }
+    
+    // Check if user has permission to create admins
+    if (req.user.role !== 'store_owner' && !req.user.isPlatformAdmin) {
+        return res.status(403).json({
+            success: false,
+            message: 'Only store owners and platform admins can create store admins'
+        });
+    }
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res.status(409).json({
+            success: false,
+            message: 'User with this email already exists'
+        });
+    }
+    
+    // Create new store admin user
+    const user = new User({
+        name: name,
+        email: email,
+        passwordHash: bcrypt.hashSync(password, 10),
+        phone: phone,
+        role: 'store_admin',
+        position: position || 'Store Admin',
+        department: department || 'Management',
+        isAdmin: false,
+        isActive: true,
+        isVerified: false
+    });
+    
+    const savedUser = await user.save();
+    
+    if (!savedUser) {
+        return res.status(500).json({
+            success: false,
+            message: 'Store admin cannot be created'
+        });
+    }
+    
+    // If storeId is provided, add the user as admin to that store
+    if (storeId) {
+        const Store = require('../models/store');
+        const store = await Store.findById(storeId);
+        
+        if (store) {
+            // Check if the current user owns this store or is platform admin
+            if (store.owner.toString() === req.user._id.toString() || req.user.isPlatformAdmin) {
+                // Add user as admin to the store
+                if (!store.admins.includes(savedUser._id)) {
+                    store.admins.push(savedUser._id);
+                    await store.save();
+                }
+                
+                // Add store to user's admin stores
+                savedUser.adminStores.push(store._id);
+                await savedUser.save();
+            }
+        }
+    }
+    
+    // Remove password hash from response
+    const userResponse = savedUser.toObject();
+    delete userResponse.passwordHash;
+    
+    res.status(201).json({
+        success: true,
+        data: userResponse,
+        message: 'Store admin created successfully'
+    });
+});
+
+/**
  * Change password
  */
 const changePassword = asyncHandler(async (req, res) => {
@@ -305,5 +392,6 @@ module.exports = {
     updateUser,
     getCurrentUser,
     updateCurrentUser,
-    changePassword
+    changePassword,
+    createStoreAdmin
 }; 

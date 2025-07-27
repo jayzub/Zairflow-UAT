@@ -1,7 +1,5 @@
 extends ../../../layouts/LayoutEcommerce
 include ../../../mixins/e-commerce/homepage/common
-//- include ../../mixins/e-commerce/checkout/CheckoutSummaryCard
-//- src/pug/mixins/e-commerce/homepage/common.pug
 
 append variables
 	- var disableNavigationType = true;
@@ -10,9 +8,30 @@ append variables
 	- var disableHorizontalNavbarAppearance = true;
 	- var activeNavItem = 'products';
 
-
 append scripts
 	style.
+		/* Marketplace header styling */
+		.marketplace-header {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			padding: 2rem 0;
+			margin-bottom: 2rem;
+		}
+		
+		/* Store badge styling */
+		.store-badge {
+			position: absolute;
+			top: 0.5rem;
+			left: 0.5rem;
+			z-index: 10;
+			background: rgba(0, 0, 0, 0.7);
+			color: white;
+			padding: 0.25rem 0.5rem;
+			border-radius: 0.25rem;
+			font-size: 0.75rem;
+			font-weight: 500;
+		}
+		
 		/* Uniform product card styling */
 		.product-card-container {
 			height: 100%;
@@ -184,8 +203,6 @@ append scripts
 					window.location.href = currentUrl.toString();
 				});
 			}
-
-			// Load More button is now handled by ProductLoader class
 		});
 
 		// ProductLoader class for AJAX load more functionality
@@ -295,6 +312,7 @@ append scripts
 				// Build the card HTML to match the Product mixin (including stretched-link)
 				const imageSrc = product.image && product.image.startsWith('http') ? product.image : (product.image ? `/assets/img/products/${product.image}` : '/assets/img/products/1.png');
 				const productLink = product._id ? `/api/v1/products/${product._id}` : '#';
+				const storeBadge = product.store ? `<div class="store-badge">${product.store.name}</div>` : '';
 				const cardHTML = `
 					<div class="position-relative text-decoration-none product-card h-100">
 						<div class="d-flex flex-column justify-content-between h-100">
@@ -306,6 +324,7 @@ append scripts
 									</button>
 									<div class="product-image-container" style="aspect-ratio: 1; overflow: hidden; position: relative;">
 										<img class="img-fluid w-100 h-100" src="${imageSrc}" alt="${product.name}" style="object-fit: cover; object-position: center;" onerror="this.src='/assets/img/products/1.png'">
+										${storeBadge}
 									</div>
 									${product.verified ? `<span class="badge text-bg-success fs-10 product-verified-badge">Verified <span class='fas fa-check ms-1'></span></span>` : ''}
 								</div>
@@ -388,6 +407,19 @@ append scripts
 		});
 
 block ecomContent
+	// Marketplace Header
+	+Section(null,'marketplace-header').pt-5.pb-3
+		.container
+			.row.align-items-center
+				.col-md-8.text-center.text-md-start
+					h1.mb-2 Marketplace
+					p.mb-0.fs-6.opacity-75 Discover products from all our amazing stores
+				.col-md-4.text-center.text-md-end
+					.mt-3
+						a.btn.btn-light.btn-sm(href=`/api/v1/stores`) 
+							span.fas.fa-store.me-1
+							| Browse Stores
+
 	+Section(null,'product-filter-container').pt-5.pb-9
 		button.btn.btn-sm.btn-phoenix-secondary.text-body-tertiary.mb-5.d-lg-none(data-phoenix-toggle='offcanvas' data-phoenix-target='#productFilterColumn')
 			span.fa-solid.fa-filter.me-2
@@ -399,6 +431,19 @@ block ecomContent
 						h3.mb-0 Filters
 						button.btn.d-lg-none.p-0(data-phoenix-dismiss="offcanvas")
 							span.uil.uil-times.fs-8
+
+					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseStores' role='button' aria-expanded='true' aria-controls='collapseStores')
+						.d-flex.align-items-center.justify-content-between.w-100
+							.fs-8.text-body-highlight Stores
+							span.fa-solid.fa-angle-down.toggle-icon.text-body-quaternary
+
+					.collapse.show#collapseStores
+						.mb-2
+							if stores && stores.length > 0
+								each store in stores
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`store-${store.slug}` type='checkbox' name='stores' value=store.slug checked=currentFilters && currentFilters.stores && currentFilters.stores.includes(store.slug))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`store-${store.slug}`)= store.name
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseAvailability' role='button' aria-expanded='true' aria-controls='collapseAvailability')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -455,6 +500,19 @@ block ecomContent
 									.form-check.mb-0
 										input.form-check-input.mt-0(id=`category-${category._id}` type='checkbox' name='categories' value=category._id checked=currentFilters && currentFilters.categories && currentFilters.categories.includes(category._id.toString()))
 										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`category-${category._id}`)= category.name
+
+					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseStores' role='button' aria-expanded='true' aria-controls='collapseStores')
+						.d-flex.align-items-center.justify-content-between.w-100
+							.fs-8.text-body-highlight Stores
+							span.fa-solid.fa-angle-down.toggle-icon.text-body-quaternary
+
+					.collapse.show#collapseStores
+						.mb-2
+							if stores && stores.length > 0
+								each store in stores
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`store-${store.slug}` type='checkbox' name='stores' value=store.slug checked=currentFilters && currentFilters.stores && currentFilters.stores.includes(store.slug))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`store-${store.slug}`)= store.name
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapsePriceRange' role='button' aria-expanded='true' aria-controls='collapsePriceRange')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -574,4 +632,4 @@ block ecomContent
 					.d-flex.justify-content-center.mt-4
 						button#load-more-btn.btn.btn-outline-primary(type='button' data-next-page=((currentPage || 1) + 1))
 							span.fas.fa-plus.me-2
-							| Load More Products
+							| Load More Products 
