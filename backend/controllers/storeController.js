@@ -12,10 +12,6 @@ const { asyncHandler } = require('../middleware/asyncHandler').default;
 const createStore = asyncHandler(async (req, res) => {
     const { name, description, contactInfo, settings, theme } = req.body;
     
-    // Debug: Check if user is properly authenticated
-    console.log('🔍 Debug - Request user:', req.user);
-    console.log('🔍 Debug - Request headers:', req.headers.authorization ? 'Authorization header present' : 'No authorization header');
-    
     if (!req.user || !req.user._id) {
         return res.status(401).json({
             success: false,

@@ -52,6 +52,15 @@ block wrapperContent
                   h5.card-title Store
                   p.card-text.text-muted Manage your store
                   a.btn.btn-info.btn-sm(href='stores') View Store
+            
+            .col-md-6.col-lg-3#createAdminCard
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-warning.mb-2
+                    i.fas.fa-user-plus
+                  h5.card-title Create Admin
+                  p.card-text.text-muted Add store administrators
+                  a.btn.btn-warning.btn-sm(href='create-admin') Create Admin
 
 block append scripts
   script.
@@ -93,8 +102,38 @@ block append scripts
         }
       }
       
+      // Check user permissions and show/hide elements accordingly
+      async function checkUserPermissions() {
+        try {
+          const userResponse = await fetch('/api/v1/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            
+            if (userData.success && userData.data) {
+              const user = userData.data;
+              
+              // Show/hide create admin card based on role
+              const createAdminCard = document.getElementById('createAdminCard');
+              if (createAdminCard) {
+                if (user.role === 'store_owner' || user.isPlatformAdmin) {
+                  createAdminCard.classList.remove('d-none');
+                } else {
+                  createAdminCard.classList.add('d-none');
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user permissions:', error);
+        }
+      }
+      
       // Check user stores on page load
       checkUserStores();
+      checkUserPermissions();
       
       // Handle logout
       document.getElementById('logoutBtn').addEventListener('click', function() {
