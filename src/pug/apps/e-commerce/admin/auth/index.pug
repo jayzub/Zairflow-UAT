@@ -30,7 +30,7 @@ block append scripts
       // Check if user is already logged in
       const token = localStorage.getItem('adminToken');
       if (token) {
-        // Redirect to dashboard if already logged in
-        window.location.href = '/admin/dashboard';
+        // Redirect to admin index if already logged in
+        window.location.href = '/admin/';
       }
     }); 

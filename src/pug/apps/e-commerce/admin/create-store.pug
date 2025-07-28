@@ -348,10 +348,10 @@ block append scripts
               localStorage.setItem('userEmail', data.data.contactInfo.email);
             }
             
-            // Redirect to dashboard after a short delay
-            setTimeout(() => {
-              window.location.href = '/admin/dashboard';
-            }, 2000);
+                    // Redirect to admin index after a short delay
+        setTimeout(() => {
+          window.location.href = '/admin/';
+        }, 2000);
             
           } else {
             showError(data.message || data.error || 'Store creation failed. Please try again.');
@@ -385,8 +385,8 @@ block append scripts
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data && data.data.length > 0) {
-              // User already has stores, redirect to dashboard
-              window.location.href = '/admin/dashboard';
+                      // User already has stores, redirect to admin index
+        window.location.href = '/admin/';
               return;
             }
           }

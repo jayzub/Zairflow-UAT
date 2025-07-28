@@ -1,0 +1,59 @@
+mixin Contact
+	+Section('container-small px-lg-7 px-xxl-3').pt-15.pb-0#contact
+		.row
+			.col-12.text-center.mb-8
+				h4.text-primary.fw-bolder.mb-3 Contact
+				h2.mb-3.text-body-emphasis.lh-base Get in Touch
+				p.mb-5 Ready to transform your e-commerce business? Let's discuss how Griffin can help you scale and grow.
+
+		.row.align-items-center
+			.col-lg-6.mb-6.mb-lg-0
+				.card.border.border-translucent
+					.card-body.p-4
+						h5.mb-4 Send us a message
+						form
+							.row.g-3
+								.col-md-6
+									label.form-label(for='firstName') First Name
+									input.form-control#firstName(type='text' placeholder='Enter your first name')
+								.col-md-6
+									label.form-label(for='lastName') Last Name
+									input.form-control#lastName(type='text' placeholder='Enter your last name')
+								.col-12
+									label.form-label(for='email') Email
+									input.form-control#email(type='email' placeholder='Enter your email')
+								.col-12
+									label.form-label(for='company') Company
+									input.form-control#company(type='text' placeholder='Enter your company name')
+								.col-12
+									label.form-label(for='message') Message
+									textarea.form-control#message(rows='4' placeholder='Tell us about your business needs')
+								.col-12
+									button.btn.btn-primary.rounded-pill.w-100(type='submit') Send Message
+
+			.col-lg-6
+				.row.g-4
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-4
+								i.fas.fa-phone.fa-2x.text-primary.mb-3
+								h6.mb-2 Phone
+								p.mb-0 +1 (555) 123-4567
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-4
+								i.fas.fa-envelope.fa-2x.text-primary.mb-3
+								h6.mb-2 Email
+								p.mb-0 hello@griffin.com
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-4
+								i.fas.fa-clock.fa-2x.text-primary.mb-3
+								h6.mb-2 Support Hours
+								p.mb-0 Mon-Fri: 9AM-6PM EST
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-4
+								i.fas.fa-map-marker-alt.fa-2x.text-primary.mb-3
+								h6.mb-2 Location
+								p.mb-0 San Francisco, CA 

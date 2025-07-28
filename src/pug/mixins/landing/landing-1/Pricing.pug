@@ -4,54 +4,58 @@ append variables
 			{
 				image:'pie.png',
 				category:'Starter',
-				price:'6',
+				price:'29',
+				month: '/month',
 				cardClasses:'rounded-end-xl-0 rounded-start',
 				features:[ 
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Timeline',
+						label: '1 Store',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Advanced Search',
+						label: 'Up to 1,000 products',
 					},
 					{
-						label: 'Custom fields',
-						newBadge: true
+						icon : 'fas fa-check text-primary',
+						label: 'Basic Analytics',
 					},
 					{
-						label:'Task dependencies',
+						label:'Standard Support',
 					},
 					{
-						label:'Private teams & projects',
+						label:'Payment Gateway Integration',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
 			},
 			{
 				image:'bolt.png',
-				category:'Team',
-				price:'12',
+				category:'Professional',
+				price:'79',
+				month: '/month',
 				cardClasses:' rounded-top-0 rounded-xl-0 border border-2 border-primary mt-5 mt-md-0',
 				features:[ 
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Timeline',
+						label: 'Up to 5 Stores',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Advanced Search',
+						label: 'Unlimited Products',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Custom fields',
+						label: 'Advanced Analytics',
 						newBadge: true
 					},
 					{
-						label:'Task dependencies',
+						icon : 'fas fa-check text-primary',
+						label:'Priority Support',
 					},
 					{
-						label:'Private teams & projects',
+						icon : 'fas fa-check text-primary',
+						label:'API Access',
 					}
 				],
 				buyBtnClass: 'btn-primary',
@@ -59,28 +63,30 @@ append variables
 			{
 				image:'edit.png',
 				category:'Business',
-				price:'23',
+				price:'199',
+				month: '/month',
 				cardClasses:'rounded-start rounded-start-xl-0 mt-5 mt-md-0',
 				features:[ 
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Timeline',
+						label: 'Up to 20 Stores',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Advanced Search',
+						label: 'Unlimited Products',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Custom fields',
+						label: 'Custom Branding',
 						newBadge: true
 					},
 					{
-						icon : 'fas fa-star text-primary',
-						label:'Task dependencies',
+						icon : 'fas fa-check text-primary',
+						label:'White-label Solution',
 					},
 					{
-						label:'Private teams & projects',
+						icon : 'fas fa-check text-primary',
+						label:'Dedicated Support',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
@@ -88,28 +94,29 @@ append variables
 			{
 				image:'shield.png',
 				category:'Enterprise',
-				price:'40',
+				price:'499',
+				month: '/month',
 				features:[ 
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Timeline',
+						label: 'Unlimited Stores',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Advanced Search',
+						label: 'Unlimited Products',
 					},
 					{
 						icon : 'fas fa-check text-primary',
-						label: 'Custom fields',
+						label: 'Custom Integrations',
 						newBadge: true
 					},
 					{
-						icon : 'fas fa-star text-primary',
-						label:'Task dependencies',
+						icon : 'fas fa-check text-primary',
+						label:'SLA Guarantee',
 					},
 					{
-						icon : 'fas fa-star text-primary',
-						label:'Private teams & projects',
+						icon : 'fas fa-check text-primary',
+						label:'24/7 Support',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
@@ -123,7 +130,7 @@ mixin PriceList(features)
 				span.fa-li
 					span(class=feature.icon)
 			span.text-body-secondary(style=feature.icon ? '--phoenix-text-opacity:1;' : '--phoenix-text-opacity:.5;') #{feature.label}
-			if feature.label === 'Custom fields'
+			if feature.newBadge
 				span.badge.badge-phoenix.badge-phoenix-warning.ms-2.fs-10(class=feature.icon ? '' : 'opacity-50') New
 
 mixin PriceItem(config)
@@ -134,22 +141,22 @@ mixin PriceItem(config)
 		.text-center
 			h1.fw-semibold.text-primary $
 				span.fw-bolder= config.price
-				span.text-body-emphasis.fs-7.ms-1.fw-bolder USD
+				span.text-body-emphasis.fs-7.ms-1.fw-bolder= config.month
 			h5.mb-4.text-body= config.month
-			button.btn.btn-lg.mb-6.w-100(class=config.buyBtnClass) Buy
+			a.btn.btn-lg.mb-6.w-100(class=config.buyBtnClass href=`/admin/auth/sign-up`) Start Free Trial
 
 	ul.fa-ul.pricing-list
 		+PriceList(config.features)
 
 mixin Pricing
-	section.bg-body-emphasis.pt-lg-0.pt-xl-8
+	section.bg-body-emphasis.pt-lg-0.pt-xl-8#pricing
 		+Background({image: `${CWD}assets/img/bg/bg-left-15.png`, attrs: { style: { 'background-position': 'left', 'background-size': 'auto',} }, className: 'd-none d-md-block' })
 		+Background({image: `${CWD}assets/img/bg/bg-right-15.png`, attrs: { style: { 'background-position': 'right', 'background-size': 'auto',} }, className: 'd-none d-md-block' })
 		.container-small.position-relative.px-lg-7.px-xxl-3
 			.mb-4.text-center.text-sm-start
 				h4.text-primary.fw-bolder.mb-3 Pricing
-				h2 Choose the best deal for you
-			p.column-md-2.text-center.text-sm-start Entice your customers with #{name} admin dashboard. Show your best deal in this section to help customers choose from your best offers and place them all in one place with this efficient template. If you are availing more than one offer to your customers, let them compare among them and search for what they need to get. Show offer details here and entice them to buy.
+				h2 Choose the perfect plan for your business
+			p.column-md-2.text-center.text-sm-start Start your e-commerce journey with Griffin. Choose the plan that fits your business needs and scale as you grow. All plans include a 14-day free trial with no credit card required.
 
 			.row.pt-9.g-3.g-xl-0
 				each card, index in pricingCards.slice(0,3)
@@ -168,5 +175,5 @@ mixin Pricing
 								.card-body
 									+PriceItem(pricingCards[3])
 				.col-12.text-center.mt-8
-					p For Enterprise Solution with Managed SMTP, Custom API setup, Dedicated Support, and more - 
-						a(href="#!")  Contact us
+					p For Enterprise Solution with Custom Development, Dedicated Infrastructure, and Advanced Security - 
+						a(href="#contact")  Contact us

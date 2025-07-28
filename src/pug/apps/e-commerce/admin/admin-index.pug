@@ -1,0 +1,168 @@
+extends ../../../layouts/LayoutTheme
+
+block wrapperContent
+  .container-fluid.px-0
+    .row.g-0
+      .col-12
+        .bg-body-emphasis.px-4.py-3
+          .row.align-items-center
+            .col
+              h4.mb-0 Admin Index
+            .col-auto
+              button.btn.btn-outline-danger.btn-sm#logoutBtn
+                i.fas.fa-sign-out-alt.me-2
+                | Logout
+    
+    .row.g-0
+      .col-12
+        .p-4
+          .row.g-4
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-primary.mb-2
+                    i.fas.fa-shopping-cart
+                  h5.card-title Products
+                  p.card-text.text-muted Manage your products
+                  a.btn.btn-primary.btn-sm(href='products') View Products
+            
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-success.mb-2
+                    i.fas.fa-users
+                  h5.card-title Customers
+                  p.card-text.text-muted View customer information
+                  a.btn.btn-success.btn-sm(href='customers') View Customers
+            
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-warning.mb-2
+                    i.fas.fa-shopping-bag
+                  h5.card-title Orders
+                  p.card-text.text-muted Manage orders
+                  a.btn.btn-warning.btn-sm(href='orders') View Orders
+            
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-info.mb-2
+                    i.fas.fa-store
+                  h5.card-title Store
+                  p.card-text.text-muted Manage your store
+                  a.btn.btn-info.btn-sm(href='stores') View Store
+            
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-secondary.mb-2
+                    i.fas.fa-chart-line
+                  h5.card-title Admin Dashboard
+                  p.card-text.text-muted View analytics and statistics
+                  a.btn.btn-secondary.btn-sm(href='dashboard') View Dashboard
+            
+            .col-md-6.col-lg-3#createAdminCard
+              .card.border-0.shadow-sm
+                .card-body.text-center
+                  .fs-1.text-warning.mb-2
+                    i.fas.fa-user-plus
+                  h5.card-title Create Admin
+                  p.card-text.text-muted Add store administrators
+                  a.btn.btn-warning.btn-sm(href='create-admin') Create Admin
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if user is logged in
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        // Redirect to login if not authenticated
+        window.location.href = '/admin/auth/sign-in';
+        return;
+      }
+      
+      // Check if user has stores
+      async function checkUserStores() {
+        try {
+          const response = await fetch('/api/v1/stores/my-stores', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.success || !data.data || data.data.length === 0) {
+              // User has no stores, redirect to create-store
+              window.location.href = '/admin/create-store';
+              return;
+            }
+          } else {
+            // Error checking stores, redirect to create-store as fallback
+            window.location.href = '/admin/create-store';
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking user stores:', error);
+          // Error checking stores, redirect to create-store as fallback
+          window.location.href = '/admin/create-store';
+          return;
+        }
+      }
+      
+      // Check user permissions and show/hide elements accordingly
+      async function checkUserPermissions() {
+        try {
+          const userResponse = await fetch('/api/v1/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            
+            if (userData.success && userData.data) {
+              const user = userData.data;
+              
+              // Show/hide create admin card based on role
+              const createAdminCard = document.getElementById('createAdminCard');
+              if (createAdminCard) {
+                if (user.role === 'store_owner' || user.isPlatformAdmin) {
+                  createAdminCard.classList.remove('d-none');
+                } else {
+                  createAdminCard.classList.add('d-none');
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user permissions:', error);
+        }
+      }
+      
+      // Check user stores on page load
+      checkUserStores();
+      checkUserPermissions();
+      
+      // Handle logout
+      document.getElementById('logoutBtn').addEventListener('click', function() {
+        // Clear local storage
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        
+        // Redirect to login page
+        window.location.href = '/admin/auth/sign-in';
+      });
+      
+      // Add authentication header to all fetch requests
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options = {}) {
+        if (token) {
+          options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${token}`
+          };
+        }
+        return originalFetch(url, options);
+      };
+    }); 

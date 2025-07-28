@@ -74,7 +74,12 @@ const checkUserStores = async (req, res, next) => {
     }
 };
 
-// Admin dashboard (with store isolation)
+// Admin index (with store isolation)
+router.get('/', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
+    res.render('admin/admin-index');
+});
+
+// Admin dashboard (analytics and statistics)
 router.get('/dashboard', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
     res.render('admin/dashboard');
 });

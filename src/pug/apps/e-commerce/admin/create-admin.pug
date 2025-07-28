@@ -133,9 +133,9 @@ block wrapperContent
           span#successText
       
       .d-grid.mt-4
-        a.btn.btn-outline-primary(href='/admin/dashboard')
+        a.btn.btn-outline-primary(href='/admin/')
           span.fas.fa-angle-left.me-2
-          | Back to Dashboard
+          | Back to Admin Index
 
 block append scripts
   script.
@@ -278,11 +278,11 @@ block append scripts
           const data = await response.json();
           
           if (response.ok && data.success) {
-            showSuccess('Store admin created successfully! Redirecting to dashboard...');
+            showSuccess('Store admin created successfully! Redirecting to admin index...');
             
-            // Redirect to dashboard after a short delay
+            // Redirect to admin index after a short delay
             setTimeout(() => {
-              window.location.href = '/admin/dashboard';
+              window.location.href = '/admin/';
             }, 2000);
             
           } else {
@@ -320,18 +320,18 @@ block append scripts
               // Only store owners and platform admins can create admins
               if (user.role !== 'store_owner' && !user.isPlatformAdmin) {
                 alert('Access denied. Only store owners and platform admins can create store admins.');
-                window.location.href = '/admin/dashboard';
+                window.location.href = '/admin/';
                 return;
               }
             }
           } else {
-            // If we can't get user data, redirect to dashboard
-            window.location.href = '/admin/dashboard';
+            // If we can't get user data, redirect to admin index
+            window.location.href = '/admin/';
             return;
           }
         } catch (error) {
           console.error('Error checking permissions:', error);
-          window.location.href = '/admin/dashboard';
+          window.location.href = '/admin/';
           return;
         }
       }

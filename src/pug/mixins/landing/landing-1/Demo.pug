@@ -1,0 +1,52 @@
+mixin Demo
+	+Section('container-small px-lg-7 px-xxl-3').pt-15.pb-0#demo
+		.row.align-items-center
+			.col-lg-6.mb-6.mb-lg-0
+				h4.text-primary.fw-bolder.mb-3 Demo
+				h2.mb-3.text-body-emphasis.lh-base See Griffin in Action
+				p.mb-4 Experience the power of our multi-tenant e-commerce platform. Watch how easy it is to manage multiple stores, track analytics, and scale your business.
+				
+				.row.g-3.mb-4
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-3
+								i.fas.fa-store.fa-2x.text-primary.mb-2
+								h6.mb-1 Multi-Store Dashboard
+								p.mb-0.fs-9 Manage all stores from one place
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-3
+								i.fas.fa-chart-line.fa-2x.text-primary.mb-2
+								h6.mb-1 Real-time Analytics
+								p.mb-0.fs-9 Track performance across stores
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-3
+								i.fas.fa-shield-alt.fa-2x.text-primary.mb-2
+								h6.mb-1 Secure Architecture
+								p.mb-0.fs-9 Enterprise-grade security
+					.col-6
+						.card.border.border-translucent.h-100
+							.card-body.text-center.p-3
+								i.fas.fa-plug.fa-2x.text-primary.mb-2
+								h6.mb-1 Easy Integrations
+								p.mb-0.fs-9 Connect with your favorite tools
+				
+				.d-flex.gap-2
+					a.btn.btn-primary.rounded-pill(href=`/admin/auth/sign-up` role='button') Start Free Trial
+					a.btn.btn-outline-primary.rounded-pill(href='#contact' role='button') Schedule Demo
+
+			.col-lg-6
+				.position-relative
+					.card.border.border-translucent.overflow-hidden
+						.card-body.p-0
+							.position-relative
+								img.w-100(src=`${CWD}assets/img/generic/dashboard-alt.png` alt='Dashboard Preview').d-dark-none
+								img.w-100(src=`${CWD}assets/img/generic/dashboard-alt-dark.png` alt='Dashboard Preview').d-light-none
+								.position-absolute.top-0.start-0.w-100.h-100.d-flex.align-items-center.justify-content-center
+									.btn.btn-primary.btn-lg.rounded-circle
+										i.fas.fa-play
+					.position-absolute.top-50.start-50.translate-middle
+						.badge.bg-primary-subtle.text-primary.px-3.py-2
+							i.fas.fa-live-demo.me-2
+							| Live Demo 

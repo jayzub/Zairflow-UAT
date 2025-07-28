@@ -156,20 +156,20 @@ block append scripts
                 if (storeResponse.ok) {
                   const storeData = await storeResponse.json();
                   if (storeData.success && storeData.data && storeData.data.length > 0) {
-                    // User has stores, redirect to dashboard
-                    window.location.href = '/admin/dashboard';
+                            // User has stores, redirect to admin index
+                    window.location.href = '/admin/';
                   } else {
                     // User has no stores, redirect to create-store
                     window.location.href = '/admin/create-store';
                   }
                 } else {
-                  // Fallback to dashboard
-                  window.location.href = '/admin/dashboard';
+                  // Fallback to admin index
+                  window.location.href = '/admin/';
                 }
               } catch (error) {
                 console.error('Error checking stores:', error);
-                // Fallback to dashboard
-                window.location.href = '/admin/dashboard';
+                // Fallback to admin index
+                window.location.href = '/admin/';
               }
             }, 1500);
             
@@ -188,7 +188,7 @@ block append scripts
       // Check if user is already logged in
       const token = localStorage.getItem('adminToken');
       if (token) {
-        // Redirect to dashboard if already logged in
-        window.location.href = '/admin/dashboard';
+        // Redirect to admin index if already logged in
+        window.location.href = '/admin/';
       }
     }); 

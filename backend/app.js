@@ -53,12 +53,6 @@ app.use((req, res, next) => {
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '..', 'src', 'pug', 'apps', 'e-commerce'));
 
-app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1d' }));
-app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-// Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Routes
 const productRoutes = require('./routes/products');
 const categoriesRoute = require('./routes/categories');
@@ -144,9 +138,9 @@ app.use(methodOverride('_method'));
 // Import authentication middleware (will be applied to specific routes)
 const { authJwt } = require('./middleware/jwt');
 
-// Root route
+// Root route - render landing page
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.render('index');
 });
 
 // API Routes
@@ -161,6 +155,13 @@ app.use(`${API_URL}/customers`, customerRoutes);
 // Admin Frontend Routes
 // app.use(`${API_URL}/admin`, adminRoutes);
 app.use('/admin', adminRoutes); // Add this line for cleaner URLs
+
+// Static file middleware (after routes to allow Pug rendering)
+app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: '1d' }));
+app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database Connection
 const connectToDatabase = require('./config/database');
