@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Customer = require('../models/customer');
+const { handleAuthError } = require('../utils/responseHandler');
 
 // Middleware to verify JWT token and attach user/customer to request
 const verifyToken = (req, res, next) => {
@@ -8,7 +9,7 @@ const verifyToken = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
     
     if (!token) {
-        return res.status(401).json({ error: 'Access token required' });
+        return handleAuthError(req, res, 'Access token required');
     }
 
     try {
@@ -24,7 +25,7 @@ const verifyToken = (req, res, next) => {
         
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Invalid token' });
+        return handleAuthError(req, res, 'Invalid token');
     }
 };
 
@@ -35,7 +36,7 @@ const requireAuth = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
         
         if (!token) {
-            return res.status(401).json({ error: 'Access token required' });
+            return handleAuthError(req, res, 'Access token required');
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -44,19 +45,19 @@ const requireAuth = async (req, res, next) => {
         const userId = decoded.id || decoded.userID;
         
         if (!userId) {
-            return res.status(401).json({ error: 'Invalid token format' });
+            return handleAuthError(req, res, 'Invalid token format');
         }
 
         // Find the user in database
         const user = await User.findById(userId);
         if (!user || !user.isActive) {
-            return res.status(401).json({ error: 'User not found or inactive' });
+            return handleAuthError(req, res, 'User not found or inactive');
         }
 
         req.user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Authentication failed' });
+        return handleAuthError(req, res, 'Authentication failed');
     }
 };
 
@@ -67,25 +68,25 @@ const requireCustomerAuth = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
         
         if (!token) {
-            return res.status(401).json({ error: 'Access token required' });
+            return handleAuthError(req, res, 'Access token required');
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         if (decoded.type !== 'customer') {
-            return res.status(401).json({ error: 'Customer token required' });
+            return handleAuthError(req, res, 'Customer token required');
         }
 
         // Find the customer in database
         const customer = await Customer.findById(decoded.id);
         if (!customer || !customer.isActive) {
-            return res.status(401).json({ error: 'Customer not found or inactive' });
+            return handleAuthError(req, res, 'Customer not found or inactive');
         }
 
         req.customer = customer;
         next();
     } catch (error) {
-        return res.status(401).json({ error: 'Authentication failed' });
+        return handleAuthError(req, res, 'Authentication failed');
     }
 };
 

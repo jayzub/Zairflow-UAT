@@ -1,122 +1,123 @@
 append variables
 	-
-		var pricingCards= [
+		var pricingCards = [
 			{
-				image:'pie.png',
-				category:'Starter',
-				price:'29',
+				image: 'pie.png',
+				category: 'Starter',
+				price: '39',
 				month: '/month',
-				cardClasses:'rounded-end-xl-0 rounded-start',
-				features:[ 
+				cardClasses: 'rounded-end-xl-0 rounded-start',
+				features: [
 					{
-						icon : 'fas fa-check text-primary',
-						label: '1 Store',
+						icon: 'fas fa-check text-primary',
+						label: '1 Store (Web only)',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label: 'Up to 1,000 products',
+						icon: 'fas fa-check text-primary',
+						label: 'Up to 500 Products',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label: 'Basic Analytics',
+						icon: 'fas fa-check text-primary',
+						label: 'Order Management',
 					},
 					{
-						label:'Standard Support',
+						icon: 'fas fa-check text-primary',
+						label: 'Basic Sales Reports',
 					},
 					{
-						label:'Payment Gateway Integration',
+						label: 'Email Support',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
 			},
 			{
-				image:'bolt.png',
-				category:'Professional',
-				price:'79',
+				image: 'bolt.png',
+				category: 'Growth Pro',
+				price: '99',
 				month: '/month',
-				cardClasses:' rounded-top-0 rounded-xl-0 border border-2 border-primary mt-5 mt-md-0',
-				features:[ 
+				cardClasses: 'rounded-top-0 rounded-xl-0 border border-2 border-primary mt-5 mt-md-0',
+				features: [
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Up to 5 Stores',
 					},
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Unlimited Products',
 					},
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Advanced Analytics',
 						newBadge: true
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'Priority Support',
+						icon: 'fas fa-check text-primary',
+						label: 'API Access',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'API Access',
+						icon: 'fas fa-check text-primary',
+						label: 'Priority Email Support',
 					}
 				],
 				buyBtnClass: 'btn-primary',
 			},
 			{
-				image:'edit.png',
-				category:'Business',
-				price:'199',
+				image: 'edit.png',
+				category: 'Brand Builder',
+				price: '249',
 				month: '/month',
-				cardClasses:'rounded-start rounded-start-xl-0 mt-5 mt-md-0',
-				features:[ 
+				cardClasses: 'rounded-start rounded-start-xl-0 mt-5 mt-md-0',
+				features: [
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Up to 20 Stores',
 					},
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Unlimited Products',
 					},
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Custom Branding',
 						newBadge: true
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'White-label Solution',
+						icon: 'fas fa-check text-primary',
+						label: 'White-label Checkout',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'Dedicated Support',
+						icon: 'fas fa-check text-primary',
+						label: 'Dedicated Support',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
 			},
 			{
-				image:'shield.png',
-				category:'Enterprise',
-				price:'499',
+				image: 'shield.png',
+				category: 'Enterprise Scale',
+				price: '599',
 				month: '/month',
-				features:[ 
+				features: [
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Unlimited Stores',
 					},
 					{
-						icon : 'fas fa-check text-primary',
+						icon: 'fas fa-check text-primary',
 						label: 'Unlimited Products',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label: 'Custom Integrations',
+						icon: 'fas fa-check text-primary',
+						label: 'Custom System Integrations',
 						newBadge: true
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'SLA Guarantee',
+						icon: 'fas fa-check text-primary',
+						label: 'SLA Guarantee',
 					},
 					{
-						icon : 'fas fa-check text-primary',
-						label:'24/7 Support',
+						icon: 'fas fa-check text-primary',
+						label: '24/7 Support',
 					}
 				],
 				buyBtnClass: 'btn-outline-primary',
@@ -156,7 +157,7 @@ mixin Pricing
 			.mb-4.text-center.text-sm-start
 				h4.text-primary.fw-bolder.mb-3 Pricing
 				h2 Choose the perfect plan for your business
-			p.column-md-2.text-center.text-sm-start Start your e-commerce journey with Griffin. Choose the plan that fits your business needs and scale as you grow. All plans include a 14-day free trial with no credit card required.
+			p.column-md-2.text-center.text-sm-start Start your e-commerce journey with Griffin. Choose the plan that fits your business needs and scale as you grow.
 
 			.row.pt-9.g-3.g-xl-0
 				each card, index in pricingCards.slice(0,3)

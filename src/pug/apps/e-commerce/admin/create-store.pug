@@ -3,6 +3,12 @@ include ../../../layouts/LayoutSimpleAuth
 
 block wrapperContent
   +LayoutBasic({logo:false, columnClass:'col-xl-8 col-xxl-6'})
+    //- Sign out button positioned in top-right
+    .position-absolute.top-0.end-0.p-3
+      button.btn.btn-outline-danger.btn-sm#signOutBtn
+        i.fas.fa-sign-out-alt.me-2
+        | Sign Out
+    
     .text-center.mb-6.mx-auto
       img.mb-7.d-dark-none(src=`${CWD}assets/img/spot-illustrations/1.png` alt='phoenix')
       img.mb-7.d-light-none(src=`${CWD}assets/img/spot-illustrations/dark_1.png` alt='phoenix')
@@ -200,6 +206,7 @@ block append scripts
       const successMessage = document.getElementById('successMessage');
       const errorText = document.getElementById('errorText');
       const successText = document.getElementById('successText');
+      const signOutBtn = document.getElementById('signOutBtn');
       
       // Hide messages initially
       function hideMessages() {
@@ -231,6 +238,19 @@ block append scripts
           form.querySelector('button[type="submit"]').disabled = false;
         }
       }
+      
+      // Sign out functionality
+      signOutBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to sign out?')) {
+          // Clear authentication data
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userRole');
+          
+          // Redirect to sign in page
+          window.location.href = '/admin/auth/sign-in';
+        }
+      });
       
       // Validate email format
       function validateEmail(email) {
