@@ -1,4 +1,5 @@
 const Store = require('../models/store');
+const { handleAuthError, handleError } = require('../utils/responseHandler');
 
 /**
  * Middleware to extract store information from request
@@ -74,16 +75,14 @@ const extractStore = async (req, res, next) => {
         
         // If no store found and user is not platform admin, return error
         if (!store) {
-            return res.status(404).json({ 
-                error: 'Store not found or inactive. Please specify a store or ensure you have access to a store.' 
-            });
+            return handleError(req, res, 'Store not found or inactive. Please specify a store or ensure you have access to a store.', 404);
         }
         
         req.store = store;
         next();
     } catch (error) {
         console.error('Store extraction error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return handleError(req, res, 'Internal server error', 500);
     }
 };
 
@@ -99,11 +98,11 @@ const requireStoreAccess = (accessLevel = 'admin') => {
             }
             
             if (!req.store) {
-                return res.status(400).json({ error: 'Store not found' });
+                return handleError(req, res, 'Store not found', 400);
             }
             
             if (!req.user) {
-                return res.status(401).json({ error: 'Authentication required' });
+                return handleAuthError(req, res, 'Authentication required', 401);
             }
             
             // Check if user is store owner
@@ -123,10 +122,10 @@ const requireStoreAccess = (accessLevel = 'admin') => {
                 return next();
             }
             
-            return res.status(403).json({ error: 'Access denied' });
+            return handleAuthError(req, res, 'Access denied', 403);
         } catch (error) {
             console.error('Store access check error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+            return handleError(req, res, 'Internal server error', 500);
         }
     };
 };

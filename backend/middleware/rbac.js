@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const { handleAuthError } = require('../utils/responseHandler');
 
 /**
  * Role-based access control middleware
@@ -89,19 +90,11 @@ const hasMinimumRole = (userRole, minimumRole) => {
 const requirePermission = (permission) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
+      return handleAuthError(req, res, 'Authentication required', 401);
     }
 
     if (!hasPermission(req.user.role, permission)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Insufficient permissions',
-        required: permission,
-        currentRole: req.user.role
-      });
+      return handleAuthError(req, res, 'Insufficient permissions', 403);
     }
 
     next();
@@ -114,19 +107,11 @@ const requirePermission = (permission) => {
 const requireMinimumRole = (minimumRole) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
+      return handleAuthError(req, res, 'Authentication required', 401);
     }
 
     if (!hasMinimumRole(req.user.role, minimumRole)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Insufficient role level',
-        required: minimumRole,
-        currentRole: req.user.role
-      });
+      return handleAuthError(req, res, 'Insufficient role level', 403);
     }
 
     next();
@@ -139,19 +124,11 @@ const requireMinimumRole = (minimumRole) => {
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
+      return handleAuthError(req, res, 'Authentication required', 401);
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied for this role',
-        allowedRoles,
-        currentRole: req.user.role
-      });
+      return handleAuthError(req, res, 'Access denied for this role', 403);
     }
 
     next();
@@ -164,10 +141,7 @@ const requireRole = (...allowedRoles) => {
 const requireStoreOwnership = () => {
   return async (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required'
-      });
+      return handleAuthError(req, res, 'Authentication required', 401);
     }
 
     // Platform admins can access everything
@@ -177,10 +151,7 @@ const requireStoreOwnership = () => {
 
     // For store owners and admins, ensure they have access to the store
     if (!req.store) {
-      return res.status(400).json({
-        success: false,
-        error: 'Store context required'
-      });
+      return handleAuthError(req, res, 'Store context required', 400);
     }
 
     // Check if user owns the store or is an admin of the store
@@ -188,10 +159,7 @@ const requireStoreOwnership = () => {
     const isAdmin = req.store.admins.some(adminId => adminId.toString() === req.user._id.toString());
 
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        error: 'Access denied to this store'
-      });
+      return handleAuthError(req, res, 'Access denied to this store', 403);
     }
 
     next();
