@@ -11,40 +11,34 @@ const login = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     const secret = process.env.JWT_SECRET || process.env.secret;
 
-    if (!user) {
+    // Check if user exists and password is correct
+    if (!user || !bcrypt.compareSync(req.body.password, user.passwordHash)) {
         return res.status(400).json({
             success: false,
-            message: 'User with given email not found'
+            message: 'Invalid email or password'
         });
     }
 
-    if (user && bcrypt.compareSync(req.body.password, user.passwordHash)) {
-        const token = jwt.sign({
-            id: user.id,
-            email: user.email,
-            isAdmin: user.isAdmin,
-            role: user.role
-        }, secret, { expiresIn: '1d' });
+    const token = jwt.sign({
+        id: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        role: user.role
+    }, secret, { expiresIn: '1d' });
 
-        // Set JWT as HTTP-only cookie
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // only send over HTTPS in production
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
-        });
+    // Set JWT as HTTP-only cookie
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // only send over HTTPS in production
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
 
-        return res.status(200).json({
-            success: true,
-            user: user.email,
-            token: token
-        });
-    } else {
-        return res.status(400).json({
-            success: false,
-            message: 'Password mismatch'
-        });
-    }
+    return res.status(200).json({
+        success: true,
+        user: user.email,
+        token: token
+    });
 });
 
 /**
