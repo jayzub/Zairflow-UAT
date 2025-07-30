@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { asyncHandler } = require('../middleware/asyncHandler').default;
+const { asyncHandler } = require('../middleware/asyncHandler');
 const { requirePermission, requireMinimumRole } = require('../middleware/rbac');
 
 /**

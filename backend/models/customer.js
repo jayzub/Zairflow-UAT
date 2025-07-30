@@ -268,7 +268,6 @@ customerSchema.pre('save', function(next) {
 });
 
 // Indexes
-customerSchema.index({ email: 1 });
 customerSchema.index({ isActive: 1 });
 customerSchema.index({ isVerified: 1 });
 customerSchema.index({ 'wishlist.product': 1 });

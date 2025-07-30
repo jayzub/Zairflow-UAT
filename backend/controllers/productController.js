@@ -8,10 +8,10 @@ const myCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
 const { getRelatedProducts } = require('../helpers/productHelpers');
 const { upload } = require('../config/multerConfig');
 const Review = require('../models/review');
-const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson').default;
-const { asyncHandler } = require('../middleware/asyncHandler').default;
+const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson');
+const { asyncHandler } = require('../middleware/asyncHandler');
 // const sanitizeHtml = require('sanitize-html');
-const { sanitizeOptions } = require('../helpers/sanitizeOptions').default;
+const { sanitizeOptions } = require('../helpers/sanitizeOptions');
 
 
 // Test endpoint for AJAX functionality

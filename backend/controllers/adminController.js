@@ -6,11 +6,11 @@ const BaseProduct = require('../models/products/baseProduct');
 const NodeCache = require('node-cache');
 const myCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
 const { upload } = require('../config/multerConfig');
-const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson').default;
-const { asyncHandler } = require('../middleware/asyncHandler').default;
+const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson');
+const { asyncHandler } = require('../middleware/asyncHandler');
 const sanitizeHtml = require('sanitize-html');
 const cloudinary = require('../config/cloudinary');
-const { sanitizeOptions } = require('../helpers/sanitizeOptions').default;
+const { sanitizeOptions } = require('../helpers/sanitizeOptions');
 const { buildProductFilter, buildAggregationPipeline, serializeProducts, getPageRange, getProductTypes, fetchCategoriesAndVendors, parseField, isValidObjectId, resolveStoreId, productTypeModelMap, initProductFields, fetchProductWithRelated, parseUpdateFields, mergeImages, prepareUpdateData } = require('../helpers/productHelpers');
 const { DEFAULT_LIMIT, DEFAULT_PAGE, DEFAULT_SORT, DEFAULT_ORDER } = require('../utils/constants');
 

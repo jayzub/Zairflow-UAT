@@ -19,4 +19,4 @@ const sanitizeOptions = {
     }
 };
 
-export default { sanitizeOptions };
+module.exports = { sanitizeOptions };

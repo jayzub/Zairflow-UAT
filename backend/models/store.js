@@ -98,7 +98,6 @@ storeSchema.virtual('id').get(function () {
 });
 
 // Indexes
-storeSchema.index({ slug: 1 });
 storeSchema.index({ owner: 1 });
 storeSchema.index({ isActive: 1 });
 storeSchema.index({ 'subscription.plan': 1 });

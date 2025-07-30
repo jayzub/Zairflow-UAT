@@ -116,11 +116,6 @@ userSchema.virtual('id').get(function () {
     return this._id.toHexString();
 });
 
-// Virtuals
-userSchema.virtual('id').get(function () {
-    return this._id.toHexString();
-});
-
 // Methods
 userSchema.methods.hasPermission = function(permission) {
     return this.permissions.includes(permission) || this.isPlatformAdmin;
@@ -153,7 +148,6 @@ userSchema.pre('save', function(next) {
 });
 
 // Indexes
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ ownedStores: 1 });

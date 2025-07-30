@@ -1,7 +1,7 @@
 const Customer = require('../models/customer');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
-const { asyncHandler } = require('../middleware/asyncHandler').default;
+const { asyncHandler } = require('../middleware/asyncHandler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 

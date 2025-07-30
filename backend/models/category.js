@@ -19,8 +19,7 @@ const categorySchema = mongoose.Schema(
         store: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Store',
-            required: true,
-            index: true
+            required: true
         },
         name: { 
             type: String, 
@@ -92,7 +91,6 @@ categorySchema.virtual('productsCount', {
 
 // Indexes
 categorySchema.index({ store: 1, parent: 1 });
-categorySchema.index({ store: 1, slug: 1 });
 categorySchema.index({ store: 1, displayOrder: 1 });
 categorySchema.index({ store: 1, isActive: 1 });
 // Compound unique index for store + slug combination

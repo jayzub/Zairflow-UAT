@@ -5,8 +5,7 @@ const baseProductSchema = new mongoose.Schema({
     store: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Store',
-        required: true,
-        index: true
+        required: true
     },
     name: { type: String, required: true },
     description: { type: String, required: true },
@@ -28,13 +27,11 @@ const baseProductSchema = new mongoose.Schema({
     category: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
-        required: true,
-        index: true,
+        required: true
     }],
     vendor: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Vendor',
-        index: true
+        ref: 'Vendor'
     },
     reviews: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -79,7 +76,7 @@ baseProductSchema.index({ store: 1, brand: 1 });
 baseProductSchema.index({ store: 1, isActive: 1 });
 baseProductSchema.index({ name: 'text', description: 'text' });
 baseProductSchema.index({ tags: 1 });
-baseProductSchema.index({ slug: 1 });
+// baseProductSchema.index({ slug: 1 });
 
 const BaseProduct = mongoose.model('Product', baseProductSchema);
 
