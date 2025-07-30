@@ -3,8 +3,8 @@ mixin DashboardDropdown(id, reveal, iconClass='fs-10')
     button.btn.btn-sm.dropdown-toggle.dropdown-caret-none.transition-none&attributes(attributes)(type='button' class=`btn-reveal${reveal ? '-' + reveal : ''}` id=id data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent")
       span.fas.fa-ellipsis-h(class=iconClass)
     .dropdown-menu.dropdown-menu-end.py-2(aria-labelledby=id )
-      a(href=`/api/v1/products/${id}`).dropdown-item View
-      a(href=`/api/v1/products/edit/${id}`).dropdown-item Edit
+      a(href=`/api/products/${id}`).dropdown-item View
+      a(href=`/api/products/edit/${id}`).dropdown-item Edit
       .dropdown-divider
       a(href='#!').dropdown-item.text-danger Remove
 

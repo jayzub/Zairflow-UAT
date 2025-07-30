@@ -46,7 +46,7 @@ SESSION_SECRET=your-session-secret-key
 
 # API Configuration
 API_VERSION=v1
-API_PREFIX=/api/v1
+API_PREFIX=/api
 
 # Store Configuration
 MAX_STORES_PER_USER=5

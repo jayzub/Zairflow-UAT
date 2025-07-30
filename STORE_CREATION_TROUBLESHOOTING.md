@@ -48,7 +48,7 @@ npm run test-store
 ### **Method 2: Manual Testing**
 1. **Register a store owner**:
    ```bash
-   curl -X POST http://localhost:3001/api/v1/users/register \
+   curl -X POST http://localhost:3001/api/users/register \
      -H "Content-Type: application/json" \
      -d '{
        "name": "Test Owner",
@@ -61,7 +61,7 @@ npm run test-store
 
 2. **Login**:
    ```bash
-   curl -X POST http://localhost:3001/api/v1/users/login \
+   curl -X POST http://localhost:3001/api/users/login \
      -H "Content-Type: application/json" \
      -d '{
        "email": "test@store.com",
@@ -71,7 +71,7 @@ npm run test-store
 
 3. **Create store** (use the token from step 2):
    ```bash
-   curl -X POST http://localhost:3001/api/v1/stores \
+   curl -X POST http://localhost:3001/api/stores \
      -H "Authorization: Bearer YOUR_JWT_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{

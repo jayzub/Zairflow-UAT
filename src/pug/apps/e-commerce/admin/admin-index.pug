@@ -85,7 +85,7 @@ block append scripts
       // Check if user has stores
       async function checkUserStores() {
         try {
-          const response = await fetch('/api/v1/stores/my-stores', {
+          const response = await fetch('/api/stores/my-stores', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -114,7 +114,7 @@ block append scripts
       // Check user permissions and show/hide elements accordingly
       async function checkUserPermissions() {
         try {
-          const userResponse = await fetch('/api/v1/users/me', {
+          const userResponse = await fetch('/api/users/me', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           

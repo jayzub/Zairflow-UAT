@@ -23,7 +23,7 @@ Set these environment variables in your Render dashboard:
 ```
 DB_URL=mongodb+srv://username:password@cluster.mongodb.net/griffin?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-here
-API_URL=/api/v1
+API_URL=/api
 NODE_ENV=production
 ```
 
@@ -97,12 +97,12 @@ griffin/
 
 ### API Endpoints
 
-The API is available at `/api/v1/`:
+The API is available at `/api/`:
 
-- `/api/v1/products` - Product management
-- `/api/v1/categories` - Category management  
-- `/api/v1/users` - User management
-- `/api/v1/orders` - Order management
+- `/api/products` - Product management
+- `/api/categories` - Category management  
+- `/api/users` - User management
+- `/api/orders` - Order management
 
 ### Health Check
 

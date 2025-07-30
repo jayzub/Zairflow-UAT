@@ -52,7 +52,7 @@ Follow the step-by-step process below.
 
 #### **Using Postman**
 ```http
-POST http://localhost:3001/api/v1/users/register
+POST http://localhost:3001/api/users/register
 Content-Type: application/json
 
 {
@@ -82,7 +82,7 @@ Content-Type: application/json
 
 #### **Using Postman**
 ```http
-POST http://localhost:3001/api/v1/users/login
+POST http://localhost:3001/api/users/login
 Content-Type: application/json
 
 {
@@ -133,7 +133,7 @@ Content-Type: application/json
 
 #### **Using Postman**
 ```http
-POST http://localhost:3001/api/v1/stores
+POST http://localhost:3001/api/stores
 Authorization: Bearer YOUR_JWT_TOKEN
 Content-Type: application/json
 
@@ -292,12 +292,12 @@ Store owners have these permissions:
 ### **1. Verify Store Creation**
 ```bash
 # List all stores
-curl http://localhost:3001/api/v1/stores/discover
+curl http://localhost:3001/api/stores/discover
 ```
 
 ### **2. Add Products**
 ```http
-POST http://localhost:3001/api/v1/products
+POST http://localhost:3001/api/products
 Authorization: Bearer YOUR_JWT_TOKEN
 Content-Type: multipart/form-data
 
@@ -313,7 +313,7 @@ Content-Type: multipart/form-data
 
 ### **3. Create Categories**
 ```http
-POST http://localhost:3001/api/v1/categories
+POST http://localhost:3001/api/categories
 Authorization: Bearer YOUR_JWT_TOKEN
 Content-Type: application/json
 
@@ -327,7 +327,7 @@ Content-Type: application/json
 
 ### **4. View Store Analytics**
 ```http
-GET http://localhost:3001/api/v1/stores/STORE_ID/analytics
+GET http://localhost:3001/api/stores/STORE_ID/analytics
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
@@ -349,17 +349,17 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ### **List All Stores**
 ```bash
-curl http://localhost:3001/api/v1/stores/discover
+curl http://localhost:3001/api/stores/discover
 ```
 
 ### **Get Store Details**
 ```bash
-curl http://localhost:3001/api/v1/stores/STORE_ID
+curl http://localhost:3001/api/stores/STORE_ID
 ```
 
 ### **Update Store**
 ```http
-PUT http://localhost:3001/api/v1/stores/STORE_ID
+PUT http://localhost:3001/api/stores/STORE_ID
 Authorization: Bearer YOUR_JWT_TOKEN
 Content-Type: application/json
 
@@ -371,7 +371,7 @@ Content-Type: application/json
 
 ### **Delete Store**
 ```http
-DELETE http://localhost:3001/api/v1/stores/STORE_ID
+DELETE http://localhost:3001/api/stores/STORE_ID
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 

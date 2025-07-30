@@ -731,7 +731,7 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
                 featured: req.query.featured === 'true',
                 onSale: req.query.onSale === 'true'
             },
-            api: process.env.API_URL || '/api/v1'
+            api: process.env.API_URL || '/api'
         });
     }
 
@@ -772,7 +772,7 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
             featured: req.query.featured === 'true',
             onSale: req.query.onSale === 'true'
         },
-        api: process.env.API_URL || '/api/v1'
+        api: process.env.API_URL || '/api'
     };
 
     res.render('landing/store-products', result);
@@ -1041,7 +1041,7 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
                 featured: req.query.featured === 'true',
                 onSale: req.query.onSale === 'true'
             },
-            api: process.env.API_URL || '/api/v1'
+            api: process.env.API_URL || '/api'
         });
     }
 
@@ -1077,7 +1077,7 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
             featured: req.query.featured === 'true',
             onSale: req.query.onSale === 'true'
         },
-        api: process.env.API_URL || '/api/v1'
+        api: process.env.API_URL || '/api'
     };
 
     res.render('landing/marketplace-products', result);

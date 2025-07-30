@@ -1829,7 +1829,7 @@
         // Special handling for product images dropzone
         if (item.id === 'product-images') {
           const productDropzoneOptions = {
-            url: '/api/v1/products',
+            url: '/api/products',
             paramName: 'images',
             maxFilesize: 5,
             maxFiles: 5,

@@ -45,14 +45,14 @@ The most common cause is a **port mismatch**:
 
 2. **Test the health endpoint directly**:
    ```bash
-   curl http://localhost:3001/api/v1/health
+   curl http://localhost:3001/api/health
    ```
-   Or visit: `http://localhost:3001/api/v1/health` in your browser
+   Or visit: `http://localhost:3001/api/health` in your browser
 
 3. **Verify Swagger configuration**:
    - Open `http://localhost:3001/api-docs`
    - Look at the top right corner for the server URL
-   - It should show: `http://localhost:3001/api/v1`
+   - It should show: `http://localhost:3001/api`
 
 ### **Solution 3: Check Environment Variables**
 
@@ -73,12 +73,12 @@ If Swagger UI still shows the wrong URL:
 
 1. **In Swagger UI**:
    - Look for the server dropdown (top right)
-   - Select the correct server: `http://localhost:3001/api/v1`
+   - Select the correct server: `http://localhost:3001/api`
    - If not available, manually edit the URL in the request
 
 2. **Test with curl** to verify the endpoint works:
    ```bash
-   curl -X POST http://localhost:3001/api/v1/users/login \
+   curl -X POST http://localhost:3001/api/users/login \
      -H "Content-Type: application/json" \
      -d '{"email":"admin@platform.com","password":"admin123"}'
    ```
@@ -88,7 +88,7 @@ If Swagger UI still shows the wrong URL:
 ### **Step 1: Test Server Health**
 ```bash
 # Test health endpoint
-curl http://localhost:3001/api/v1/health
+curl http://localhost:3001/api/health
 ```
 
 Expected response:
@@ -106,7 +106,7 @@ Expected response:
 ### **Step 2: Test Login Endpoint**
 ```bash
 # Test login endpoint
-curl -X POST http://localhost:3001/api/v1/users/login \
+curl -X POST http://localhost:3001/api/users/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@platform.com","password":"admin123"}'
 ```
@@ -186,9 +186,9 @@ Look for:
 ## 📋 **Verification Checklist**
 
 - [ ] Server is running on port 3001
-- [ ] Health endpoint responds: `http://localhost:3001/api/v1/health`
+- [ ] Health endpoint responds: `http://localhost:3001/api/health`
 - [ ] Swagger UI loads: `http://localhost:3001/api-docs`
-- [ ] Server URL in Swagger shows: `http://localhost:3001/api/v1`
+- [ ] Server URL in Swagger shows: `http://localhost:3001/api`
 - [ ] Login endpoint works in Postman
 - [ ] Browser cache is cleared
 - [ ] No CORS errors in browser console

@@ -225,7 +225,7 @@ append scripts
           console.log('Submitting form data...');
           
           // Check if user is authenticated
-          const authCheck = await fetch('/api/v1/users/profile', {
+          const authCheck = await fetch('/api/users/profile', {
             method: 'GET',
             credentials: 'include'
           });

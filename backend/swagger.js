@@ -18,11 +18,11 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3001/api/v1',
+        url: 'http://localhost:3001/api',
         description: 'Development server'
       },
       {
-        url: 'https://your-domain.com/api/v1',
+        url: 'https://your-domain.com/api',
         description: 'Production server'
       }
     ],

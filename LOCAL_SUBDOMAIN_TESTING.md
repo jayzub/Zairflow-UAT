@@ -27,17 +27,17 @@ sudo nano /etc/hosts
 
 1. **Test main domain:**
 ```bash
-curl -H "Host: griffin.local" http://localhost:3001/api/v1/stores
+curl -H "Host: griffin.local" http://localhost:3001/api/stores
 ```
 
 2. **Test subdomain:**
 ```bash
-curl -H "Host: store1.griffin.local" http://localhost:3001/api/v1/products
+curl -H "Host: store1.griffin.local" http://localhost:3001/api/products
 ```
 
 3. **Test another subdomain:**
 ```bash
-curl -H "Host: test-store.griffin.local" http://localhost:3001/api/v1/stores
+curl -H "Host: test-store.griffin.local" http://localhost:3001/api/stores
 ```
 
 ### Step 3: Create Test Stores
@@ -56,7 +56,7 @@ npm run create-store
 ```bash
 # Get a JWT token first (you'll need to implement login)
 # Then create a store:
-curl -X POST http://localhost:3001/api/v1/stores \
+curl -X POST http://localhost:3001/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -73,7 +73,7 @@ curl -X POST http://localhost:3001/api/v1/stores \
 1. **Create multiple stores with different slugs:**
 ```bash
 # Store 1
-curl -X POST http://localhost:3001/api/v1/stores \
+curl -X POST http://localhost:3001/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -85,7 +85,7 @@ curl -X POST http://localhost:3001/api/v1/stores \
   }'
 
 # Store 2
-curl -X POST http://localhost:3001/api/v1/stores \
+curl -X POST http://localhost:3001/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -100,10 +100,10 @@ curl -X POST http://localhost:3001/api/v1/stores \
 2. **Test subdomain access:**
 ```bash
 # Test electronics store
-curl -H "Host: electronics-store.griffin.local" http://localhost:3001/api/v1/products
+curl -H "Host: electronics-store.griffin.local" http://localhost:3001/api/products
 
 # Test fashion store
-curl -H "Host: fashion-store.griffin.local" http://localhost:3001/api/v1/products
+curl -H "Host: fashion-store.griffin.local" http://localhost:3001/api/products
 ```
 
 ### Step 5: Browser Testing
@@ -129,17 +129,17 @@ The middleware should automatically:
 
 ```bash
 # Test subdomain extraction
-curl -H "Host: my-store.griffin.local" http://localhost:3001/api/v1/stores
+curl -H "Host: my-store.griffin.local" http://localhost:3001/api/stores
 
 # Test with different subdomains
-curl -H "Host: store1.griffin.local" http://localhost:3001/api/v1/products
-curl -H "Host: store2.griffin.local" http://localhost:3001/api/v1/products
+curl -H "Host: store1.griffin.local" http://localhost:3001/api/products
+curl -H "Host: store2.griffin.local" http://localhost:3001/api/products
 
 # Test main domain
-curl -H "Host: griffin.local" http://localhost:3001/api/v1/stores
+curl -H "Host: griffin.local" http://localhost:3001/api/stores
 
 # Test invalid subdomain
-curl -H "Host: invalid-store.griffin.local" http://localhost:3001/api/v1/products
+curl -H "Host: invalid-store.griffin.local" http://localhost:3001/api/products
 ```
 
 ### Expected Results

@@ -220,9 +220,9 @@ app._router.stack.forEach((middleware) => {
 ### **3. Test Individual Routes**
 ```bash
 # Test specific routes
-curl http://localhost:3001/api/v1/products/filter
-curl http://localhost:3001/api/v1/products/123
-curl http://localhost:3001/api/v1/products/category/electronics
+curl http://localhost:3001/api/products/filter
+curl http://localhost:3001/api/products/123
+curl http://localhost:3001/api/products/category/electronics
 ```
 
 ## 📚 **Additional Resources**

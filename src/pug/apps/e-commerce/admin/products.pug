@@ -362,12 +362,12 @@ append scripts
             </div>
           </td>
           <td class="align-middle white-space-nowrap py-0">
-            <a href="/api/v1/products/${product._id}" class="d-block border border-translucent rounded-2">
+            <a href="/api/products/${product._id}" class="d-block border border-translucent rounded-2">
               <img src="${product.image?.url || 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2'}" alt="${product.name}" width="53">
             </a>
           </td>
           <td class="product align-middle ps-4">
-            <a class="fw-semibold line-clamp-3 mb-0" href="/api/v1/products/${product._id}">${product.name}</a>
+            <a class="fw-semibold line-clamp-3 mb-0" href="/api/products/${product._id}">${product.name}</a>
           </td>
           <td class="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">${priceDisplay}</td>
           <td class="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
@@ -389,8 +389,8 @@ append scripts
                 <span class="fas fa-ellipsis-h fs-11"></span>
               </button>
               <div class="dropdown-menu dropdown-menu-end border py-2">
-                <a class="dropdown-item" href="/api/v1/products/edit/${product._id}">Edit</a>
-                <a class="dropdown-item" href="/api/v1/products/${product._id}">View</a>
+                <a class="dropdown-item" href="/api/products/edit/${product._id}">Edit</a>
+                <a class="dropdown-item" href="/api/products/${product._id}">View</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item text-danger" href="#!" onclick="deleteProduct('${product._id}')">Delete</a>
               </div>
@@ -443,7 +443,7 @@ append scripts
     // Delete product function
     function deleteProduct(productId) {
       if (confirm('Are you sure you want to delete this product?')) {
-        fetch(`/api/v1/products/${productId}`, {
+        fetch(`/api/products/${productId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'

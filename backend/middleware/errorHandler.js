@@ -7,7 +7,7 @@ function errorHandler(err, req, res, next) {
       console.error(err.stack);
     }
   
-    // If it's an API request (e.g., /api/v1/*), send JSON
+    // If it's an API request (e.g., /api/*), send JSON
     const isApiRequest = req.originalUrl.startsWith('/api');
   
     if (isApiRequest) {

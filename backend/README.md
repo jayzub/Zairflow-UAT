@@ -26,7 +26,7 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Create User
 
-`POST |  /api/v1/users/register` 
+`POST |  /api/users/register` 
 
 | Key       | Value          |
 | --------- | -----------    |
@@ -43,7 +43,7 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Login User
 
-`POST |  /api/v1/users/login` 
+`POST |  /api/users/login` 
 
 | Key        | Value          |
 | ---------  | -----------    |
@@ -52,25 +52,25 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Get Users
 
-`GET |  /api/v1/users` 
+`GET |  /api/users` 
 
 ### * Get Single Users
 
-`GET |  /api/v1/users/{id}` 
+`GET |  /api/users/{id}` 
 
 ### * Delete User
 
-`DELETE |  /api/v1/users/{id}` 
+`DELETE |  /api/users/{id}` 
 
 ### * Get Users Count
 
-`GET |  /api/v1/users/get/count` 
+`GET |  /api/users/get/count` 
 
 ## Category Routes
 
 ### * Create Category
 
-`POST |  /api/v1/categories` 
+`POST |  /api/categories` 
 
 | Key   | Value      |
 | ------| ---------- |
@@ -80,15 +80,15 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Get Categories
 
-`GET |  /api/v1/categories` 
+`GET |  /api/categories` 
 
 ### * Get Single Category
 
-`GET |  /api/v1/categories/{id}` 
+`GET |  /api/categories/{id}` 
 
 ### * Update Category
 
-`PUT |  /api/v1/categories/{id}` 
+`PUT |  /api/categories/{id}` 
 
 | Key   | Value      |
 | ------| ---------- |
@@ -98,13 +98,13 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Delete Category
 
-`DELETE |  /api/v1/categories/{id}`
+`DELETE |  /api/categories/{id}`
 
 ## Product Routes
 
 ### * Create Product
 
-`POST |  /api/v1/products` 
+`POST |  /api/products` 
 
 | Key            | Value           |
 | ---------      | -----------     |
@@ -122,30 +122,30 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Get Products
 
-`GET |  /api/v1/products` 
+`GET |  /api/products` 
 
 ###  * Get Single Category
 
-`GET |  /api/v1/products/{id}` 
+`GET |  /api/products/{id}` 
 
 ###  * Get Prodcut Counts
 
-`GET |  /api/v1/products/get/count` 
+`GET |  /api/products/get/count` 
 
 ###  * Get Featured Prodcut Counts
 
-`GET |  /api/v1/products/get/featured/{count}`
+`GET |  /api/products/get/featured/{count}`
 
 ### * Upload Galley Images
 
-`POST |  /api/v1/products/gallery-images/{id}`
+`POST |  /api/products/gallery-images/{id}`
 | Key            | Value           |
 | ---------      | -----------     |
 | images         | Array of images |
 
 ### * Update Product
 
-`PUT |  /api/v1/products` 
+`PUT |  /api/products` 
 | Key            | Value           |
 | ---------      | -----------     |
 | name           | Product 1       |
@@ -162,13 +162,13 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 ### * Delete Product
 
-`DELETE |  /api/v1/products/{id}`
+`DELETE |  /api/products/{id}`
 
 ## Orders Routes
 
 ### * Create Order
 
-`POST |  /api/v1/orders` 
+`POST |  /api/orders` 
 ```
 {
 	"orderItems":[
@@ -192,29 +192,29 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 ```
 ### * Get Orders
 
-`GET |  /api/v1/orders` 
+`GET |  /api/orders` 
 
 ### * Get Single Order
 
-`GET |  /api/v1/orders/{id}` 
+`GET |  /api/orders/{id}` 
 
 ### * Get Total Order Count
 
-`GET |  /api/v1/orders/get/count`
+`GET |  /api/orders/get/count`
 
 ### * Get Total Sales
 
-`GET |  /api/v1/orders/get/totalsales`
+`GET |  /api/orders/get/totalsales`
 
 ### * Get User Order
 
-`GET |  /api/v1/orders/get/usersorders/{userid}`
+`GET |  /api/orders/get/usersorders/{userid}`
 
 ### * Update Single Order
 
-`PUT |  /api/v1/orders/{id}` 
+`PUT |  /api/orders/{id}` 
 
 ### * Delete Single Order
 
-`DELETE |  /api/v1/orders/{id}` 
+`DELETE |  /api/orders/{id}` 
 

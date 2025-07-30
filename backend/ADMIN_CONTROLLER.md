@@ -108,13 +108,13 @@ GET    /admin/api/products/count          - Product count
 GET    /admin/api/products/featured/:count - Featured products
 ```
 
-### Public Product Routes (`/api/v1/products`)
+### Public Product Routes (`/api/products`)
 ```
-GET    /api/v1/products                   - Public product list
-GET    /api/v1/products/:id               - Public product details
-GET    /api/v1/products/filter            - Product filter page
-GET    /api/v1/products/category/:id      - Products by category
-GET    /api/v1/products/test-ajax         - AJAX test endpoint
+GET    /api/products                   - Public product list
+GET    /api/products/:id               - Public product details
+GET    /api/products/filter            - Product filter page
+GET    /api/products/category/:id      - Products by category
+GET    /api/products/test-ajax         - AJAX test endpoint
 ```
 
 ## Key Differences from Product Controller

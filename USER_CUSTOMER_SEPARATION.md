@@ -128,8 +128,8 @@ enum: ['store_owner', 'store_admin', 'platform_admin']
 ### 6. New Customer Routes (`backend/routes/customers.js`)
 
 **Public Routes:**
-- `POST /api/v1/customers/register`
-- `POST /api/v1/customers/login`
+- `POST /api/customers/register`
+- `POST /api/customers/login`
 
 **Protected Routes:**
 - Profile management
@@ -172,8 +172,8 @@ enum: ['store_owner', 'store_admin', 'platform_admin']
 
 ### For Frontend:
 1. **Authentication**: Update to use appropriate endpoints
-   - Admin login: `/api/v1/users/login`
-   - Customer login: `/api/v1/customers/login`
+   - Admin login: `/api/users/login`
+   - Customer login: `/api/customers/login`
 
 2. **Token Handling**: Check token type to determine user type
    - Admin tokens: Use admin features
@@ -188,14 +188,14 @@ enum: ['store_owner', 'store_admin', 'platform_admin']
 ### Admin Authentication
 ```javascript
 // Login as admin
-const response = await fetch('/api/v1/users/login', {
+const response = await fetch('/api/users/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ email, password })
 });
 
 // Use admin token for admin operations
-const adminResponse = await fetch('/api/v1/stores', {
+const adminResponse = await fetch('/api/stores', {
   headers: { 'Authorization': `Bearer ${adminToken}` }
 });
 ```
@@ -203,14 +203,14 @@ const adminResponse = await fetch('/api/v1/stores', {
 ### Customer Authentication
 ```javascript
 // Register as customer
-const response = await fetch('/api/v1/customers/register', {
+const response = await fetch('/api/customers/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ name, email, password, phone })
 });
 
 // Use customer token for customer operations
-const customerResponse = await fetch('/api/v1/customers/wishlist', {
+const customerResponse = await fetch('/api/customers/wishlist', {
   headers: { 'Authorization': `Bearer ${customerToken}` }
 });
 ```

@@ -75,7 +75,7 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
             limit,
             featuredProductsCount,
             pageRange: getPageRange(page, totalPages),
-            api: process.env.API_URL || '/api/v1',
+            api: process.env.API_URL || '/api',
         };
 
         // Cache the result
@@ -97,7 +97,7 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
                 hasNextPage,
                 hasPrevPage,
                 productCount,
-                api: process.env.API_URL || '/api/v1'
+                api: process.env.API_URL || '/api'
             });
         } else {
             // Return full page for regular requests

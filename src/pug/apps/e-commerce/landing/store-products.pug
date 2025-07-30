@@ -307,7 +307,7 @@ append scripts
 
 				// Build the card HTML to match the Product mixin (including stretched-link)
 				const imageSrc = product.image && product.image.startsWith('http') ? product.image : (product.image ? `/assets/img/products/${product.image}` : '/assets/img/products/1.png');
-				const productLink = product._id ? `/api/v1/products/${product._id}` : '#';
+				const productLink = product._id ? `/api/products/${product._id}` : '#';
 				const cardHTML = `
 					<div class="position-relative text-decoration-none product-card h-100">
 						<div class="d-flex flex-column justify-content-between h-100">
@@ -417,10 +417,10 @@ block ecomContent
 						if store.description
 							p.mb-0.fs-6.opacity-75 #{store.description}
 						.mt-3
-							a.btn.btn-outline-light.btn-sm.me-2(href=`/api/v1/products/marketplace`) 
+							a.btn.btn-outline-light.btn-sm.me-2(href=`/api/products/marketplace`) 
 								span.fas.fa-arrow-left.me-1
 								| Back to Marketplace
-							a.btn.btn-light.btn-sm(href=`/api/v1/stores/${store.slug}`) 
+							a.btn.btn-light.btn-sm(href=`/api/stores/${store.slug}`) 
 								span.fas.fa-store.me-1
 								| Store Details
 

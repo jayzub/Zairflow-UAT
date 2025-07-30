@@ -96,40 +96,40 @@ This document describes the architecture and implementation of a multi-tenant ec
 
 ### Store Management (Admin)
 ```
-POST   /api/v1/stores                    # Create new store
-GET    /api/v1/stores/my-stores          # Get user's stores
-GET    /api/v1/stores/:id                # Get store details
-PUT    /api/v1/stores/:id                # Update store
-DELETE /api/v1/stores/:id                # Delete store
-GET    /api/v1/stores/:id/analytics      # Get store analytics
-POST   /api/v1/stores/:id/admins         # Add store admin
-DELETE /api/v1/stores/:id/admins         # Remove store admin
+POST   /api/stores                    # Create new store
+GET    /api/stores/my-stores          # Get user's stores
+GET    /api/stores/:id                # Get store details
+PUT    /api/stores/:id                # Update store
+DELETE /api/stores/:id                # Delete store
+GET    /api/stores/:id/analytics      # Get store analytics
+POST   /api/stores/:id/admins         # Add store admin
+DELETE /api/stores/:id/admins         # Remove store admin
 ```
 
 ### Customer Management
 ```
-POST   /api/v1/customers/register        # Register new customer
-POST   /api/v1/customers/login           # Customer login
-GET    /api/v1/customers/profile         # Get customer profile
-PUT    /api/v1/customers/profile         # Update customer profile
-POST   /api/v1/customers/addresses       # Add customer address
-PUT    /api/v1/customers/addresses/:id   # Update customer address
-DELETE /api/v1/customers/addresses/:id   # Remove customer address
-GET    /api/v1/customers/wishlist        # Get customer wishlist
-POST   /api/v1/customers/wishlist        # Add to wishlist
-DELETE /api/v1/customers/wishlist/:productId/:storeId  # Remove from wishlist
-GET    /api/v1/customers/recently-viewed # Get recently viewed products
+POST   /api/customers/register        # Register new customer
+POST   /api/customers/login           # Customer login
+GET    /api/customers/profile         # Get customer profile
+PUT    /api/customers/profile         # Update customer profile
+POST   /api/customers/addresses       # Add customer address
+PUT    /api/customers/addresses/:id   # Update customer address
+DELETE /api/customers/addresses/:id   # Remove customer address
+GET    /api/customers/wishlist        # Get customer wishlist
+POST   /api/customers/wishlist        # Add to wishlist
+DELETE /api/customers/wishlist/:productId/:storeId  # Remove from wishlist
+GET    /api/customers/recently-viewed # Get recently viewed products
 ```
 
 ### Platform Admin
 ```
-GET    /api/v1/platform/overview         # Platform overview
-GET    /api/v1/platform/analytics        # Platform analytics
-GET    /api/v1/platform/stores           # All stores
-GET    /api/v1/platform/stores/:storeId  # Store details
-PUT    /api/v1/platform/stores/:storeId/subscription  # Update subscription
-PUT    /api/v1/platform/stores/:storeId/verify        # Verify store
-PUT    /api/v1/platform/stores/:storeId/status        # Toggle store status
+GET    /api/platform/overview         # Platform overview
+GET    /api/platform/analytics        # Platform analytics
+GET    /api/platform/stores           # All stores
+GET    /api/platform/stores/:storeId  # Store details
+PUT    /api/platform/stores/:storeId/subscription  # Update subscription
+PUT    /api/platform/stores/:storeId/verify        # Verify store
+PUT    /api/platform/stores/:storeId/status        # Toggle store status
 ```
 
 ## Store Routing Strategies
@@ -150,12 +150,12 @@ headers: {
 
 ### 3. Query Parameter Routing
 ```
-/api/v1/products?storeSlug=store1
+/api/products?storeSlug=store1
 ```
 
 ### 4. Path Parameter Routing
 ```
-/api/v1/stores/store1/products
+/api/stores/store1/products
 ```
 
 ## Subscription Plans and Limits
@@ -203,7 +203,7 @@ const storeData = {
   }
 };
 
-const response = await fetch('/api/v1/stores', {
+const response = await fetch('/api/stores', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -224,7 +224,7 @@ const productData = {
   category: ["categoryId1", "categoryId2"]
 };
 
-const response = await fetch('/api/v1/products', {
+const response = await fetch('/api/products', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ const adminData = {
   email: "admin@example.com"
 };
 
-const response = await fetch('/api/v1/stores/storeId/admins', {
+const response = await fetch('/api/stores/storeId/admins', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

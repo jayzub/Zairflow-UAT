@@ -311,7 +311,7 @@ append scripts
 
 				// Build the card HTML to match the Product mixin (including stretched-link)
 				const imageSrc = product.image && product.image.startsWith('http') ? product.image : (product.image ? `/assets/img/products/${product.image}` : '/assets/img/products/1.png');
-				const productLink = product._id ? `/api/v1/products/${product._id}` : '#';
+				const productLink = product._id ? `/api/products/${product._id}` : '#';
 				const storeBadge = product.store ? `<div class="store-badge">${product.store.name}</div>` : '';
 				const cardHTML = `
 					<div class="position-relative text-decoration-none product-card h-100">
@@ -416,7 +416,7 @@ block ecomContent
 					p.mb-0.fs-6.opacity-75 Discover products from all our amazing stores
 				.col-md-4.text-center.text-md-end
 					.mt-3
-						a.btn.btn-light.btn-sm(href=`/api/v1/stores`) 
+						a.btn.btn-light.btn-sm(href=`/api/stores`) 
 							span.fas.fa-store.me-1
 							| Browse Stores
 

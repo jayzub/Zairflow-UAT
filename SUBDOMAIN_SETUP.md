@@ -216,7 +216,7 @@ sudo networksetup -setdnsservers "Wi-Fi" 127.0.0.1
 
 ```bash
 # Using curl to create a store
-curl -X POST http://localhost:3001/api/v1/stores \
+curl -X POST http://localhost:3001/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -232,17 +232,17 @@ curl -X POST http://localhost:3001/api/v1/stores \
 
 ```bash
 # Test main domain
-curl http://yourdomain.com/api/v1/stores
+curl http://yourdomain.com/api/stores
 
 # Test subdomain
-curl http://test-store.yourdomain.com/api/v1/products
+curl http://test-store.yourdomain.com/api/products
 ```
 
 ### 3. Verify store isolation
 
 ```bash
 # Create another store
-curl -X POST http://localhost:3001/api/v1/stores \
+curl -X POST http://localhost:3001/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -254,8 +254,8 @@ curl -X POST http://localhost:3001/api/v1/stores \
   }'
 
 # Test both stores
-curl http://test-store.yourdomain.com/api/v1/products
-curl http://another-store.yourdomain.com/api/v1/products
+curl http://test-store.yourdomain.com/api/products
+curl http://another-store.yourdomain.com/api/products
 ```
 
 ## Troubleshooting

@@ -113,24 +113,24 @@ If you have global security applied, you can override it for specific endpoints:
 ### 1. **Test Public Endpoints**
 ```bash
 # Health check (no token needed)
-curl -X GET http://localhost:3001/api/v1/health
+curl -X GET http://localhost:3001/api/health
 
 # Get products (no token needed)
-curl -X GET http://localhost:3001/api/v1/products
+curl -X GET http://localhost:3001/api/products
 
 # Discover stores (no token needed)
-curl -X GET http://localhost:3001/api/v1/stores/discover
+curl -X GET http://localhost:3001/api/stores/discover
 ```
 
 ### 2. **Test Protected Endpoints**
 ```bash
 # First, get a token
-curl -X POST http://localhost:3001/api/v1/users/login \
+curl -X POST http://localhost:3001/api/users/login \
   -H "Content-Type: application/json" \
   -d '{"email": "admin@example.com", "password": "password123"}'
 
 # Then use the token
-curl -X GET http://localhost:3001/api/v1/stores/my-stores \
+curl -X GET http://localhost:3001/api/stores/my-stores \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 

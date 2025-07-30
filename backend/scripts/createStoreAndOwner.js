@@ -114,7 +114,7 @@ const createStoreAndOwner = async (ownerData, storeData) => {
     console.log(`   Password: ${ownerData.password}`);
 
     console.log('\n🌐 Store URL:');
-    console.log(`   http://localhost:3001/api/v1/stores/${store._id}`);
+    console.log(`   http://localhost:3001/api/stores/${store._id}`);
 
     return { owner, store };
 

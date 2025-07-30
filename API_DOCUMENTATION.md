@@ -24,7 +24,7 @@ This provides a complete interactive interface where you can:
 
 All API endpoints are prefixed with:
 ```
-http://localhost:3000/api/v1
+http://localhost:3000/api
 ```
 
 ### 3. Authentication
@@ -38,7 +38,7 @@ The API uses JWT (JSON Web Tokens) for authentication. There are two types of us
 
 ```bash
 # Login as admin
-curl -X POST http://localhost:3000/api/v1/auth/login \
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@example.com",
@@ -46,7 +46,7 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
   }'
 
 # Use the returned token in subsequent requests
-curl -X GET http://localhost:3000/api/v1/stores/my-stores \
+curl -X GET http://localhost:3000/api/stores/my-stores \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -54,7 +54,7 @@ curl -X GET http://localhost:3000/api/v1/stores/my-stores \
 
 ```bash
 # Register as customer
-curl -X POST http://localhost:3000/api/v1/customers/register \
+curl -X POST http://localhost:3000/api/customers/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Jane Smith",
@@ -64,7 +64,7 @@ curl -X POST http://localhost:3000/api/v1/customers/register \
   }'
 
 # Login as customer
-curl -X POST http://localhost:3000/api/v1/customers/login \
+curl -X POST http://localhost:3000/api/customers/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "jane@example.com",
@@ -188,14 +188,14 @@ All data is isolated by store. When making API calls, the system automatically f
 
 ```bash
 # Using subdomain
-curl -X GET https://my-store.yourdomain.com/api/v1/products
+curl -X GET https://my-store.yourdomain.com/api/products
 
 # Using header
-curl -X GET http://localhost:3000/api/v1/products \
+curl -X GET http://localhost:3000/api/products \
   -H "x-store-slug: my-store"
 
 # Using query parameter
-curl -X GET "http://localhost:3000/api/v1/products?storeSlug=my-store"
+curl -X GET "http://localhost:3000/api/products?storeSlug=my-store"
 ```
 
 ## Data Models
@@ -517,7 +517,7 @@ The API supports webhooks for real-time notifications:
 
 ```javascript
 // Using fetch
-const response = await fetch('http://localhost:3000/api/v1/stores', {
+const response = await fetch('http://localhost:3000/api/stores', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -538,7 +538,7 @@ const data = await response.json();
 import requests
 
 response = requests.post(
-    'http://localhost:3000/api/v1/stores',
+    'http://localhost:3000/api/stores',
     headers={
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {token}'
@@ -556,7 +556,7 @@ data = response.json()
 
 ```bash
 # Create a store
-curl -X POST http://localhost:3000/api/v1/stores \
+curl -X POST http://localhost:3000/api/stores \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -568,11 +568,11 @@ curl -X POST http://localhost:3000/api/v1/stores \
   }'
 
 # Get products
-curl -X GET "http://localhost:3000/api/v1/products?page=1&limit=20" \
+curl -X GET "http://localhost:3000/api/products?page=1&limit=20" \
   -H "x-store-slug: my-store"
 
 # Create a product
-curl -X POST http://localhost:3000/api/v1/products \
+curl -X POST http://localhost:3000/api/products \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "x-store-slug: my-store" \

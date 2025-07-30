@@ -17,7 +17,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const app = express();
-const API_URL = process.env.API_URL || '/api/v1';
+const API_URL = process.env.API_URL || '/api';
 const { flatSitemap } = require('../gulp/pug.gulp');
 
 // Load models

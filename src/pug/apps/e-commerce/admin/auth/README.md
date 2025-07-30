@@ -62,10 +62,10 @@ This directory contains the frontend authentication pages for the e-commerce adm
 ## API Endpoints Used
 
 ### Authentication
-- `POST /api/v1/users/login` - User login
-- `POST /api/v1/users/register` - User registration
-- `POST /api/v1/users/forgot-password` - Request password reset (to be implemented)
-- `POST /api/v1/users/reset-password` - Reset password (to be implemented)
+- `POST /api/users/login` - User login
+- `POST /api/users/register` - User registration
+- `POST /api/users/forgot-password` - Request password reset (to be implemented)
+- `POST /api/users/reset-password` - Reset password (to be implemented)
 
 ## Security Features
 
@@ -104,12 +104,12 @@ This directory contains the frontend authentication pages for the e-commerce adm
 The following backend endpoints need to be implemented:
 
 ### ✅ **Implemented**
-- `POST /api/v1/users/login` - Returns JWT token
-- `POST /api/v1/users/register` - Creates new admin user
+- `POST /api/users/login` - Returns JWT token
+- `POST /api/users/register` - Creates new admin user
 
 ### 🔄 **To Be Implemented**
-- `POST /api/v1/users/forgot-password` - Sends reset email
-- `POST /api/v1/users/reset-password` - Resets password with token
+- `POST /api/users/forgot-password` - Sends reset email
+- `POST /api/users/reset-password` - Resets password with token
 
 ## Styling
 
