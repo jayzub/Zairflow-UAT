@@ -20,6 +20,20 @@ const app = express();
 const API_URL = process.env.API_URL || '/api';
 const { flatSitemap } = require('../gulp/pug.gulp');
 
+// Express configuration for consistent routing
+app.set('strict routing', true); // Prevents automatic trailing slash handling
+app.set('case sensitive routing', true); // Case-sensitive route matching
+
+// Middleware to handle trailing slashes
+app.use((req, res, next) => {
+  // Remove trailing slash except for root path
+  if (req.path.length > 1 && req.path.endsWith('/')) {
+    const newPath = req.path.slice(0, -1);
+    return res.redirect(301, newPath + (req.query ? '?' + new URLSearchParams(req.query).toString() : ''));
+  }
+  next();
+});
+
 // Load models
 require('./models/products/electronics');
 require('./models/products/clothing');
