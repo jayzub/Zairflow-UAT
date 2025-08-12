@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const vendorSchema = new mongoose.Schema({
+    // Store isolation - vendors belong to stores
+    store: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Store',
+        required: true
+    },
     name: { 
         type: String, 
         required: true 
@@ -11,8 +17,8 @@ const vendorSchema = new mongoose.Schema({
     },
     email: { 
         type: String, 
-        required: true,
-        unique: true 
+        required: true
+        // Removed global unique - will be store-specific unique
     },
     phone: { 
         type: String 
@@ -35,6 +41,12 @@ const vendorSchema = new mongoose.Schema({
 vendorSchema.virtual('id').get(function () {
     return this._id.toHexString();
 });
+
+// Indexes for store isolation
+vendorSchema.index({ store: 1, isActive: 1 });
+vendorSchema.index({ store: 1, name: 1 });
+// Compound unique index for store + email combination
+vendorSchema.index({ store: 1, email: 1 }, { unique: true });
 
 const Vendor = mongoose.model('Vendor', vendorSchema);
 

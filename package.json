@@ -79,6 +79,8 @@
     "express": "^4.21.1",
     "express-jwt": "^6.0.0",
     "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
     "feather-icons": "^4.29.2",
     "flatpickr": "^4.6.13",
     "fullcalendar": "^6.1.11",
@@ -132,6 +134,7 @@
     "prismjs": "^1.29.0",
     "pug": "^3.0.3",
     "rater-js": "^1.0.1",
+    "redis": "^4.7.1",
     "require-dir": "^1.2.0",
     "rimraf": "^5.0.5",
     "rollup": "^2.72.1",
@@ -152,6 +155,7 @@
     "tinymce": "^7.0.1",
     "typed.js": "^2.1.0",
     "uuid": "^8.3.2",
+    "xss": "^1.0.14",
     "yargs": "^17.0.1"
   },
   "browserslist": [

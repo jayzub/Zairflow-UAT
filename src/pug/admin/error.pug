@@ -1,0 +1,17 @@
+extends ../../layouts/LayoutTheme
+include ../../mixins/dashboard/common
+
+append variables
+  - var pageTitle = 'Error'
+
+block content
+  .row.justify-content-center
+    .col-12.col-md-8.col-lg-6
+      .text-center.py-8
+        .mb-4
+          i.fas.fa-exclamation-triangle.fa-3x.text-warning
+        h2.mb-3= error || 'An error occurred'
+        p.text-body-tertiary.mb-4= message || 'Something went wrong. Please try again.'
+        a.btn.btn-primary(href='/admin')
+          i.fas.fa-home.me-2
+          | Back to Dashboard 

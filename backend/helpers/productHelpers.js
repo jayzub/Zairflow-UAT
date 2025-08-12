@@ -1,17 +1,24 @@
 const BaseProduct = require('../models/products/baseProduct');
 
-exports.getRelatedProducts = async (currentProductId, categoryId) => {
+exports.getRelatedProducts = async (currentProductId, categoryId, storeId = null) => {
     try {
         if (!categoryId) return [];
         
-        const relatedProducts = await BaseProduct.find({
+        // Build filter with store isolation
+        const filter = {
             _id: { $ne: currentProductId },
             category: categoryId,
-            status: 'published' // Only get published products
-        })
-        .select('name price images category') // Select only needed fields
-        .populate('category', 'name')
-        .limit(8);
+            isActive: true
+        };
+        
+        if (storeId) {
+            filter.store = storeId;
+        }
+        
+        const relatedProducts = await BaseProduct.find(filter)
+            .select('name price images category productType') // Select only needed fields
+            .populate('category', 'name')
+            .limit(8);
 
         return relatedProducts || [];
     } catch (error) {
@@ -186,15 +193,21 @@ exports.productTypeModelMap = {
     Clothing: require('../models/products/clothing'),
     Electronics: require('../models/products/electronics'),
     Furniture: require('../models/products/furniture'),
+    Books: require('../models/products/books'),
 };
 
-// Helper to fetch categories and vendors
-exports.fetchCategoriesAndVendors = async () => {
+// Helper to fetch categories and vendors with store filtering
+exports.fetchCategoriesAndVendors = async (storeId = null) => {
     const Category = require('../models/category');
     const Vendor = require('../models/vendor');
+    
+    // Build filters with store isolation
+    const categoryFilter = storeId ? { store: storeId, isActive: true } : { isActive: true };
+    const vendorFilter = storeId ? { store: storeId, isActive: true } : { isActive: true };
+    
     const [categories, vendors] = await Promise.all([
-        Category.find().select('name _id'),
-        Vendor.find().select('name _id')
+        Category.find(categoryFilter).select('name _id allowedProductTypes'),
+        Vendor.find(vendorFilter).select('name _id')
     ]);
     return { categories, vendors };
 };
@@ -277,4 +290,215 @@ exports.prepareUpdateData = (body, parsed, images, price, salePrice) => {
         status: body.status || 'draft',
         isFeatured: body.isFeatured === 'true' || body.isFeatured === true
     };
+};
+
+// Helper to validate product type and category compatibility
+exports.validateProductCategoryCompatibility = async (productType, categoryIds, storeId) => {
+    if (!categoryIds || categoryIds.length === 0) {
+        return { valid: true, message: 'No categories assigned' };
+    }
+    
+    const Category = require('../models/category');
+    
+    try {
+        const categories = await Category.find({
+            _id: { $in: categoryIds },
+            store: storeId
+        });
+        
+        const incompatibleCategories = categories.filter(
+            category => !category.allowsProductType(productType)
+        );
+        
+        if (incompatibleCategories.length > 0) {
+            const categoryNames = incompatibleCategories.map(cat => cat.name).join(', ');
+            return {
+                valid: false,
+                message: `Product type "${productType}" is not allowed in categories: ${categoryNames}`
+            };
+        }
+        
+        return { valid: true, message: 'All categories are compatible' };
+    } catch (error) {
+        return { valid: false, message: 'Error validating category compatibility' };
+    }
+};
+
+// Helper to get compatible categories for a product type
+exports.getCompatibleCategories = async (productType, storeId) => {
+    const Category = require('../models/category');
+    
+    try {
+        const categories = await Category.find({
+            store: storeId,
+            isActive: true,
+            allowedProductTypes: productType
+        }).select('name _id parent displayOrder');
+        
+        return categories;
+    } catch (error) {
+        console.error('Error fetching compatible categories:', error);
+        return [];
+    }
+};
+
+// Helper to get product types allowed by a category
+exports.getCategoryProductTypes = async (categoryId, storeId) => {
+    const Category = require('../models/category');
+    
+    try {
+        const category = await Category.findOne({
+            _id: categoryId,
+            store: storeId
+        });
+        
+        return category ? category.allowedProductTypes : [];
+    } catch (error) {
+        console.error('Error fetching category product types:', error);
+        return [];
+    }
+};
+
+// Helper to check if a product can be assigned to a category
+exports.canAssignProductToCategory = async (productType, categoryId, storeId) => {
+    const Category = require('../models/category');
+    
+    try {
+        const category = await Category.findOne({
+            _id: categoryId,
+            store: storeId
+        });
+        
+        return category ? category.allowsProductType(productType) : false;
+    } catch (error) {
+        console.error('Error checking category assignment:', error);
+        return false;
+    }
+};
+
+// Helper to get all product types available in a store
+exports.getStoreProductTypes = () => {
+    return require('../config/productTypes').getProductTypeNames();
+};
+
+// Helper to get product type specific fields
+exports.getProductTypeFields = (productType) => {
+    return require('../config/productTypes').getProductTypeFields(productType);
+};
+
+// Helper to get product type configuration
+exports.getProductTypeConfig = (productType) => {
+    return require('../config/productTypes').getProductTypeConfig(productType);
+};
+
+// Helper to get product types for a subscription plan
+exports.getProductTypesForPlan = (plan) => {
+    return require('../config/productTypes').getProductTypesForPlan(plan);
+};
+
+// Helper to validate product type specific data
+exports.validateProductTypeData = (productType, data) => {
+    const fields = exports.getProductTypeFields(productType);
+    const errors = [];
+    
+    for (const [fieldName, fieldConfig] of Object.entries(fields)) {
+        if (fieldConfig.required && !data[fieldName]) {
+            errors.push(`${fieldName} is required for ${productType} products`);
+        }
+        
+        if (data[fieldName] && fieldConfig.enum && !fieldConfig.enum.includes(data[fieldName])) {
+            errors.push(`${fieldName} must be one of: ${fieldConfig.enum.join(', ')}`);
+        }
+    }
+    
+    return {
+        valid: errors.length === 0,
+        errors
+    };
+};
+
+// Helper to create product-specific data dynamically
+exports.createProductSpecificData = (productType, body, parsed) => {
+    const config = require('../config/productTypes').getProductTypeConfig(productType);
+    if (!config) {
+        throw new Error(`Invalid product type: ${productType}`);
+    }
+    
+    const productData = {};
+    
+    // Dynamically add fields based on configuration
+    Object.keys(config.fields).forEach(fieldName => {
+        const fieldConfig = config.fields[fieldName];
+        
+        switch (fieldConfig.type) {
+            case 'string':
+                if (body[fieldName]) {
+                    productData[fieldName] = body[fieldName];
+                }
+                break;
+            case 'array':
+                if (parsed[fieldName]) {
+                    productData[fieldName] = parsed[fieldName];
+                }
+                break;
+            case 'object':
+                if (parsed[fieldName]) {
+                    productData[fieldName] = parsed[fieldName];
+                }
+                break;
+        }
+    });
+    
+    // Add variants if they exist
+    if (parsed.variants) {
+        productData.variants = parsed.variants;
+    }
+    
+    return productData;
+};
+
+// Helper to validate product type against store subscription
+exports.validateProductTypeForStore = async (productType, storeId) => {
+    const Store = require('../models/store');
+    const { getProductTypesForPlan } = require('../config/productTypes');
+    
+    try {
+        const store = await Store.findById(storeId);
+        if (!store) {
+            return { valid: false, message: 'Store not found' };
+        }
+        
+        const allowedTypes = getProductTypesForPlan(store.subscription.plan);
+        
+        if (!allowedTypes.includes(productType)) {
+            return {
+                valid: false,
+                message: `Product type "${productType}" is not allowed in your current plan (${store.subscription.plan}). ` +
+                        `Allowed types: ${allowedTypes.join(', ')}`
+            };
+        }
+        
+        return { valid: true, message: 'Product type is allowed for this store' };
+    } catch (error) {
+        console.error('Error validating product type for store:', error);
+        return { valid: false, message: 'Error validating product type' };
+    }
+};
+
+// Helper to get allowed product types for a store
+exports.getAllowedProductTypesForStore = async (storeId) => {
+    const Store = require('../models/store');
+    const { getProductTypesForPlan } = require('../config/productTypes');
+    
+    try {
+        const store = await Store.findById(storeId);
+        if (!store) {
+            return [];
+        }
+        
+        return getProductTypesForPlan(store.subscription.plan);
+    } catch (error) {
+        console.error('Error getting allowed product types:', error);
+        return [];
+    }
 };

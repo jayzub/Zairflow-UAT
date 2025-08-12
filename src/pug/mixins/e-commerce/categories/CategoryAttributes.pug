@@ -1,0 +1,95 @@
+mixin CategoryAttributes(options = {})
+  - const category = options.category || {}
+  
+  .card&attributes(attributes)
+    .card-body
+      h4.card-title.mb-4 Category Attributes
+      p.text-body-tertiary.mb-4 Define attributes that products in this category should have. These will be used for filtering and product specifications.
+      
+      .attributes-container
+        if category.attributes && category.attributes.length > 0
+          each attribute, index in category.attributes
+            .attribute-item.mb-3.border.rounded.p-3
+              .row.g-3
+                .col-md-4
+                  label.form-label Attribute Name
+                  input.form-control(type='text' name=`attributes[${index}][name]` placeholder='e.g., Size, Color, Material' value=attribute.name required)
+                .col-md-3
+                  label.form-label Type
+                  select.form-select(name=`attributes[${index}][type]` required)
+                    option(value='' selected=!attribute.type) Select type
+                    option(value='string' selected=attribute.type === 'string') Text
+                    option(value='number' selected=attribute.type === 'number') Number
+                    option(value='boolean' selected=attribute.type === 'boolean') Boolean
+                    option(value='date' selected=attribute.type === 'date') Date
+                    option(value='object' selected=attribute.type === 'object') Object
+                    option(value='array' selected=attribute.type === 'array') Array
+                .col-md-2
+                  label.form-label Required
+                  .form-check
+                    input.form-check-input(type='checkbox' name=`attributes[${index}][required]` id=`required_${index}` checked=attribute.required)
+                    label.form-check-label(for=`required_${index}`) Required
+                .col-md-2
+                  label.form-label Unit
+                  input.form-control(type='text' name=`attributes[${index}][unit]` placeholder='e.g., cm, kg' value=attribute.unit)
+                .col-md-1
+                  button.btn.btn-outline-danger.btn-sm(type='button' onclick="this.closest('.attribute-item').remove()")
+                    i.fas.fa-times
+              .row.mt-2
+                .col-12
+                  label.form-label Options (comma-separated)
+                  input.form-control(type='text' name=`attributes[${index}][options]` placeholder='Small, Medium, Large' value=attribute.options ? attribute.options.join(', ') : '')
+        else
+          .text-center.py-4
+            p.text-body-tertiary.mb-3 No attributes defined yet
+            button.btn.btn-outline-primary.add-attribute-btn(type='button')
+              i.fas.fa-plus.me-2
+              | Add First Attribute
+      
+      .text-center.mt-3
+        button.btn.btn-outline-primary.add-attribute-btn(type='button')
+          i.fas.fa-plus.me-2
+          | Add Attribute
+      
+      .mt-4
+        h6.text-body-highlight.mb-3 Attribute Examples:
+        .row.g-3
+          .col-md-6
+            .card.border.border-200
+              .card-body.p-3
+                h6.mb-2 Electronics
+                ul.list-unstyled.mb-0.fs-9
+                  li • Processor (string)
+                  li • RAM (number, GB)
+                  li • Storage (number, GB)
+                  li • Ports (array)
+          
+          .col-md-6
+            .card.border.border-200
+              .card-body.p-3
+                h6.mb-2 Clothing
+                ul.list-unstyled.mb-0.fs-9
+                  li • Size (string, options)
+                  li • Material (string)
+                  li • Fit (string, options)
+                  li • Care Instructions (array)
+          
+          .col-md-6
+            .card.border.border-200
+              .card-body.p-3
+                h6.mb-2 Furniture
+                ul.list-unstyled.mb-0.fs-9
+                  li • Dimensions (object)
+                  li • Material (string)
+                  li • Assembly Required (boolean)
+                  li • Weight (number, kg)
+          
+          .col-md-6
+            .card.border.border-200
+              .card-body.p-3
+                h6.mb-2 Books
+                ul.list-unstyled.mb-0.fs-9
+                  li • Author (string)
+                  li • Pages (number)
+                  li • Format (string, options)
+                  li • ISBN (string) 

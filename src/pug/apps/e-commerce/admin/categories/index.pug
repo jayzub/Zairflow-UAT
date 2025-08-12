@@ -1,0 +1,183 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../mixins/dashboard/common
+include ../../../../mixins/e-commerce/categories/CategoryCard
+include ../../../../mixins/dashboard/common
+
+prepend styles
+  link(href=`${CWD}vendors/choices/choices.min.css`, rel='stylesheet')
+
+prepend scripts
+  script(src=`${CWD}vendors/choices/choices.min.js`)
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize Choices for select elements
+      const choices = new Choices('.form-select', {
+        removeItemButton: true,
+        placeholder: true,
+        placeholderValue: 'Select an option'
+      });
+
+      // Search functionality
+      const searchInput = document.getElementById('searchCategories');
+      const categoryCards = document.querySelectorAll('.category-card');
+      
+      searchInput?.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        categoryCards.forEach(card => {
+          const categoryName = card.querySelector('.category-name').textContent.toLowerCase();
+          const categoryDescription = card.querySelector('.category-description')?.textContent.toLowerCase() || '';
+          
+          if (categoryName.includes(searchTerm) || categoryDescription.includes(searchTerm)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+
+      // Filter by product type
+      const productTypeFilter = document.getElementById('productTypeFilter');
+      productTypeFilter?.addEventListener('change', function() {
+        const selectedType = this.value;
+        categoryCards.forEach(card => {
+          const allowedTypes = card.dataset.allowedTypes;
+          if (!selectedType || allowedTypes.includes(selectedType)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+
+      // Filter by status
+      const statusFilter = document.getElementById('statusFilter');
+      statusFilter?.addEventListener('change', function() {
+        const selectedStatus = this.value;
+        categoryCards.forEach(card => {
+          const isActive = card.dataset.active === 'true';
+          if (selectedStatus === '' || (selectedStatus === 'active' && isActive) || (selectedStatus === 'inactive' && !isActive)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+
+      // Delete category confirmation
+      document.querySelectorAll('.delete-category-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const categoryId = this.dataset.categoryId;
+          const categoryName = this.dataset.categoryName;
+          
+          if (confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
+            deleteCategory(categoryId);
+          }
+        });
+      });
+
+      async function deleteCategory(categoryId) {
+        try {
+          const response = await fetch(`/admin/categories/${categoryId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              // Remove the card from the DOM
+              const card = document.querySelector(`[data-category-id="${categoryId}"]`).closest('.category-card');
+              card.remove();
+              
+              // Show success message
+              showAlert('Category deleted successfully', 'success');
+            } else {
+              throw new Error(result.message || 'Error deleting category');
+            }
+          } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Error deleting category:', error);
+          showAlert('Error deleting category: ' + error.message, 'danger');
+        }
+      }
+
+      function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.categories-container');
+        container.insertBefore(alertDiv, container.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+          alertDiv.remove();
+        }, 5000);
+      }
+    });
+
+append variables
+  - var pageTitle = 'Categories'
+
+block content
+  .row.g-3.flex-between-end.mb-5
+    .col-auto
+      h2.mb-2 #{pageTitle}
+      h5.text-body-tertiary.fw-semibold Manage your product categories
+    .col-auto
+      a.btn.btn-primary(href='/admin/categories/add')
+        i.fas.fa-plus.me-2
+        | Add Category
+
+  .row.g-3.mb-4
+    .col-12.col-sm-6.col-md-3
+      label.form-label(for='searchCategories') Search Categories
+      input.form-control#searchCategories(type='text' placeholder='Search by name or description...')
+    
+    .col-12.col-sm-6.col-md-3
+      label.form-label(for='productTypeFilter') Filter by Product Type
+      select.form-select#productTypeFilter
+        option(value='') All Product Types
+        option(value='Electronics') Electronics
+        option(value='Clothing') Clothing
+        option(value='Furniture') Furniture
+        option(value='Books') Books
+    
+    .col-12.col-sm-6.col-md-3
+      label.form-label(for='statusFilter') Filter by Status
+      select.form-select#statusFilter
+        option(value='') All Status
+        option(value='active') Active
+        option(value='inactive') Inactive
+    
+    .col-12.col-sm-6.col-md-3
+      label.form-label(for='sortBy') Sort By
+      select.form-select#sortBy
+        option(value='name') Name
+        option(value='createdAt') Date Created
+        option(value='productCount') Product Count
+        option(value='displayOrder') Display Order
+
+  .categories-container
+    if categories && categories.length > 0
+      .row.g-4
+        each category in categories
+          .col-12.col-md-6.col-xl-4
+            +CategoryCard({ category })
+    else
+      .text-center.py-8
+        .mb-4
+          i.fas.fa-folder.fa-3x.text-body-tertiary
+        h4.mb-3 No categories found
+        p.text-body-tertiary.mb-4 Create your first category to organize your products
+        a.btn.btn-primary(href='/admin/categories/add')
+          i.fas.fa-plus.me-2
+          | Create First Category 

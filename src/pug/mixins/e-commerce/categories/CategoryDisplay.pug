@@ -1,0 +1,62 @@
+mixin CategoryDisplay(options = {})
+  - const category = options.category || {}
+  
+  .card&attributes(attributes)
+    .card-body
+      h4.card-title.mb-4 Category Preview
+      
+      .text-center.mb-4
+        .category-preview.p-4.border.rounded
+          if category.icon
+            i(class=category.icon style=`color: ${category.color || '#007bff'}; font-size: 2rem;`)
+          else
+            i.fas.fa-folder(style=`color: ${category.color || '#007bff'}; font-size: 2rem;`)
+          h5.mt-3.mb-2= category.name || 'Category Name'
+          p.text-body-tertiary.mb-0= category.description || 'Category description will appear here'
+      
+      .mb-4
+        h6.text-body-highlight.mb-3 Quick Stats
+        .row.g-2
+          .col-6
+            .card.border.border-200
+              .card-body.p-2.text-center
+                h6.mb-1.fw-bold 0
+                p.mb-0.fs-9.text-body-tertiary Products
+          .col-6
+            .card.border.border-200
+              .card-body.p-2.text-center
+                h6.mb-1.fw-bold 0
+                p.mb-0.fs-9.text-body-tertiary Subcategories
+      
+      .mb-4
+        h6.text-body-highlight.mb-3 Settings
+        .form-check.mb-2
+          input.form-check-input#showInMenu(type='checkbox' name='showInMenu' checked=category.showInMenu !== false)
+          label.form-check-label(for='showInMenu') Show in navigation menu
+        .form-check.mb-2
+          input.form-check-input#featured(type='checkbox' name='featured' checked=category.featured)
+          label.form-check-label(for='featured') Featured category
+        .form-check.mb-2
+          input.form-check-input#allowReviews(type='checkbox' name='allowReviews' checked=category.allowReviews !== false)
+          label.form-check-label(for='allowReviews') Allow product reviews
+      
+      .mb-4
+        h6.text-body-highlight.mb-3 SEO Settings
+        label.form-label(for='metaTitle') Meta Title
+        input.form-control#metaTitle(type='text' name='metaTitle' placeholder='Category meta title' value=category.metaTitle)
+        
+        label.form-label(for='metaDescription') Meta Description
+        textarea.form-control#metaDescription(name='metaDescription' rows='3' placeholder='Category meta description')= category.metaDescription
+        
+        label.form-label(for='metaKeywords') Meta Keywords
+        input.form-control#metaKeywords(type='text' name='metaKeywords' placeholder='keyword1, keyword2, keyword3' value=category.metaKeywords)
+      
+      .alert.alert-info
+        h6.mb-2
+          i.fas.fa-info-circle.me-2
+          | Tips
+        ul.mb-0.fs-9
+          li Use descriptive names for better SEO
+          li Choose appropriate product types
+          li Set up attributes for better filtering
+          li Use parent categories for organization 

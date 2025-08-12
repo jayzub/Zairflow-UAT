@@ -24,10 +24,17 @@ const baseProductSchema = new mongoose.Schema({
     }],
     price: { type: mongoose.Schema.Types.Decimal128, min: 0.0, default: 0.0 },
     salePrice: { type: mongoose.Schema.Types.Decimal128, min: 0.0, default: 0.0 },
+    // Product type is required - determines which specific fields are available
+    productType: { 
+        type: String, 
+        required: true,
+        enum: require('../../config/productTypes').getProductTypeNames(),
+        index: true
+    },
+    // Categories are optional - can be assigned later
     category: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
+        ref: 'Category'
     }],
     vendor: {
         type: mongoose.Schema.Types.ObjectId,
@@ -64,19 +71,110 @@ const baseProductSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Pre-save middleware to generate slug if not provided
+baseProductSchema.pre('save', async function(next) {
+    if (!this.slug) {
+        const slug = this.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        
+        // Ensure slug is unique within the store
+        let counter = 1;
+        let uniqueSlug = slug;
+        
+        while (true) {
+            const existing = await this.constructor.findOne({ 
+                slug: uniqueSlug, 
+                store: this.store,
+                _id: { $ne: this._id }
+            });
+            
+            if (!existing) {
+                break;
+            }
+            
+            uniqueSlug = `${slug}-${counter}`;
+            counter++;
+        }
+        
+        this.slug = uniqueSlug;
+    }
+    next();
+});
+
+// Pre-save middleware to validate category-product type compatibility and store limits
+baseProductSchema.pre('save', async function(next) {
+    try {
+        // Validate product type against store subscription
+        const Store = mongoose.model('Store');
+        const store = await Store.findById(this.store);
+        
+        if (store) {
+            const planLimits = {
+                free: ['Clothing'],
+                basic: ['Clothing', 'Electronics'],
+                premium: ['Clothing', 'Electronics', 'Furniture'],
+                enterprise: ['Clothing', 'Electronics', 'Furniture']
+            };
+            
+            const allowedTypes = planLimits[store.subscription.plan] || planLimits.free;
+            
+            if (!allowedTypes.includes(this.productType)) {
+                return next(new Error(
+                    `Product type "${this.productType}" is not allowed in your current plan (${store.subscription.plan}). ` +
+                    `Allowed types: ${allowedTypes.join(', ')}`
+                ));
+            }
+        }
+        
+        // Validate category-product type compatibility
+        if (this.category && this.category.length > 0) {
+            const Category = mongoose.model('Category');
+            
+            // Check if all categories allow this product type
+            const categories = await Category.find({
+                _id: { $in: this.category },
+                store: this.store
+            });
+            
+            for (const category of categories) {
+                if (!category.allowedProductTypes.includes(this.productType)) {
+                    return next(new Error(
+                        `Category "${category.name}" does not allow product type "${this.productType}". ` +
+                        `Allowed types: ${category.allowedProductTypes.join(', ')}`
+                    ));
+                }
+            }
+        }
+        
+        next();
+    } catch (error) {
+        return next(error);
+    }
+});
+
 // Virtuals
 baseProductSchema.virtual('id').get(function () {
     return this._id.toHexString();
 });
 
 // Indexes
+baseProductSchema.index({ store: 1, productType: 1 });
 baseProductSchema.index({ store: 1, isFeatured: 1 });
 baseProductSchema.index({ store: 1, category: 1 });
 baseProductSchema.index({ store: 1, brand: 1 });
 baseProductSchema.index({ store: 1, isActive: 1 });
+baseProductSchema.index({ store: 1, price: 1 });
+baseProductSchema.index({ store: 1, rating: 1 });
+baseProductSchema.index({ store: 1, dateCreated: -1 });
 baseProductSchema.index({ name: 'text', description: 'text' });
 baseProductSchema.index({ tags: 1 });
-// baseProductSchema.index({ slug: 1 });
+baseProductSchema.index({ slug: 1, store: 1 }, { unique: true, sparse: true });
+// Compound indexes for common queries
+baseProductSchema.index({ store: 1, isActive: 1, isFeatured: 1 });
+baseProductSchema.index({ store: 1, productType: 1, isActive: 1 });
+baseProductSchema.index({ store: 1, category: 1, isActive: 1 });
 
 const BaseProduct = mongoose.model('Product', baseProductSchema);
 

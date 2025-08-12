@@ -120,7 +120,7 @@ block append scripts
         hideMessages();
         
         try {
-          const response = await fetch('/api/users/login', {
+          const response = await fetch('/admin/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ block append scripts
             // Check if user has stores and redirect accordingly
             setTimeout(async () => {
               try {
-                const storeResponse = await fetch('/api/stores/my-stores', {
+                const storeResponse = await fetch('/admin/my-stores', {
                   headers: {
                     'Authorization': `Bearer ${data.token}`
                   }

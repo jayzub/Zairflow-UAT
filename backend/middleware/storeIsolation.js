@@ -141,6 +141,29 @@ const addStoreFilter = (req, res, next) => {
 };
 
 /**
+ * Middleware to ensure store-specific data access
+ */
+const ensureStoreDataAccess = (modelName) => {
+    return async (req, res, next) => {
+        try {
+            if (!req.store && !req.user?.isPlatformAdmin) {
+                return handleError(req, res, 'Store context required', 400);
+            }
+            
+            // Add store filter to req for use in controllers
+            if (req.store) {
+                req.storeFilter = { store: req.store._id };
+            }
+            
+            next();
+        } catch (error) {
+            console.error('Store data access error:', error);
+            return handleError(req, res, 'Internal server error', 500);
+        }
+    };
+};
+
+/**
  * Middleware to validate store subscription limits
  */
 const checkStoreLimits = async (req, res, next) => {
@@ -183,5 +206,6 @@ module.exports = {
     extractStore,
     requireStoreAccess,
     addStoreFilter,
+    ensureStoreDataAccess,
     checkStoreLimits
 }; 

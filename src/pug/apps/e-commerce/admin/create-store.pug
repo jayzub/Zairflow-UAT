@@ -349,7 +349,7 @@ block append scripts
             delete storeData.contactInfo.phone;
           }
           
-          const response = await fetch('/api/stores', {
+          const response = await fetch('/admin/stores', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -396,7 +396,7 @@ block append scripts
       // Check if user already has stores (if so, redirect to dashboard)
       async function checkUserStores() {
         try {
-          const response = await fetch('/api/stores/my-stores', {
+          const response = await fetch('/admin/my-stores', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
