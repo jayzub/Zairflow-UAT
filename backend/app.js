@@ -25,14 +25,14 @@ app.set('strict routing', true); // Prevents automatic trailing slash handling
 app.set('case sensitive routing', true); // Case-sensitive route matching
 
 // Middleware to handle trailing slashes
-app.use((req, res, next) => {
-  // Remove trailing slash except for root path
-  if (req.path.length > 1 && req.path.endsWith('/')) {
-    const newPath = req.path.slice(0, -1);
-    return res.redirect(301, newPath + (req.query ? '?' + new URLSearchParams(req.query).toString() : ''));
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   // Remove trailing slash except for root path
+//   if (req.path.length > 1 && req.path.endsWith('/')) {
+//     const newPath = req.path.slice(0, -1);
+//     return res.redirect(301, newPath + (req.query ? '?' + new URLSearchParams(req.query).toString() : ''));
+//   }
+//   next();
+// });
 
 // Load models
 require('./models/products/electronics');
@@ -71,12 +71,12 @@ app.use((req, res, next) => {
 // Routes
 const productRoutes = require('./routes/products');
 const categoriesRoute = require('./routes/categories');
-const userRoute = require('./routes/users');
+// const userRoute = require('./routes/users');
 const orderRoute = require('./routes/orders');
 const storeRoutes = require('./routes/stores');
 const platformRoutes = require('./routes/platform');
 const customerRoutes = require('./routes/customers');
-const adminRoutes = require('./routes/admin');
+const adminRoutes = require('./routes/adminRoutes');
 const { authJwt } = require('./middleware/jwt');
 
 // Health Check (API and Render)
@@ -119,7 +119,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use(`${API_URL}/products`, productRoutes);
 app.use(`${API_URL}/categories`, categoriesRoute);
-app.use(`${API_URL}/users`, userRoute);
+// app.use(`${API_URL}/users`, userRoute);
 app.use(`${API_URL}/orders`, orderRoute);
 app.use(`${API_URL}/stores`, storeRoutes);
 app.use(`${API_URL}/platform`, platformRoutes);

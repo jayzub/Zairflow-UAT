@@ -6,8 +6,10 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const userSchemas = require('./schemas/user');
 const commonSchemas = require('./schemas/common');
 const storeSchemas = require('./schemas/store');
+const categorySchemas = require('./schemas/category');
 const userPaths = require('./paths/users');
 const storePaths = require('./paths/stores');
+const categoryPaths = require('./paths/categories');
 
 const options = {
   definition: {
@@ -59,6 +61,9 @@ const options = {
         
         // Store schemas
         ...storeSchemas,
+        
+        // Category schemas
+        ...categorySchemas,
         
         // Additional schemas can be added here
         
@@ -137,7 +142,8 @@ const options = {
     },
     paths: {
       ...userPaths,
-      ...storePaths
+      ...storePaths,
+      ...categoryPaths
       // Add other path files here
     },
     tags: [
@@ -168,6 +174,10 @@ const options = {
       {
         name: 'Categories',
         description: 'Category management endpoints'
+      },
+      {
+        name: 'Categories - Admin',
+        description: 'Category administration endpoints (requires authentication)'
       }
     ]
   },

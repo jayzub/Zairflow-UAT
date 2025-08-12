@@ -1,0 +1,90 @@
+mixin CategoryCard(options = {})
+  - const category = options.category || {}
+  
+  .card.category-card.h-100(data-category-id=category._id data-allowed-types=category.allowedProductTypes ? category.allowedProductTypes.join(',') : '' data-active=category.isActive)
+    .card-body
+      .d-flex.align-items-center.mb-3
+        .flex-shrink-0
+          if category.icon
+            i(class=category.icon style=`color: ${category.color || '#007bff'}; font-size: 1.5rem;`)
+          else
+            i.fas.fa-folder(style=`color: ${category.color || '#007bff'}; font-size: 1.5rem;`)
+        .flex-grow-1.ms-3
+          h5.mb-1.category-name= category.name
+          p.mb-0.text-body-tertiary.fs-9.category-description= category.description || 'No description'
+      
+      .row.g-2.mb-3
+        .col-6
+          .text-center
+            h6.mb-1.fw-bold= category.productCount || 0
+            p.mb-0.fs-9.text-body-tertiary Products
+        .col-6
+          .text-center
+            h6.mb-1.fw-bold= category.children ? category.children.length : 0
+            p.mb-0.fs-9.text-body-tertiary Subcategories
+      
+      .mb-3
+        if category.allowedProductTypes && category.allowedProductTypes.length > 0
+          .d-flex.flex-wrap.gap-1
+            each productType in category.allowedProductTypes
+              span.badge.bg-soft-primary.fs-9= productType
+        else
+          span.badge.bg-soft-secondary.fs-9 No product types
+      
+      if category.parent
+        .mb-3
+          p.mb-1.fs-9.text-body-tertiary Parent Category:
+          p.mb-0.fs-9.fw-semibold= category.parent.name
+      
+      .d-flex.justify-content-between.align-items-center
+        .d-flex.align-items-center
+          if category.isActive
+            span.badge.bg-success.fs-9 Active
+          else
+            span.badge.bg-secondary.fs-9 Inactive
+          
+          if category.featured
+            span.badge.bg-warning.ms-1.fs-9 Featured
+        
+        .dropdown
+          button.btn.btn-sm.btn-phoenix-secondary.dropdown-toggle.dropdown-toggle-split(type='button' data-bs-toggle='dropdown' aria-expanded='false')
+            span.visually-hidden Toggle dropdown
+          ul.dropdown-menu.dropdown-menu-end
+            li
+              a.dropdown-item(href=`/admin/categories/edit/${category._id}`)
+                i.fas.fa-edit.me-2
+                | Edit
+            li
+              a.dropdown-item(href=`/admin/categories/${category._id}/products`)
+                i.fas.fa-box.me-2
+                | View Products
+            li
+              a.dropdown-item(href=`/admin/categories/${category._id}/stats`)
+                i.fas.fa-chart-bar.me-2
+                | Statistics
+            li
+              hr.dropdown-divider
+            li
+              button.dropdown-item.text-danger.delete-category-btn(
+                type='button'
+                data-category-id=category._id
+                data-category-name=category.name
+              )
+                i.fas.fa-trash.me-2
+                | Delete
+    
+    .card-footer.bg-body-tertiary
+      .d-flex.justify-content-between.align-items-center
+        .fs-9.text-body-tertiary
+          if category.createdAt
+            | Created #{new Date(category.createdAt).toLocaleDateString()}
+          else
+            | Recently created
+        
+        .d-flex.align-items-center
+          if category.displayOrder
+            span.fs-9.text-body-tertiary.me-2 Order: #{category.displayOrder}
+          
+          a.btn.btn-sm.btn-phoenix-secondary(href=`/admin/categories/edit/${category._id}`)
+            i.fas.fa-edit.me-1
+            | Edit 

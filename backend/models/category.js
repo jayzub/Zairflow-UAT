@@ -48,13 +48,14 @@ const categorySchema = mongoose.Schema(
             ref: 'Category',
             default: null
         },
-        // Allowed product types for this category
+        // Product types allowed in this category (controls what products can be added)
         allowedProductTypes: [{
             type: String,
-            enum: ['Electronics', 'Clothing', 'Furniture'],
-            required: true
+            enum: require('../config/productTypes').getProductTypeNames(),
+            required: true,
+            default: require('../config/productTypes').getProductTypeNames() // Allow all by default
         }],
-        // Category-specific attributes
+        // Category-specific attributes (custom fields for products in this category)
         attributes: [categoryAttributeSchema],
         // For controlling display order
         displayOrder: { 
@@ -74,6 +75,38 @@ const categorySchema = mongoose.Schema(
     }
 );
 
+// Pre-save middleware to validate parent category compatibility
+categorySchema.pre('save', async function(next) {
+    if (this.parent) {
+        try {
+            const parentCategory = await this.constructor.findOne({
+                _id: this.parent,
+                store: this.store
+            });
+            
+            if (!parentCategory) {
+                return next(new Error('Parent category not found'));
+            }
+            
+            // Child category should only allow product types that parent allows
+            const incompatibleTypes = this.allowedProductTypes.filter(
+                type => !parentCategory.allowedProductTypes.includes(type)
+            );
+            
+            if (incompatibleTypes.length > 0) {
+                return next(new Error(
+                    `Category cannot allow product types [${incompatibleTypes.join(', ')}] ` +
+                    `because parent category "${parentCategory.name}" doesn't allow them. ` +
+                    `Parent allows: [${parentCategory.allowedProductTypes.join(', ')}]`
+                ));
+            }
+        } catch (error) {
+            return next(error);
+        }
+    }
+    next();
+});
+
 // Virtual for getting child categories
 categorySchema.virtual('children', {
     ref: 'Category',
@@ -89,14 +122,24 @@ categorySchema.virtual('productsCount', {
     count: true
 });
 
+// Method to check if category allows a specific product type
+categorySchema.methods.allowsProductType = function(productType) {
+    return this.allowedProductTypes.includes(productType);
+};
+
+// Method to get compatible product types for this category
+categorySchema.methods.getCompatibleProductTypes = function() {
+    return this.allowedProductTypes;
+};
+
 // Indexes
 categorySchema.index({ store: 1, parent: 1 });
 categorySchema.index({ store: 1, displayOrder: 1 });
 categorySchema.index({ store: 1, isActive: 1 });
+categorySchema.index({ store: 1, allowedProductTypes: 1 });
 // Compound unique index for store + slug combination
 categorySchema.index({ store: 1, slug: 1 }, { unique: true });
 
-// Example usage of the model:
 const Category = mongoose.model('Category', categorySchema);
 
 module.exports = Category;

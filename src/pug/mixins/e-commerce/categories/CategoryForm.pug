@@ -1,0 +1,64 @@
+mixin CategoryForm(options = {})
+  - const categories = options.categories || []
+  - const category = options.category || {}
+  
+  .card&attributes(attributes)
+    .card-body
+      h4.card-title.mb-4 Basic Information
+      
+      .row.g-3
+        .col-12.col-sm-6
+          label.form-label(for='name') Category Name *
+          input.form-control#name(type='text' name='name' placeholder='Enter category name' value=category.name required)
+          .form-text The name of the category as it will appear to customers
+        
+        .col-12.col-sm-6
+          .form-text.text-muted
+            i.fas.fa-info-circle.me-2
+            | URL slug will be automatically generated from the category name
+        
+        .col-12
+          label.form-label(for='description') Description
+          textarea.form-control#description(name='description' rows='4' placeholder='Describe this category...')= category.description
+          .form-text A detailed description of what this category contains
+        
+        .col-12.col-sm-6
+          label.form-label(for='icon') Icon Class
+          input.form-control#icon(type='text' name='icon' placeholder='fas fa-laptop' value=category.icon)
+          .form-text FontAwesome or custom icon class for the category
+        
+        .col-12.col-sm-6
+          label.form-label(for='color') Color
+          .input-group
+            input.form-control#color(type='color' name='color' value=category.color || '#007bff')
+            span.input-group-text
+              .color-preview(style=`width: 20px; height: 20px; border-radius: 3px; background-color: ${category.color || '#007bff'}`)
+          .form-text Color for category display in the UI
+        
+        .col-12.col-sm-6
+          label.form-label(for='parent') Parent Category
+          select.form-select#parent(name='parent')
+            option(value='') No parent (top-level category)
+            if categories.length > 0
+              each parentCategory in categories
+                option(value=parentCategory._id selected=category.parent && category.parent.toString() === parentCategory._id.toString())= parentCategory.name
+        
+        .col-12.col-sm-6
+          label.form-label(for='displayOrder') Display Order
+          input.form-control#displayOrder(type='number' name='displayOrder' placeholder='1' value=category.displayOrder || 1 min='1')
+          .form-text Order in which this category appears (lower numbers appear first)
+        
+        .col-12
+          label.form-label(for='allowedProductTypes') Allowed Product Types *
+          select.form-select#allowedProductTypes(name='allowedProductTypes' multiple required)
+            option(value='Electronics') Electronics
+            option(value='Clothing') Clothing
+            option(value='Furniture') Furniture
+            option(value='Books') Books
+          .form-text Select which product types are allowed in this category
+        
+        .col-12
+          .form-check
+            input.form-check-input#isActive(type='checkbox' name='isActive' checked=category.isActive !== false)
+            label.form-check-label(for='isActive') Active Category
+            .form-text Inactive categories won't be visible to customers 

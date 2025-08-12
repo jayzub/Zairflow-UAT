@@ -243,7 +243,7 @@ block append scripts
         
         try {
           // First, get the user's stores to find the store ID
-          const storeResponse = await fetch('/api/stores/my-stores', {
+          const storeResponse = await fetch('/admin/my-stores', {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
             }
@@ -258,7 +258,7 @@ block append scripts
             }
           }
           
-          const response = await fetch('/api/users/create-store-admin', {
+          const response = await fetch('/admin/create-store-admin', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -308,7 +308,7 @@ block append scripts
       // Check if user has permission to create admins
       async function checkCreateAdminPermission() {
         try {
-          const userResponse = await fetch('/api/users/me', {
+          const userResponse = await fetch('/admin/me', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           

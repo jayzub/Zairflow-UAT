@@ -1,18 +1,18 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Category = require('../models/category');
-const Vendor = require('../models/vendor');
-const BaseProduct = require('../models/products/baseProduct');
+const Category = require('../../models/category');
+const Vendor = require('../../models/vendor');
+const BaseProduct = require('../../models/products/baseProduct');
 const NodeCache = require('node-cache');
 const myCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
-const { upload } = require('../config/multerConfig');
-const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson');
-const { asyncHandler } = require('../middleware/asyncHandler');
+const { upload } = require('../../config/multerConfig');
+const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
+const { asyncHandler } = require('../../middleware/asyncHandler');
 const sanitizeHtml = require('sanitize-html');
-const cloudinary = require('../config/cloudinary');
-const { sanitizeOptions } = require('../helpers/sanitizeOptions');
-const { buildProductFilter, buildAggregationPipeline, serializeProducts, getPageRange, getProductTypes, fetchCategoriesAndVendors, parseField, isValidObjectId, resolveStoreId, productTypeModelMap, initProductFields, fetchProductWithRelated, parseUpdateFields, mergeImages, prepareUpdateData } = require('../helpers/productHelpers');
-const { DEFAULT_LIMIT, DEFAULT_PAGE, DEFAULT_SORT, DEFAULT_ORDER } = require('../utils/constants');
+const cloudinary = require('../../config/cloudinary');
+const { sanitizeOptions } = require('../../helpers/sanitizeOptions');
+const { buildProductFilter, buildAggregationPipeline, serializeProducts, getPageRange, getProductTypes, fetchCategoriesAndVendors, parseField, isValidObjectId, resolveStoreId, productTypeModelMap, initProductFields, fetchProductWithRelated, parseUpdateFields, mergeImages, prepareUpdateData } = require('../../helpers/productHelpers');
+const { DEFAULT_LIMIT, DEFAULT_PAGE, DEFAULT_SORT, DEFAULT_ORDER } = require('../../utils/constants');
 
 // Admin: Get all products with admin-specific logic
 exports.getAllProducts = asyncHandler(async (req, res) => {
@@ -117,12 +117,21 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
 exports.addProductPage = asyncHandler(async (req, res) => {
     try {
         const productTypes = getProductTypes(BaseProduct);
-        const { categories, vendors } = await fetchCategoriesAndVendors();
+        
+        // Get store-specific categories and vendors
+        const storeId = req.store?._id;
+        const { categories, vendors } = await fetchCategoriesAndVendors(storeId);
+        
+        // Get allowed product types for this store
+        const { getAllowedProductTypesForStore } = require('../../helpers/productHelpers');
+        const allowedProductTypes = storeId ? await getAllowedProductTypesForStore(storeId) : productTypes;
+        
         res.render('admin/add-product', {
             pageTitle: 'Add Product',
             categories,
             vendors,
-            productTypes
+            productTypes: allowedProductTypes, // Only show allowed types
+            allProductTypes: productTypes // Keep all types for reference
         });
     } catch (error) {
         console.error('Error rendering add product page:', error);
@@ -169,14 +178,54 @@ exports.createProduct = asyncHandler(async (req, res) => {
             }
         }
 
-        // Validate categories
-        for (const categoryId of categories) {
-            if (!isValidObjectId(categoryId, mongoose)) {
-                return res.status(400).json({ success: false, message: `Invalid category ID ${categoryId}` });
+        // Validate product type is provided
+        if (!body.productType) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Product type is required. Please select a product type.' 
+            });
+        }
+
+        // Validate product type is valid
+        const { getStoreProductTypes } = require('../../helpers/productHelpers');
+        const validProductTypes = getStoreProductTypes();
+        if (!validProductTypes.includes(body.productType)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Invalid product type. Must be one of: ${validProductTypes.join(', ')}` 
+            });
+        }
+
+        // Validate product type against store subscription
+        const { validateProductTypeForStore } = require('../../helpers/productHelpers');
+        const storeValidation = await validateProductTypeForStore(body.productType, storeId);
+        if (!storeValidation.valid) {
+            return res.status(400).json({ 
+                success: false, 
+                message: storeValidation.message 
+            });
+        }
+
+        // Validate categories if provided
+        if (categories && categories.length > 0) {
+            for (const categoryId of categories) {
+                if (!isValidObjectId(categoryId, mongoose)) {
+                    return res.status(400).json({ success: false, message: `Invalid category ID ${categoryId}` });
+                }
+                const categoryExists = await Category.findById(categoryId);
+                if (!categoryExists) {
+                    return res.status(404).json({ success: false, message: `Category not found ${categoryId}` });
+                }
             }
-            const categoryExists = await Category.findById(categoryId);
-            if (!categoryExists) {
-                return res.status(404).json({ success: false, message: `Category not found ${categoryId}` });
+
+            // Validate category-product type compatibility
+            const { validateProductCategoryCompatibility } = require('../../helpers/productHelpers');
+            const compatibility = await validateProductCategoryCompatibility(body.productType, categories, storeId);
+            if (!compatibility.valid) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: compatibility.message 
+                });
             }
         }
 
@@ -206,9 +255,10 @@ exports.createProduct = asyncHandler(async (req, res) => {
         // Prepare base product data
         const productData = {
             store: storeId,
+            productType: body.productType, // Required product type
             name: body.name,
             description: body.description,
-            category: categories,
+            category: categories, // Optional categories
             brand: body.brand,
             tags: tags,
             vendor: body.vendor,
@@ -227,43 +277,20 @@ exports.createProduct = asyncHandler(async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid product type' });
         }
 
-        // Add type-specific fields
-        let productSpecificData = {};
-        switch (body.productType) {
-            case 'Clothing':
-                productSpecificData = {
-                    material: body.material,
-                    materialComposition: materialComposition || [],
-                    care: care || [],
-                    fit: body.fit,
-                    season: body.season,
-                    gender: body.gender,
-                    variants: variants || []
-                };
-                break;
-            case 'Electronics':
-                productSpecificData = {
-                    specifications: specifications,
-                    warranty: warranty,
-                    dimensions: dimensions,
-                    weight: weight,
-                    variants: variants || []
-                };
-                break;
-            case 'Furniture':
-                productSpecificData = {
-                    dimensions: dimensions,
-                    weight: weight,
-                    materials: materials,
-                    assembly: assembly,
-                    style: body.style,
-                    capacity: body.capacity,
-                    roomType: roomType,
-                    warranty: warranty,
-                    variants: variants || []
-                };
-                break;
-        }
+        // Add type-specific fields dynamically
+        const { createProductSpecificData } = require('../../helpers/productHelpers');
+        const productSpecificData = createProductSpecificData(body.productType, body, {
+            materialComposition,
+            care,
+            variants,
+            materials,
+            roomType,
+            specifications,
+            warranty,
+            dimensions,
+            weight,
+            assembly
+        });
 
         // Create and save the product
         const product = new ProductModel({ ...productData, ...productSpecificData });
@@ -433,8 +460,6 @@ exports.updateProduct = [
     })
 ];
 
-// Todo below this line
-
 // Admin: Delete a product (Soft Delete)
 exports.removeProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -478,39 +503,4 @@ exports.getFeaturedProducts = asyncHandler(async (req, res) => {
     const count = parseInt(req.params.count, 10) || 0;
     const products = await BaseProduct.find({ isFeatured: true }).limit(count);
     res.status(200).json({ success: true, data: products });
-});
-
-// Admin: Dashboard statistics
-exports.getDashboardStats = asyncHandler(async (req, res) => {
-    try {
-        // Build filter for store isolation - platform admins see all, others see their store only
-        let filter = { isActive: true };
-        if (!req.user.isPlatformAdmin && req.store) {
-            filter.store = req.store._id;
-        }
-
-        const [totalProducts, featuredProducts, lowStockProducts, totalCategories] = await Promise.all([
-            BaseProduct.countDocuments(filter),
-            BaseProduct.countDocuments({ ...filter, isFeatured: true }),
-            BaseProduct.countDocuments({ ...filter, countInStock: { $lt: 10 } }),
-            Category.countDocuments(!req.user.isPlatformAdmin && req.store ? { store: req.store._id } : {})
-        ]);
-
-        res.status(200).json({
-            success: true,
-            data: {
-                totalProducts,
-                featuredProducts,
-                lowStockProducts,
-                totalCategories
-            }
-        });
-    } catch (error) {
-        console.error('Error getting dashboard stats:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching dashboard statistics',
-            error: error.message
-        });
-    }
 }); 

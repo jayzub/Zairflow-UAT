@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
+    // Store isolation - reviews belong to stores
+    store: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Store',
+        required: true
+    },
     product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
@@ -46,8 +52,12 @@ const reviewSchema = new mongoose.Schema({
     toJSON: { virtuals: true }
 });
 
-// Prevent duplicate reviews from the same user for the same product
-reviewSchema.index({ product: 1, user: 1 }, { unique: true });
+// Indexes for store isolation
+reviewSchema.index({ store: 1, product: 1 });
+reviewSchema.index({ store: 1, user: 1 });
+reviewSchema.index({ store: 1, rating: 1 });
+// Compound unique index for store + product + user combination
+reviewSchema.index({ store: 1, product: 1, user: 1 }, { unique: true });
 
 const Review = mongoose.model('Review', reviewSchema);
 
