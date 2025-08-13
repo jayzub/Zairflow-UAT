@@ -1,6 +1,6 @@
 // Helper function to check if request is API
 const isApiRequest = (req) => {
-    return req.originalUrl.startsWith('/api');
+    return req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/admin');
 };
 
 // Helper function to handle authentication/authorization errors consistently

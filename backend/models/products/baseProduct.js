@@ -111,14 +111,9 @@ baseProductSchema.pre('save', async function(next) {
         const store = await Store.findById(this.store);
         
         if (store) {
-            const planLimits = {
-                free: ['Clothing'],
-                basic: ['Clothing', 'Electronics'],
-                premium: ['Clothing', 'Electronics', 'Furniture'],
-                enterprise: ['Clothing', 'Electronics', 'Furniture']
-            };
-            
-            const allowedTypes = planLimits[store.subscription.plan] || planLimits.free;
+            // Use the centralized product type configuration instead of hardcoded limits
+            const { getProductTypesForPlan } = require('../../config/productTypes');
+            const allowedTypes = getProductTypesForPlan(store.subscription.plan);
             
             if (!allowedTypes.includes(this.productType)) {
                 return next(new Error(

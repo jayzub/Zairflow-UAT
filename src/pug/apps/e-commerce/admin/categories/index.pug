@@ -12,11 +12,105 @@ prepend scripts
 append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize Choices for select elements
-      const choices = new Choices('.form-select', {
-        removeItemButton: true,
-        placeholder: true,
-        placeholderValue: 'Select an option'
+      // Populate product types filter dynamically
+      async function populateProductTypeFilter() {
+        try {
+          console.log('Fetching product types for filter...');
+          const response = await fetch('/admin/product-types/config');
+          console.log('Response status:', response.status);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log('Product types result:', result);
+            
+            const productTypeFilter = document.getElementById('productTypeFilter');
+            console.log('Product type filter element:', productTypeFilter);
+            
+            if (productTypeFilter) {
+              // Keep the "All Product Types" option
+              const allOption = productTypeFilter.querySelector('option[value=""]');
+              console.log('All option element:', allOption);
+              
+              productTypeFilter.innerHTML = '';
+              productTypeFilter.appendChild(allOption);
+              
+              // Add fetched product types
+              if (result.data && Array.isArray(result.data)) {
+                console.log('Adding product types:', result.data.length);
+                result.data.forEach(type => {
+                  console.log('Adding type:', type);
+                  const option = document.createElement('option');
+                  option.value = type.name;
+                  option.textContent = type.displayName || type.name;
+                  productTypeFilter.appendChild(option);
+                });
+              } else {
+                console.error('Invalid result.data format:', result.data);
+                throw new Error('Invalid data format from API');
+              }
+            }
+          } else {
+            console.error('API response not ok:', response.status, response.statusText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Failed to fetch product types for filter:', error);
+          // Fallback to hardcoded options if API fails
+          console.log('Using fallback product types');
+          const productTypeFilter = document.getElementById('productTypeFilter');
+          if (productTypeFilter) {
+            const fallbackTypes = ['Electronics', 'Clothing', 'Furniture', 'Books'];
+            fallbackTypes.forEach(type => {
+              const option = document.createElement('option');
+              option.value = type;
+              option.textContent = type;
+              productTypeFilter.appendChild(option);
+            });
+            console.log('Fallback options added');
+          }
+        }
+      }
+
+      // Add immediate fallback options for testing
+      function addImmediateFallback() {
+        console.log('Adding immediate fallback options...');
+        const productTypeFilter = document.getElementById('productTypeFilter');
+        if (productTypeFilter) {
+          const fallbackTypes = ['Electronics', 'Clothing', 'Furniture', 'Books'];
+          fallbackTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            productTypeFilter.appendChild(option);
+          });
+          console.log('Immediate fallback options added');
+        }
+      }
+
+      // Add fallback options immediately for testing
+      addImmediateFallback();
+
+      // Initialize Choices for select elements AFTER populating product types
+      let choicesInstance;
+      
+      // Call the function when page loads, then initialize Choices
+      populateProductTypeFilter().then(() => {
+        // Initialize Choices after product types are populated
+        choicesInstance = new Choices('.form-select', {
+          removeItemButton: true,
+          placeholder: true,
+          placeholderValue: 'Select an option'
+        });
+        console.log('Choices initialized after product types population');
+      }).catch(error => {
+        console.error('Error in product types population:', error);
+        // Still initialize Choices even if product types fail
+        choicesInstance = new Choices('.form-select', {
+          removeItemButton: true,
+          placeholder: true,
+          placeholderValue: 'Select an option'
+        });
       });
 
       // Search functionality
@@ -146,10 +240,7 @@ block content
       label.form-label(for='productTypeFilter') Filter by Product Type
       select.form-select#productTypeFilter
         option(value='') All Product Types
-        option(value='Electronics') Electronics
-        option(value='Clothing') Clothing
-        option(value='Furniture') Furniture
-        option(value='Books') Books
+        // Product types will be populated dynamically
     
     .col-12.col-sm-6.col-md-3
       label.form-label(for='statusFilter') Filter by Status

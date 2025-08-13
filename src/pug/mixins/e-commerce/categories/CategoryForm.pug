@@ -13,9 +13,11 @@ mixin CategoryForm(options = {})
           .form-text The name of the category as it will appear to customers
         
         .col-12.col-sm-6
+          label.form-label(for='slug') URL Slug
+          input.form-control#slug(type='text' name='slug' placeholder='auto-generated' value=category.slug readonly)
           .form-text.text-muted
             i.fas.fa-info-circle.me-2
-            | URL slug will be automatically generated from the category name
+            | Auto-generated from category name
         
         .col-12
           label.form-label(for='description') Description
@@ -51,10 +53,7 @@ mixin CategoryForm(options = {})
         .col-12
           label.form-label(for='allowedProductTypes') Allowed Product Types *
           select.form-select#allowedProductTypes(name='allowedProductTypes' multiple required)
-            option(value='Electronics') Electronics
-            option(value='Clothing') Clothing
-            option(value='Furniture') Furniture
-            option(value='Books') Books
+            // Product types will be populated dynamically from backend config
           .form-text Select which product types are allowed in this category
         
         .col-12
