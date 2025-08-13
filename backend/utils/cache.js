@@ -8,6 +8,19 @@ class StoreCache {
     constructor() {
         this.client = null;
         this.isConnected = false;
+        
+        // Default TTL values (in seconds) - can be overridden by environment variables
+        this.defaultTTLs = {
+            store: parseInt(process.env.CACHE_TTL) || 3600,           // 1 hour
+            analytics: parseInt(process.env.ANALYTICS_CACHE_TTL) || 1800,  // 30 minutes
+            settings: parseInt(process.env.SETTINGS_CACHE_TTL) || 7200,    // 2 hours
+            theme: parseInt(process.env.THEME_CACHE_TTL) || 7200,         // 2 hours
+            userStores: parseInt(process.env.USER_STORES_CACHE_TTL) || 1800, // 30 minutes
+            discovery: parseInt(process.env.DISCOVERY_CACHE_TTL) || 900,     // 15 minutes
+            adminProducts: parseInt(process.env.ADMIN_PRODUCTS_CACHE_TTL) || 300, // 5 minutes
+            generic: parseInt(process.env.GENERIC_CACHE_TTL) || 300        // 5 minutes
+        };
+        
         this.init();
     }
 
@@ -78,13 +91,14 @@ class StoreCache {
     /**
      * Set store data in cache
      */
-    async setStore(storeId, data, ttl = 3600) {
+    async setStore(storeId, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
-            await this.client.setex(`store:${storeId}`, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.store;
+            await this.client.setex(`store:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache set error:', error);
@@ -129,13 +143,14 @@ class StoreCache {
     /**
      * Set store analytics in cache
      */
-    async setStoreAnalytics(storeId, data, ttl = 1800) {
+    async setStoreAnalytics(storeId, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
-            await this.client.setex(`analytics:${storeId}`, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.analytics;
+            await this.client.setex(`analytics:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache analytics set error:', error);
@@ -163,13 +178,14 @@ class StoreCache {
     /**
      * Set store settings in cache
      */
-    async setStoreSettings(storeId, data, ttl = 7200) {
+    async setStoreSettings(storeId, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
-            await this.client.setex(`settings:${storeId}`, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.settings;
+            await this.client.setex(`settings:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache settings set error:', error);
@@ -197,13 +213,14 @@ class StoreCache {
     /**
      * Set store theme in cache
      */
-    async setStoreTheme(storeId, data, ttl = 7200) {
+    async setStoreTheme(storeId, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
-            await this.client.setex(`theme:${storeId}`, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.theme;
+            await this.client.setex(`theme:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache theme set error:', error);
@@ -231,13 +248,14 @@ class StoreCache {
     /**
      * Set user stores in cache
      */
-    async setUserStores(userId, data, ttl = 1800) {
+    async setUserStores(userId, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
-            await this.client.setex(`user_stores:${userId}`, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.userStores;
+            await this.client.setex(`user_stores:${userId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache user stores set error:', error);
@@ -283,14 +301,15 @@ class StoreCache {
     /**
      * Set store discovery results in cache
      */
-    async setStoreDiscovery(query, data, ttl = 900) {
+    async setStoreDiscovery(query, data, ttl = null) {
         if (!this.isConnected) {
             return false;
         }
 
         try {
             const key = `discovery:${JSON.stringify(query)}`;
-            await this.client.setex(key, ttl, JSON.stringify(data));
+            const cacheTTL = ttl || this.defaultTTLs.discovery;
+            await this.client.setex(key, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache discovery set error:', error);
@@ -358,6 +377,126 @@ class StoreCache {
         } catch (error) {
             console.error('Cache stats error:', error);
             return null;
+        }
+    }
+
+    /**
+     * Generic cache get method
+     */
+    async get(key) {
+        if (!this.isConnected) {
+            return null;
+        }
+
+        try {
+            const cached = await this.client.get(key);
+            return cached ? JSON.parse(cached) : null;
+        } catch (error) {
+            console.error('Cache get error:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Generic cache set method with TTL
+     */
+    async set(key, data, ttl = null) {
+        if (!this.isConnected) {
+            return false;
+        }
+
+        try {
+            const cacheTTL = ttl || this.defaultTTLs.generic;
+            await this.client.setex(key, cacheTTL, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Cache set error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Generic cache delete method
+     */
+    async del(key) {
+        if (!this.isConnected) {
+            return false;
+        }
+
+        try {
+            await this.client.del(key);
+            return true;
+        } catch (error) {
+            console.error('Cache delete error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get all cache keys (for maintenance)
+     */
+    async keys() {
+        if (!this.isConnected) {
+            return [];
+        }
+
+        try {
+            const keys = await this.client.keys('*');
+            return keys;
+        } catch (error) {
+            console.error('Cache keys error:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Check if a key exists in cache
+     */
+    async exists(key) {
+        if (!this.isConnected) {
+            return false;
+        }
+
+        try {
+            const result = await this.client.exists(key);
+            return result === 1;
+        } catch (error) {
+            console.error('Cache exists error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get TTL for a key
+     */
+    async getTTL(key) {
+        if (!this.isConnected) {
+            return -1;
+        }
+
+        try {
+            const ttl = await this.client.ttl(key);
+            return ttl;
+        } catch (error) {
+            console.error('Cache TTL error:', error);
+            return -1;
+        }
+    }
+
+    /**
+     * Set TTL for an existing key
+     */
+    async expire(key, ttl) {
+        if (!this.isConnected) {
+            return false;
+        }
+
+        try {
+            const result = await this.client.expire(key, ttl);
+            return result === 1;
+        } catch (error) {
+            console.error('Cache expire error:', error);
+            return false;
         }
     }
 

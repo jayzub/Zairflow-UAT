@@ -81,19 +81,35 @@ exports.editCategoryPage = asyncHandler(async (req, res) => {
 // Admin: Create a new category
 exports.createCategory = asyncHandler(async (req, res) => {
     try {
-        const { name, description, parent, displayOrder, isActive } = req.body;
+        // Debug: Log the request body
+        console.log('Request body:', req.body);
+        console.log('Request headers:', req.headers);
         
-        // Generate slug from name
+        const { name, description, parent, displayOrder, isActive, slug: providedSlug } = req.body;
+        
+        // Validate required fields
+        if (!name || typeof name !== 'string' || name.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Category name is required and must be a non-empty string',
+                receivedData: { name, description, parent, displayOrder, isActive, slug: providedSlug }
+            });
+        }
+        
+        // Generate slug from name if not provided
         const generateSlug = (name) => {
+            if (!name || typeof name !== 'string') {
+                throw new Error('Name parameter is required and must be a string');
+            }
             return name
                 .toLowerCase()
                 .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
                 .replace(/\s+/g, '-') // Replace spaces with hyphens
                 .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-                .trim('-'); // Remove leading/trailing hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
         };
         
-        let slug = generateSlug(name);
+        let slug = providedSlug || generateSlug(name);
         let counter = 1;
         let originalSlug = slug;
         
@@ -103,6 +119,21 @@ exports.createCategory = asyncHandler(async (req, res) => {
             counter++;
         }
         
+        // Handle allowedProductTypes array
+        let allowedProductTypes = [];
+        if (req.body.allowedProductTypes) {
+            if (Array.isArray(req.body.allowedProductTypes)) {
+                allowedProductTypes = req.body.allowedProductTypes;
+            } else if (typeof req.body.allowedProductTypes === 'string') {
+                // Handle case where it might be sent as JSON string
+                try {
+                    allowedProductTypes = JSON.parse(req.body.allowedProductTypes);
+                } catch (e) {
+                    allowedProductTypes = [req.body.allowedProductTypes];
+                }
+            }
+        }
+        
         const categoryData = {
             name,
             slug,
@@ -110,6 +141,7 @@ exports.createCategory = asyncHandler(async (req, res) => {
             parent: parent || null,
             displayOrder: displayOrder || 0,
             isActive: isActive !== 'false',
+            allowedProductTypes: allowedProductTypes.length > 0 ? allowedProductTypes : undefined,
             store: req.store._id
         };
 

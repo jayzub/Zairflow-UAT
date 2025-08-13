@@ -1,7 +1,7 @@
 extends ../../../layouts/LayoutTheme
 include ../../../mixins/dashboard/common
 include ../../../mixins/e-commerce/add-product/OrganizeCard
-include ../../../mixins/e-commerce/add-product/VariantCard
+include ../../../mixins/e-commerce/add-product/DynamicProductFields
 include ../../../mixins/e-commerce/add-product/ProductDescription
 include ../../../mixins/e-commerce/add-product/DisplayImage
 include ../../../mixins/dashboard/common
@@ -33,14 +33,276 @@ append scripts
         }
       });
 
+      // Populate product types from backend config
+      async function populateProductTypes() {
+        try {
+          const response = await fetch('/admin/product-types/config');
+          if (response.ok) {
+            const result = await response.json();
+            const productTypeSelect = document.querySelector('#productTypeSelect');
+            
+            // Clear existing options
+            productTypeSelect.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select product type...';
+            productTypeSelect.appendChild(defaultOption);
+            
+            // Store product types configuration globally for dynamic field generation
+            window.productTypesConfig = {};
+            result.data.forEach(type => {
+              window.productTypesConfig[type.name] = type;
+              const option = document.createElement('option');
+              option.value = type.name;
+              option.textContent = type.displayName || type.name;
+              productTypeSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch product types:', error);
+          // Fallback to hardcoded options if API fails
+          const productTypeSelect = document.querySelector('#productTypeSelect');
+          
+          // Fallback product types with full configuration
+          const fallbackTypes = {
+            'Electronics': {
+              name: 'Electronics',
+              displayName: 'Electronics & Gadgets',
+              fields: {
+                modelNumber: { type: 'string', required: false, label: 'Model Number' },
+                specifications: { type: 'object', required: false, label: 'Specifications' },
+                warranty: { type: 'object', required: false, label: 'Warranty' },
+                dimensions: { type: 'object', required: false, label: 'Dimensions' },
+                weight: { type: 'object', required: false, label: 'Weight' }
+              }
+            },
+            'Clothing': {
+              name: 'Clothing',
+              displayName: 'Clothing & Apparel',
+              fields: {
+                material: { type: 'string', required: false, label: 'Material' },
+                materialComposition: { type: 'array', required: false, label: 'Material Composition' },
+                care: { type: 'array', required: false, label: 'Care Instructions' },
+                fit: { type: 'string', required: false, label: 'Fit Type' },
+                season: { type: 'string', required: false, label: 'Season' },
+                gender: { 
+                  type: 'string', 
+                  required: false, 
+                  label: 'Gender',
+                  enum: ['men', 'women', 'unisex', 'kids'],
+                  options: [
+                    { value: 'men', label: 'Men' },
+                    { value: 'women', label: 'Women' },
+                    { value: 'unisex', label: 'Unisex' },
+                    { value: 'kids', label: 'Kids' }
+                  ]
+                }
+              }
+            },
+            'Furniture': {
+              name: 'Furniture',
+              displayName: 'Furniture & Home',
+              fields: {
+                dimensions: { type: 'object', required: false, label: 'Dimensions' },
+                weight: { type: 'object', required: false, label: 'Weight' },
+                materials: { type: 'array', required: false, label: 'Materials' },
+                assembly: { type: 'object', required: false, label: 'Assembly' },
+                style: { type: 'string', required: false, label: 'Style' },
+                roomType: { type: 'array', required: false, label: 'Room Type' }
+              }
+            },
+            'Books': {
+              name: 'Books',
+              displayName: 'Books & Publications',
+              fields: {
+                author: { type: 'string', required: false, label: 'Author' },
+                publisher: { type: 'string', required: false, label: 'Publisher' },
+                isbn: { type: 'string', required: false, label: 'ISBN' },
+                language: { type: 'string', required: false, label: 'Language' },
+                format: { 
+                  type: 'string', 
+                  required: false, 
+                  label: 'Format',
+                  enum: ['hardcover', 'paperback', 'ebook', 'audiobook'],
+                  options: [
+                    { value: 'hardcover', label: 'Hardcover' },
+                    { value: 'paperback', label: 'Paperback' },
+                    { value: 'ebook', label: 'E-Book' },
+                    { value: 'audiobook', label: 'Audiobook' }
+                  ]
+                },
+                genre: { type: 'array', required: false, label: 'Genre' },
+                pages: { type: 'number', required: false, label: 'Pages' },
+                publicationDate: { type: 'date', required: false, label: 'Publication Date' }
+              }
+            }
+          };
+          
+          // Store fallback configurations globally
+          window.productTypesConfig = fallbackTypes;
+          
+          // Clear existing options
+          productTypeSelect.innerHTML = '';
+          
+          // Add default option
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Select product type...';
+          productTypeSelect.appendChild(defaultOption);
+          
+          // Add fallback options
+          Object.values(fallbackTypes).forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.name;
+            option.textContent = type.displayName || type.name;
+            productTypeSelect.appendChild(option);
+          });
+        }
+      }
+
+      // Dynamic field generation function
+      function generateProductTypeFields(productType) {
+        const container = document.getElementById('dynamicProductFields');
+        if (!container) return;
+
+        // Clear existing content
+        container.innerHTML = '';
+
+        if (!productType) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-info-circle me-2"></i>
+              Select a product type to see specific fields
+            </div>
+          `;
+          return;
+        }
+
+        // Get product type configuration
+        const productTypeConfig = getProductTypeConfig(productType);
+        if (!productTypeConfig) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Product type configuration not found
+            </div>
+          `;
+          return;
+        }
+
+        // Generate fields based on configuration
+        let fieldsHTML = `<h5 class="mb-3">${productTypeConfig.displayName || productTypeConfig.name} Details</h5>`;
+        
+        if (productTypeConfig.fields) {
+          Object.entries(productTypeConfig.fields).forEach(([fieldName, fieldConfig]) => {
+            fieldsHTML += generateFieldHTML(fieldName, fieldConfig);
+          });
+        }
+
+        container.innerHTML = fieldsHTML;
+      }
+
+      // Helper function to generate individual field HTML
+      function generateFieldHTML(fieldName, fieldConfig) {
+        const { type, required, label, enum: enumValues, options } = fieldConfig;
+        const fieldLabel = label || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+        const isRequired = required ? 'required' : '';
+        
+        let fieldHTML = `
+          <div class="mb-3">
+            <label class="form-label">${fieldLabel}${required ? ' *' : ''}</label>
+        `;
+
+        switch (type) {
+          case 'string':
+            if (enumValues && options) {
+              fieldHTML += `<select class="form-select" name="${fieldName}" ${isRequired}>`;
+              fieldHTML += `<option value="">Select ${fieldLabel.toLowerCase()}...</option>`;
+              options.forEach(option => {
+                fieldHTML += `<option value="${option.value}">${option.label}</option>`;
+              });
+              fieldHTML += '</select>';
+            } else {
+              fieldHTML += `<input class="form-control" type="text" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>`;
+            }
+            break;
+          
+          case 'number':
+            fieldHTML += `<input class="form-control" type="number" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>`;
+            break;
+          
+          case 'boolean':
+            fieldHTML += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="${fieldName}" id="${fieldName}">
+                <label class="form-check-label" for="${fieldName}">${fieldLabel}</label>
+              </div>
+            `;
+            break;
+          
+          case 'date':
+            fieldHTML += `<input class="form-control" type="date" name="${fieldName}" ${isRequired}>`;
+            break;
+          
+          case 'array':
+            fieldHTML += `
+              <div class="array-container">
+                <input class="form-control mb-2" type="text" name="${fieldName}[0]" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>
+                <button class="btn btn-outline-primary btn-sm add-array-item" type="button" data-field="${fieldName}">Add ${fieldLabel}</button>
+              </div>
+            `;
+            break;
+          
+          case 'object':
+            fieldHTML += `<textarea class="form-control" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()} (JSON format)" rows="3" ${isRequired}></textarea>`;
+            break;
+          
+          default:
+            fieldHTML += `<input class="form-control" type="text" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>`;
+        }
+
+        fieldHTML += '</div>';
+        return fieldHTML;
+      }
+
+      // Helper function to get product type configuration
+      function getProductTypeConfig(productTypeName) {
+        // This will be populated when we fetch product types
+        return window.productTypesConfig?.[productTypeName];
+      }
+
       // Product type selection handler
       const productTypeSelect = document.querySelector('select[name="productType"]');
-      const typeFields = document.querySelectorAll('.product-type-fields');
-
+      
       productTypeSelect?.addEventListener('change', function() {
-        typeFields.forEach(field => field.classList.add('d-none'));
-        const selectedType = this.value.toLowerCase();
-        document.querySelector(`.${selectedType}-fields`)?.classList.remove('d-none');
+        const selectedType = this.value;
+        console.log('Product type selected:', selectedType);
+        console.log('Available configs:', window.productTypesConfig);
+        generateProductTypeFields(selectedType);
+      });
+
+      // Call the function when page loads
+      populateProductTypes();
+
+      // Event delegation for dynamic array fields
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-array-item')) {
+          const fieldName = e.target.dataset.field;
+          const container = e.target.closest('.array-container');
+          const existingInputs = container.querySelectorAll(`input[name^="${fieldName}["]`);
+          const newIndex = existingInputs.length;
+          
+          const newInput = document.createElement('div');
+          newInput.className = 'input-group mb-2';
+          newInput.innerHTML = `
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}]" placeholder="Enter ${fieldName}">
+            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
+          `;
+          
+          container.insertBefore(newInput, e.target);
+        }
       });
 
       // Clothing: Material Composition handler
@@ -581,7 +843,8 @@ append scripts
     });
 
 append variables
-  - 
+  - var pageTitle = 'Add Product'
+  - var productTypes = [{ value: 'Electronics', label: 'Electronics' }, { value: 'Clothing', label: 'Clothing' }, { value: 'Furniture', label: 'Furniture' }, { value: 'Books', label: 'Books' }]
 
 block content
   form.mb-9#productForm(action="/admin/products" method="POST" enctype="multipart/form-data")
@@ -604,4 +867,4 @@ block content
           .col-12.col-xl-12
             +OrganizeCard({ categories, vendors }).mb-3
           .col-12.col-xl-12
-            +VariantCard
+            +DynamicProductFields

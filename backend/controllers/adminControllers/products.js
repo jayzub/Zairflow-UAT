@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const Category = require('../../models/category');
 const Vendor = require('../../models/vendor');
 const BaseProduct = require('../../models/products/baseProduct');
-const NodeCache = require('node-cache');
-const myCache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
+const storeCache = require('../../utils/cache');
 const { upload } = require('../../config/multerConfig');
 const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
 const { asyncHandler } = require('../../middleware/asyncHandler');
@@ -30,9 +29,9 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
             req.headers['x-requested-with'] === 'XMLHttpRequest' ||
             req.headers['accept'] === 'application/json';
 
-        // Check Node cache (only for non-AJAX requests)
+        // Check Redis cache (only for non-AJAX requests)
         const cacheKey = `admin_products:${JSON.stringify({ page, limit, sort, order, filter, isAjax: isAjaxRequest })}`;
-        const cachedResult = myCache.get(cacheKey);
+        const cachedResult = await storeCache.get(cacheKey);
 
         if (cachedResult && !isAjaxRequest) {
             return respondWithViewOrJson(req, res, 'admin/products', cachedResult);
@@ -79,7 +78,7 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
         };
 
         // Cache the result
-        myCache.set(cacheKey, result);
+        await storeCache.set(cacheKey, result);
 
         if (isAjaxRequest) {
             // Return JSON for AJAX requests (infinite scroll)
@@ -151,6 +150,16 @@ exports.createProduct = asyncHandler(async (req, res) => {
         // Sanitize the description HTML
         if (body.description) {
             body.description = sanitizeHtml(body.description, sanitizeOptions);
+        }
+
+        // Determine store from authenticated user or request (moved up to fix reference error)
+        const storeId = resolveStoreId(req, body);
+        
+        if (!storeId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Store ID is required. Please specify a store you have access to.'
+            });
         }
 
         // Parse fields
@@ -243,15 +252,6 @@ exports.createProduct = asyncHandler(async (req, res) => {
             ? mongoose.Types.Decimal128.fromString(body.salePrice.toString())
             : null;
 
-        // Determine store from authenticated user or request
-        const storeId = resolveStoreId(req, body);
-        if (!storeId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Store ID is required. Please specify a store you have access to.'
-            });
-        }
-
         // Prepare base product data
         const productData = {
             store: storeId,
@@ -297,12 +297,12 @@ exports.createProduct = asyncHandler(async (req, res) => {
         const savedProduct = await product.save();
 
         // Clear the products cache
-        const cacheKeys = myCache.keys();
-        cacheKeys.forEach(key => {
+        const cacheKeys = await storeCache.keys();
+        for (const key of cacheKeys) {
             if (key.startsWith('products:') || key.startsWith('admin_products:')) {
-                myCache.del(key);
+                await storeCache.del(key);
             }
-        });
+        }
 
         // Return success response
         return res.status(201).json({
@@ -438,12 +438,12 @@ exports.updateProduct = [
                 { new: true, runValidators: true }
             );
             // Clear the products cache
-            const cacheKeys = myCache.keys();
-            cacheKeys.forEach(key => {
+            const cacheKeys = await storeCache.keys();
+            for (const key of cacheKeys) {
                 if (key.startsWith('products:') || key.startsWith('admin_products:')) {
-                    myCache.del(key);
+                    await storeCache.del(key);
                 }
-            });
+            }
             res.status(200).json({
                 success: true,
                 data: updatedProduct,

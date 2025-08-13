@@ -160,7 +160,8 @@ exports.isValidObjectId = (id, mongoose) => mongoose.isValidObjectId(id);
 // Helper to resolve storeId for product creation
 exports.resolveStoreId = (req, body) => {
     let storeId = req.store?._id;
-    if (req.user.isPlatformAdmin) {
+    
+    if (req.user?.isPlatformAdmin) {
         if (body.storeId) {
             storeId = body.storeId;
         } else if (req.store) {
@@ -185,6 +186,7 @@ exports.resolveStoreId = (req, body) => {
             }
         }
     }
+    
     return storeId;
 };
 
@@ -466,6 +468,12 @@ exports.validateProductTypeForStore = async (productType, storeId) => {
         const store = await Store.findById(storeId);
         if (!store) {
             return { valid: false, message: 'Store not found' };
+        }
+        
+        // Check if store has subscription info
+        if (!store.subscription || !store.subscription.plan) {
+            console.warn(`Store ${storeId} has no subscription plan, allowing all product types`);
+            return { valid: true, message: 'Product type is allowed (no subscription restrictions)' };
         }
         
         const allowedTypes = getProductTypesForPlan(store.subscription.plan);

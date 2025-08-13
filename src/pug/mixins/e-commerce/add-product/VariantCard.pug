@@ -184,4 +184,33 @@ mixin VariantCard
         input.form-control.mb-2(type='text' name='capacity' placeholder='Capacity')
         input.form-control.mb-2(type='text' name='roomType' placeholder='Room Types (comma-separated)')
 
+      //- Books specific fields
+      .product-type-fields.books-fields.d-none
+        h5.mb-3 Books Details
+        .row.g-3
+          .col-12
+            input.form-control.mb-2(type='text' name='author' placeholder='Author')
+            input.form-control.mb-2(type='text' name='publisher' placeholder='Publisher')
+            input.form-control.mb-2(type='text' name='isbn' placeholder='ISBN')
+            input.form-control.mb-2(type='text' name='language' placeholder='Language')
+            
+            select.form-select.mb-2(name='format')
+              option(value='') Select format...
+              option(value='hardcover') Hardcover
+              option(value='paperback') Paperback
+              option(value='ebook') E-Book
+              option(value='audiobook') Audiobook
+            
+            input.form-control.mb-2(type='text' name='genre' placeholder='Genre (comma-separated)')
+            input.form-control.mb-2(type='number' name='pages' placeholder='Number of Pages')
+            input.form-control.mb-2(type='date' name='publicationDate' placeholder='Publication Date')
+
+        h5.mb-3.mt-3 Variants
+        .variants-container
+          .variant-item.mb-3
+            input.form-control.mb-2(type='text' name='variants[0].format' placeholder='Format')
+            input.form-control.mb-2(type='text' name='variants[0].language' placeholder='Language')
+            input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
+        button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
+
         
