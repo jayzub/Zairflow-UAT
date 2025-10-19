@@ -4,7 +4,7 @@ mixin DashboardDropdown(id, reveal, iconClass='fs-10')
       span.fas.fa-ellipsis-h(class=iconClass)
     .dropdown-menu.dropdown-menu-end.py-2(aria-labelledby=id )
       a(href=`/api/products/${id}`).dropdown-item View
-      a(href=`/api/products/edit/${id}`).dropdown-item Edit
+      a(href=`/admin/products/edit/${id}`).dropdown-item Edit
       .dropdown-divider
       a(href='#!').dropdown-item.text-danger Remove
 

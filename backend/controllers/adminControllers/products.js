@@ -152,7 +152,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
             body.description = sanitizeHtml(body.description, sanitizeOptions);
         }
 
-        // Determine store from authenticated user or request (moved up to fix reference error)
+        // Determine store from authenticated user or request
         const storeId = resolveStoreId(req, body);
         
         if (!storeId) {
@@ -175,6 +175,26 @@ exports.createProduct = asyncHandler(async (req, res) => {
         const dimensions = parseField(body.dimensions);
         const weight = parseField(body.weight);
         const assembly = parseField(body.assembly);
+        
+        // Parse additional fields for all product types
+        const ingredients = parseField(body.ingredients);
+        const nutritionalInfo = parseField(body.nutritionalInfo);
+        const allergens = parseField(body.allergens);
+        const volume = parseField(body.volume);
+        const genre = parseField(body.genre);
+        const author = body.author;
+        const publisher = body.publisher;
+        const isbn = body.isbn;
+        const language = body.language;
+        const format = body.format;
+        const pages = body.pages;
+        const publicationDate = body.publicationDate;
+        const brand = body.brand;
+        const expiryDate = body.expiryDate;
+        const sport = body.sport;
+        const skillLevel = body.skillLevel;
+        const room = body.room;
+        const skinType = body.skinType;
 
         // Validate vendor if provided
         if (body.vendor) {
@@ -289,7 +309,25 @@ exports.createProduct = asyncHandler(async (req, res) => {
             warranty,
             dimensions,
             weight,
-            assembly
+            assembly,
+            ingredients,
+            nutritionalInfo,
+            allergens,
+            volume,
+            genre,
+            author,
+            publisher,
+            isbn,
+            language,
+            format,
+            pages,
+            publicationDate,
+            brand,
+            expiryDate,
+            sport,
+            skillLevel,
+            room,
+            skinType
         });
 
         // Create and save the product
@@ -427,6 +465,56 @@ exports.updateProduct = [
                         capacity: body.capacity,
                         roomType: parsed.roomType,
                         warranty: parsed.warranty,
+                        variants: parsed.variants || []
+                    });
+                    break;
+                case 'Books':
+                    Object.assign(updateData, {
+                        author: body.author,
+                        publisher: body.publisher,
+                        isbn: body.isbn,
+                        language: body.language,
+                        format: body.format,
+                        genre: parsed.genre || [],
+                        pages: body.pages,
+                        publicationDate: body.publicationDate,
+                        variants: parsed.variants || []
+                    });
+                    break;
+                case 'Food':
+                    Object.assign(updateData, {
+                        brand: body.brand,
+                        ingredients: parsed.ingredients || [],
+                        nutritionalInfo: parsed.nutritionalInfo,
+                        expiryDate: body.expiryDate,
+                        allergens: parsed.allergens || [],
+                        variants: parsed.variants || []
+                    });
+                    break;
+                case 'Sports':
+                    Object.assign(updateData, {
+                        sport: body.sport,
+                        skillLevel: body.skillLevel,
+                        material: body.material,
+                        weight: parsed.weight,
+                        variants: parsed.variants || []
+                    });
+                    break;
+                case 'HomeGarden':
+                    Object.assign(updateData, {
+                        room: body.room,
+                        material: body.material,
+                        dimensions: parsed.dimensions,
+                        variants: parsed.variants || []
+                    });
+                    break;
+                case 'HealthBeauty':
+                    Object.assign(updateData, {
+                        brand: body.brand,
+                        skinType: body.skinType,
+                        ingredients: parsed.ingredients || [],
+                        volume: parsed.volume,
+                        expiryDate: body.expiryDate,
                         variants: parsed.variants || []
                     });
                     break;

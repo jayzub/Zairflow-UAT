@@ -196,6 +196,10 @@ exports.productTypeModelMap = {
     Electronics: require('../models/products/electronics'),
     Furniture: require('../models/products/furniture'),
     Books: require('../models/products/books'),
+    Food: require('../models/products/food'),
+    Sports: require('../models/products/sports'),
+    HomeGarden: require('../models/products/homeGarden'),
+    HealthBeauty: require('../models/products/healthBeauty'),
 };
 
 // Helper to fetch categories and vendors with store filtering
@@ -262,7 +266,12 @@ exports.parseUpdateFields = (body) => {
         warranty: exports.parseField(body.warranty),
         dimensions: exports.parseField(body.dimensions),
         weight: exports.parseField(body.weight),
-        assembly: exports.parseField(body.assembly)
+        assembly: exports.parseField(body.assembly),
+        ingredients: exports.parseField(body.ingredients),
+        nutritionalInfo: exports.parseField(body.nutritionalInfo),
+        allergens: exports.parseField(body.allergens),
+        volume: exports.parseField(body.volume),
+        genre: exports.parseField(body.genre)
     };
 };
 
@@ -446,6 +455,16 @@ exports.createProductSpecificData = (productType, body, parsed) => {
             case 'object':
                 if (parsed[fieldName]) {
                     productData[fieldName] = parsed[fieldName];
+                }
+                break;
+            case 'number':
+                if (body[fieldName]) {
+                    productData[fieldName] = Number(body[fieldName]);
+                }
+                break;
+            case 'date':
+                if (body[fieldName]) {
+                    productData[fieldName] = new Date(body[fieldName]);
                 }
                 break;
         }

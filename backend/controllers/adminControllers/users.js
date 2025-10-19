@@ -35,6 +35,8 @@ exports.login = asyncHandler(async (req, res) => {
     return res.status(200).json({
         success: true,
         user: user.email,
+        role: user.role,
+        isPlatformAdmin: user.isPlatformAdmin,
         token: token
     });
 });

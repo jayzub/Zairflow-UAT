@@ -139,14 +139,23 @@ block append scripts
             localStorage.setItem('adminToken', data.token);
             localStorage.setItem('adminUser', JSON.stringify({
               email: data.user,
+              role: data.role,
+              isPlatformAdmin: data.isPlatformAdmin,
               isAdmin: true
             }));
             
             showSuccess('Sign in successful! Redirecting...');
             
-            // Check if user has stores and redirect accordingly
+            // Check if user is platform admin or has stores and redirect accordingly
             setTimeout(async () => {
               try {
+                // Platform admins should go directly to admin dashboard
+                if (data.isPlatformAdmin || data.role === 'platform_admin') {
+                  window.location.href = '/admin/';
+                  return;
+                }
+                
+                // For regular admins, check if they have stores
                 const storeResponse = await fetch('/admin/my-stores', {
                   headers: {
                     'Authorization': `Bearer ${data.token}`
@@ -156,7 +165,7 @@ block append scripts
                 if (storeResponse.ok) {
                   const storeData = await storeResponse.json();
                   if (storeData.success && storeData.data && storeData.data.length > 0) {
-                            // User has stores, redirect to admin index
+                    // User has stores, redirect to admin index
                     window.location.href = '/admin/';
                   } else {
                     // User has no stores, redirect to create-store
