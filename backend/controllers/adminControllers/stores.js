@@ -435,56 +435,103 @@ exports.updateStoreTheme = asyncHandler(async (req, res) => {
 // Admin: Get user's stores
 exports.getUserStores = asyncHandler(async (req, res) => {
     try {
-        // Get stores where user is owner or admin
-        const stores = await Store.aggregate([
-            {
-                $match: {
-                    $or: [
-                        { owner: req.user._id },
-                        { admins: req.user._id }
-                    ]
+        let stores;
+        
+        // Platform admins can see all stores
+        if (req.user.isPlatformAdmin || req.user.role === 'platform_admin') {
+            stores = await Store.aggregate([
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'owner',
+                        foreignField: '_id',
+                        as: 'owner'
+                    }
+                },
+                {
+                    $unwind: '$owner'
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'admins',
+                        foreignField: '_id',
+                        as: 'admins'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        description: 1,
+                        slug: 1,
+                        isActive: 1,
+                        isVerified: 1,
+                        dateCreated: 1,
+                        'owner._id': 1,
+                        'owner.firstName': 1,
+                        'owner.lastName': 1,
+                        'owner.email': 1,
+                        'admins._id': 1,
+                        'admins.firstName': 1,
+                        'admins.lastName': 1,
+                        'admins.email': 1,
+                        subscription: 1
+                    }
                 }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'owner',
-                    foreignField: '_id',
-                    as: 'owner'
+            ]);
+        } else {
+            // Regular users only see stores where they are owner or admin
+            stores = await Store.aggregate([
+                {
+                    $match: {
+                        $or: [
+                            { owner: req.user._id },
+                            { admins: req.user._id }
+                        ]
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'owner',
+                        foreignField: '_id',
+                        as: 'owner'
+                    }
+                },
+                {
+                    $unwind: '$owner'
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'admins',
+                        foreignField: '_id',
+                        as: 'admins'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        name: 1,
+                        description: 1,
+                        slug: 1,
+                        isActive: 1,
+                        isVerified: 1,
+                        dateCreated: 1,
+                        'owner._id': 1,
+                        'owner.firstName': 1,
+                        'owner.lastName': 1,
+                        'owner.email': 1,
+                        'admins._id': 1,
+                        'admins.firstName': 1,
+                        'admins.lastName': 1,
+                        'admins.email': 1,
+                        subscription: 1
+                    }
                 }
-            },
-            {
-                $unwind: '$owner'
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'admins',
-                    foreignField: '_id',
-                    as: 'admins'
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    description: 1,
-                    slug: 1,
-                    isActive: 1,
-                    isVerified: 1,
-                    dateCreated: 1,
-                    'owner._id': 1,
-                    'owner.firstName': 1,
-                    'owner.lastName': 1,
-                    'owner.email': 1,
-                    'admins._id': 1,
-                    'admins.firstName': 1,
-                    'admins.lastName': 1,
-                    'admins.email': 1,
-                    subscription: 1
-                }
-            }
-        ]);
+            ]);
+        }
 
         res.status(200).json({
             success: true,

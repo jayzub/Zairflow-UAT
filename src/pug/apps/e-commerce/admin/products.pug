@@ -87,7 +87,7 @@ block content
             button.btn.btn-link.text-body.me-4.px-0
               span.fa-solid.fa-file-export.fs-9.me-2
               | Export
-            a.btn.btn-primary#addBtn(href=`/${apiUrl}/products/add-product`)
+            a.btn.btn-primary#addBtn(href=`/${adminUrl}/products/add`)
               span.fas.fa-plus.me-2
               | Add product
       
@@ -389,7 +389,7 @@ append scripts
                 <span class="fas fa-ellipsis-h fs-11"></span>
               </button>
               <div class="dropdown-menu dropdown-menu-end border py-2">
-                <a class="dropdown-item" href="/api/products/edit/${product._id}">Edit</a>
+                <a class="dropdown-item" href="/admin/products/edit/${product._id}">Edit</a>
                 <a class="dropdown-item" href="/api/products/${product._id}">View</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item text-danger" href="#!" onclick="deleteProduct('${product._id}')">Delete</a>

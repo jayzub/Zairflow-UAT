@@ -156,7 +156,7 @@ const PRODUCT_TYPES = {
     },
     
     HOME_GARDEN: {
-        name: 'Home & Garden',
+        name: 'HomeGarden',
         displayName: 'Home & Garden',
         description: 'Home improvement and garden supplies',
         icon: 'fas fa-home',
@@ -172,7 +172,7 @@ const PRODUCT_TYPES = {
     },
 
     HEALTH_BEAUTY: {
-        name: 'Health & Beauty',
+        name: 'HealthBeauty',
         displayName: 'Health & Beauty',
         description: 'Health, beauty, and personal care products',
         icon: 'fas fa-spa',

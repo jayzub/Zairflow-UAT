@@ -57,6 +57,25 @@ append layoutScripts
   script(src=`${CWD}vendors/list.js/list.min.js`)
   script(src=`${CWD}vendors/feather-icons/feather.min.js`)
   script(src=`${CWD}vendors/dayjs/dayjs.min.js`)
+  
+  //- Add logout functionality for Sign out button in ProfileDropdown
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle logout from profile dropdown Sign out button
+      document.addEventListener('click', function(e) {
+        // Check if the clicked element is the Sign out button or contains it
+        if (e.target && (e.target.id === 'signOutBtn' || e.target.closest('#signOutBtn'))) {
+          e.preventDefault();
+          
+          // Clear local storage
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          
+          // Redirect to login page
+          window.location.href = '/admin/auth/sign-in';
+        }
+      });
+    });
 
 block mainContent
   //- +LayoutContentProd
