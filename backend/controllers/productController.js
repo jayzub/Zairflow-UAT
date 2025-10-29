@@ -125,201 +125,129 @@ exports.getProductById = asyncHandler(async (req, res) => {
         colorVariantImages['default'] = gallery.map(img => img.url);
     }
 
-    // Prepare specifications sections based on product type
-    let specificationSections = [];
-    
-    switch (productObj.productType) {
-        case 'Electronics':
-            if (productObj.specifications?.processor) {
-                specificationSections.push({
-                    title: 'Processor/Chipset',
-                    specs: [
-                        { label: 'Name', value: productObj.specifications.processor.name },
-                        { label: 'Cores', value: productObj.specifications.processor.cores },
-                        { label: 'Speed', value: productObj.specifications.processor.speed },
-                        { label: 'Architecture', value: productObj.specifications.processor.architecture }
-                    ].filter(spec => spec.value)
+    // Helper function to generate specifications sections
+    function generateSpecificationSections(productObj) {
+        const sections = [];
+        
+        // Generic key-value array handler
+        function addKeyValueSection(title, fieldName, productObj) {
+            if (productObj[fieldName]?.length) {
+                sections.push({
+                    title: title,
+                    specs: productObj[fieldName].map(item => {
+                        const key = Object.keys(item)[0];
+                        const value = item[key];
+                        return { label: key, value: value };
+                    })
                 });
             }
-
-            if (productObj.specifications?.memory) {
-                specificationSections.push({
-                    title: 'Storage',
-                    specs: [
-                        { label: 'RAM', value: `${productObj.specifications.memory.ram} ${productObj.specifications.memory.ramUnit}` },
-                        { label: 'Storage', value: `${productObj.specifications.memory.storage} ${productObj.specifications.memory.storageUnit}` },
-                        { label: 'Storage Type', value: productObj.specifications.memory.storageType }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.specifications?.display) {
-                specificationSections.push({
-                    title: 'Display',
-                    specs: [
-                        { label: 'Size', value: `${productObj.specifications.display.size}"` },
-                        { label: 'Resolution', value: productObj.specifications.display.resolution },
-                        { label: 'Technology', value: productObj.specifications.display.technology },
-                        { label: 'Refresh Rate', value: productObj.specifications.display.refreshRate ? `${productObj.specifications.display.refreshRate}Hz` : null },
-                        { label: 'Brightness', value: productObj.specifications.display.brightness ? `${productObj.specifications.display.brightness} nits` : null },
-                        { label: 'HDR', value: productObj.specifications.display.hdr ? 'Yes' : 'No' }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.specifications?.ports || productObj.specifications?.connectivity) {
-                const connectivitySpecs = [];
-                if (productObj.specifications.ports?.length) {
-                    productObj.specifications.ports.forEach(port => {
-                        connectivitySpecs.push({ label: port.type, value: `${port.quantity} ports` });
-                    });
-                }
-                if (productObj.specifications.connectivity) {
-                    if (productObj.specifications.connectivity.wifi) {
-                        connectivitySpecs.push({ label: 'WiFi', value: productObj.specifications.connectivity.wifi });
+        }
+        
+        // Generic field handler
+        function addFieldSection(title, fields, productObj) {
+            const specs = fields.map(field => {
+                if (typeof field === 'string') {
+                    return { label: field, value: productObj[field] };
+                } else if (typeof field === 'object') {
+                    const { field: fieldName, label, formatter } = field;
+                    let value = productObj[fieldName];
+                    if (formatter && value) {
+                        value = formatter(value);
                     }
-                    if (productObj.specifications.connectivity.bluetooth) {
-                        connectivitySpecs.push({ label: 'Bluetooth', value: productObj.specifications.connectivity.bluetooth });
-                    }
-                    if (productObj.specifications.connectivity.ethernet) {
-                        connectivitySpecs.push({ label: 'Ethernet', value: 'Yes' });
-                    }
+                    return { label: label || fieldName, value: value };
                 }
-                if (connectivitySpecs.length) {
-                    specificationSections.push({
-                        title: 'Connectivity',
-                        specs: connectivitySpecs
-                    });
-                }
+            }).filter(spec => spec.value);
+            
+            if (specs.length > 0) {
+                sections.push({ title, specs });
             }
-
-            if (productObj.dimensions || productObj.weight) {
-                specificationSections.push({
-                    title: 'Physical Specifications',
-                    specs: [
-                        { label: 'Length', value: productObj.dimensions?.length ? `${productObj.dimensions.length} ${productObj.dimensions.unit}` : null },
-                        { label: 'Width', value: productObj.dimensions?.width ? `${productObj.dimensions.width} ${productObj.dimensions.unit}` : null },
-                        { label: 'Height', value: productObj.dimensions?.height ? `${productObj.dimensions.height} ${productObj.dimensions.unit}` : null },
-                        { label: 'Weight', value: productObj.weight?.value ? `${productObj.weight.value} ${productObj.weight.unit}` : null }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.warranty || productObj.powerConsumption) {
-                specificationSections.push({
-                    title: 'Power & Warranty',
-                    specs: [
-                        { label: 'Power Consumption', value: productObj.powerConsumption },
-                        { label: 'Warranty Duration', value: productObj.warranty?.duration ? `${productObj.warranty.duration} months` : null },
-                        { label: 'Warranty Type', value: productObj.warranty?.type },
-                        { label: 'Coverage Details', value: productObj.warranty?.coverage }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            // Additional Details section for remaining fields
-            const additionalSpecs = [
-                { label: 'Model Number', value: productObj.modelNumber },
-                { label: 'Color', value: productObj.color }
-            ].filter(spec => spec.value);
-
-            if (additionalSpecs.length) {
-                specificationSections.push({
-                    title: 'Additional Details',
-                    specs: additionalSpecs
-                });
-            }
-            break;
-
-        case 'Furniture':
-            if (productObj.dimensions) {
-                specificationSections.push({
-                    title: 'Dimensions',
-                    specs: [
-                        { label: 'Length', value: `${productObj.dimensions.length} ${productObj.dimensions.unit}` },
-                        { label: 'Width', value: `${productObj.dimensions.width} ${productObj.dimensions.unit}` },
-                        { label: 'Height', value: `${productObj.dimensions.height} ${productObj.dimensions.unit}` },
-                        { label: 'Weight', value: productObj.weight ? `${productObj.weight.value} ${productObj.weight.unit}` : null }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.materials?.length) {
-                specificationSections.push({
-                    title: 'Materials',
-                    specs: productObj.materials.map(material => ({
-                        label: material.type,
-                        value: material.description
-                    }))
-                });
-            }
-
-            if (productObj.assembly) {
-                specificationSections.push({
-                    title: 'Assembly',
-                    specs: [
-                        { label: 'Assembly Required', value: productObj.assembly.required ? 'Yes' : 'No' },
-                        { label: 'Estimated Time', value: productObj.assembly.estimatedTime },
-                        { label: 'Tools Included', value: productObj.assembly.toolsIncluded ? 'Yes' : 'No' }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.warranty) {
-                specificationSections.push({
-                    title: 'Warranty Information',
-                    specs: [
-                        { label: 'Duration', value: productObj.warranty.duration ? `${productObj.warranty.duration} months` : null },
-                        { label: 'Coverage', value: productObj.warranty.coverage }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.roomType?.length || productObj.style || productObj.capacity || productObj.color) {
-                specificationSections.push({
-                    title: 'Additional Details',
-                    specs: [
-                        { label: 'Room Type', value: productObj.roomType?.join(', ') },
-                        { label: 'Style', value: productObj.style },
-                        { label: 'Capacity', value: productObj.capacity },
-                        { label: 'Color', value: productObj.color }
-                    ].filter(spec => spec.value)
-                });
-            }
-            break;
-
-        case 'Clothing':
-            if (productObj.material || productObj.materialComposition?.length) {
-                specificationSections.push({
-                    title: 'Material & Care',
-                    specs: [
-                        { label: 'Material', value: productObj.material },
-                        { label: 'Material Composition', value: productObj.materialComposition?.map(m => `${m.material} ${m.percentage}%`).join(', ') },
-                        { label: 'Care Instructions', value: productObj.care?.join(', ') }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            if (productObj.measurements || productObj.fit) {
-                specificationSections.push({
-                    title: 'Fit & Size',
-                    specs: [
-                        { label: 'Fit', value: productObj.fit },
-                        { label: 'Size Chart', value: productObj.measurements?.sizeChart },
-                        { label: 'Fit Type', value: productObj.measurements?.fitType }
-                    ].filter(spec => spec.value)
-                });
-            }
-
-            specificationSections.push({
-                title: 'Additional Details',
-                specs: [
-                    { label: 'Gender', value: productObj.gender },
-                    { label: 'Season', value: productObj.season }
-                ].filter(spec => spec.value)
-            });
-            break;
+        }
+        
+        // Product type specific logic
+        switch (productObj.productType) {
+            case 'Electronics':
+                addKeyValueSection('Specifications', 'specifications', productObj);
+                addKeyValueSection('Dimensions', 'dimensions', productObj);
+                addFieldSection('Additional Details', ['modelNumber', 'weight', 'warranty'], productObj);
+                break;
+                
+            case 'Furniture':
+                addKeyValueSection('Dimensions', 'dimensions', productObj);
+                addFieldSection('Materials', [
+                    { field: 'material', label: 'Material', formatter: material => material?.join(', ') }
+                ], productObj);
+                addFieldSection('Room Type', ['roomType'], productObj);
+                addFieldSection('Additional Details', ['style', 'weight', 'assembly', 'warranty'], productObj);
+                break;
+                
+            case 'Clothing':
+                addFieldSection('Material & Care', [
+                    'material',
+                    { field: 'materialComposition', label: 'Material Composition', formatter: mc => 
+                        mc?.map(m => {
+                            const key = Object.keys(m)[0];
+                            const value = m[key];
+                            return `${key}: ${value}`;
+                        }).join(', ') },
+                    { field: 'care', label: 'Care Instructions', formatter: care => care?.join(', ') }
+                ], productObj);
+                addFieldSection('Fit & Style', ['fit', 'gender', 'season'], productObj);
+                break;
+                
+            case 'Food':
+                addKeyValueSection('Nutritional Information', 'nutritionalInfo', productObj);
+                addFieldSection('Food Details', [
+                    'brand',
+                    { field: 'ingredients', label: 'Ingredients', formatter: ing => ing?.join(', ') },
+                    { field: 'expiryDate', label: 'Expiry Date', formatter: date => date ? new Date(date).toLocaleDateString() : null },
+                    { field: 'allergens', label: 'Allergens', formatter: all => all?.join(', ') }
+                ], productObj);
+                break;
+                
+            case 'HomeGarden':
+                addKeyValueSection('Dimensions', 'dimensions', productObj);
+                addFieldSection('Details', ['room', 'material'], productObj);
+                break;
+                
+            case 'Books':
+                addFieldSection('Book Details', [
+                    'author',
+                    'publisher',
+                    'isbn',
+                    'language',
+                    'format',
+                    'pages',
+                    { field: 'publicationDate', label: 'Publication Date', formatter: date => date ? new Date(date).toLocaleDateString() : null },
+                    { field: 'genre', label: 'Genre', formatter: genre => genre?.join(', ') }
+                ], productObj);
+                break;
+                
+            case 'Sports':
+                addFieldSection('Sports Details', [
+                    'sport',
+                    'skillLevel',
+                    'material',
+                    { field: 'weight', label: 'Weight', formatter: w => w?.value ? `${w.value} ${w.unit}` : null }
+                ], productObj);
+                break;
+                
+            case 'HealthBeauty':
+                addFieldSection('Product Details', [
+                    'brand',
+                    'skinType',
+                    { field: 'ingredients', label: 'Ingredients', formatter: ing => ing?.join(', ') },
+                    { field: 'volume', label: 'Volume', formatter: v => v?.value ? `${v.value} ${v.unit}` : null },
+                    { field: 'expiryDate', label: 'Expiry Date', formatter: date => date ? new Date(date).toLocaleDateString() : null }
+                ], productObj);
+                break;
+        }
+        
+        return sections;
     }
+
+    // Generate specifications sections
+    const specificationSections = generateSpecificationSections(productObj);
+    
 
     const data = {
         pageTitle: productObj.name,

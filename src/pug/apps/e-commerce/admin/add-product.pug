@@ -64,7 +64,6 @@ append scripts
           console.error('Failed to fetch product types:', error);
           // Fallback to hardcoded options if API fails
           const productTypeSelect = document.querySelector('#productTypeSelect');
-          console.error('Failed to fetch product types:', error);
           
           // Clear existing options
           productTypeSelect.innerHTML = '';
@@ -181,6 +180,21 @@ append scripts
           case 'object':
             fieldHTML += `<textarea class="form-control" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()} (JSON format)" rows="3" ${isRequired}></textarea>`;
             break;
+
+          case 'key_value_array':
+            fieldHTML += `
+              <div class="key-value-container mb-3">
+                <div class="key-value-item d-flex gap-2 mb-2">
+                  <input class="form-control" type="text" name="${fieldName}[0][key]" placeholder="Key" ${isRequired}>
+                  <input class="form-control" type="text" name="${fieldName}[0][value]" placeholder="Value" ${isRequired}>
+                  <button class="btn btn-outline-danger" type="button" onclick="this.closest('.key-value-item').remove()">×</button>
+                </div>
+                <button class="btn btn-outline-primary btn-sm add-key-value-item" type="button" data-field="${fieldName}">
+                  Add Key-Value Pair
+                </button>
+              </div>
+            `;
+            break;
           
           default:
             fieldHTML += `<input class="form-control" type="text" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>`;
@@ -226,34 +240,27 @@ append scripts
           
           container.insertBefore(newInput, e.target);
         }
+        
+        // Event delegation for dynamic key-value array fields
+        if (e.target.classList.contains('add-key-value-item')) {
+          const fieldName = e.target.dataset.field;
+          const container = e.target.closest('.key-value-container');
+          const existingItems = container.querySelectorAll('.key-value-item');
+          const newIndex = existingItems.length;
+          
+          const newKeyValueItem = document.createElement('div');
+          newKeyValueItem.className = 'key-value-item d-flex gap-2 mb-2';
+          newKeyValueItem.innerHTML = `
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}][key]" placeholder="Key (e.g. cotton)">
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}][value]" placeholder="Value (e.g. 60%)">
+            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.key-value-item').remove()">×</button>
+          `;
+          
+          container.insertBefore(newKeyValueItem, e.target);
+        }
       });
 
-      // Clothing: Material Composition handler
-      document.querySelector('.add-composition-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.material-composition-container');
-        const newComposition = document.createElement('div');
-        newComposition.className = 'input-group mb-2';
-        newComposition.innerHTML = `
-          <input class="form-control" type="text" name="materialComposition[][material]" placeholder="Material">
-          <input class="form-control" type="number" name="materialComposition[][percentage]" placeholder="Percentage">
-          <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
-        `;
-        container.appendChild(newComposition);
-      });
-
-      // Clothing: Care Instructions handler
-      document.querySelector('.add-care-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.care-instructions-container');
-        const newCare = document.createElement('div');
-        newCare.className = 'input-group mb-2';
-        newCare.innerHTML = `
-          <input class="form-control" type="text" name="care[]" placeholder="Care Instruction">
-          <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
-        `;
-        container.appendChild(newCare);
-      });
-
-      // Clothing: Variant handler
+      // Variant handler
       document.querySelector('.add-variant-btn')?.addEventListener('click', function() {
         const container = document.querySelector('.variants-container');
         const variantItems = container.querySelectorAll('.variant-item');
@@ -261,78 +268,8 @@ append scripts
         const newVariant = document.createElement('div');
         newVariant.className = 'variant-item mb-3';
         newVariant.innerHTML = `
-          <div class="input-group">
+          <div class="">
             <input class="form-control mb-2" type="text" name="variants[${idx}][size]" placeholder="Size">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][color]" placeholder="Color">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][colorHex]" placeholder="Color Hex Code">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][sku]" placeholder="SKU">
-            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.variant-item').remove()">Remove Variant</button>
-          </div>
-        `;
-        container.appendChild(newVariant);
-      });
-
-      // Furniture: Variant handler (separate for furniture-fields)
-      document.querySelector('.furniture-fields .add-variant-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.furniture-fields .variants-container');
-        const variantItems = container.querySelectorAll('.variant-item');
-        const idx = variantItems.length;
-        const newVariant = document.createElement('div');
-        newVariant.className = 'variant-item mb-3';
-        newVariant.innerHTML = `
-          <div class="input-group">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][color]" placeholder="Color">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][colorHex]" placeholder="Color Hex Code">
-            <input class="form-control mb-2" type="text" name="variants[${idx}][sku]" placeholder="SKU">
-            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.variant-item').remove()">Remove Variant</button>
-          </div>
-        `;
-        container.appendChild(newVariant);
-      });
-
-      // Furniture: Material handler (with index)
-      document.querySelector('.add-material-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.materials-container');
-        const materialItems = container.querySelectorAll('.material-item');
-        const idx = materialItems.length;
-        const newMaterial = document.createElement('div');
-        newMaterial.className = 'material-item mb-2';
-        newMaterial.innerHTML = `
-          <div class="input-group">
-            <input class="form-control mb-2" type="text" name="materials[${idx}][type]" placeholder="Material Type">
-            <input class="form-control mb-2" type="text" name="materials[${idx}][description]" placeholder="Material Description">
-            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.material-item').remove()">Remove Material</button>
-          </div>
-        `;
-        container.appendChild(newMaterial);
-      });
-
-      // Electronics: Port handler
-      document.querySelector('.electronics-fields .add-port-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.electronics-fields .ports-container');
-        const portItems = container.querySelectorAll('.port-item');
-        const idx = portItems.length;
-        const newPort = document.createElement('div');
-        newPort.className = 'port-item mb-2';
-        newPort.innerHTML = `
-          <div class="input-group">
-            <input class="form-control mb-2" type="text" name="specifications.ports[${idx}].type" placeholder="Port Type">
-            <input class="form-control mb-2" type="number" name="specifications.ports[${idx}].quantity" placeholder="Quantity">
-            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.port-item').remove()">Remove Port</button>
-          </div>
-        `;
-        container.appendChild(newPort);
-      });
-
-      // Electronics: Variant handler (fix index incrementation)
-      document.querySelector('.electronics-fields .add-variant-btn')?.addEventListener('click', function() {
-        const container = document.querySelector('.electronics-fields .variants-container');
-        const variantItems = container.querySelectorAll('.variant-item');
-        const idx = variantItems.length;
-        const newVariant = document.createElement('div');
-        newVariant.className = 'variant-item mb-3';
-        newVariant.innerHTML = `
-          <div class="input-group">
             <input class="form-control mb-2" type="text" name="variants[${idx}][color]" placeholder="Color">
             <input class="form-control mb-2" type="text" name="variants[${idx}][colorHex]" placeholder="Color Hex Code">
             <input class="form-control mb-2" type="text" name="variants[${idx}][sku]" placeholder="SKU">
@@ -382,6 +319,58 @@ append scripts
         formData.append('status', 'draft');
         await submitForm(formData);
       });
+
+      // Generic function to handle regular array fields (like care instructions)
+      function handleArrayField(fieldName, cleanedFormData) {
+        const inputs = document.querySelectorAll(`input[name^="${fieldName}["]`);
+        const result = [];
+        
+        inputs.forEach(input => {
+          const value = input.value.trim();
+          if (value) {
+            result.push(value);
+          }
+        });
+        
+        if (result.length > 0) {
+          cleanedFormData.append(fieldName, JSON.stringify(result));
+        }
+      }
+
+      // Generic function to handle key-value array fields
+      function handleKeyValueArrayField(fieldName, cleanedFormData) {
+        const inputs = document.querySelectorAll(`input[name^="${fieldName}["]`);
+        const result = [];
+        
+        // Group inputs by their index
+        const groupedInputs = {};
+        inputs.forEach(input => {
+          const name = input.name;
+          const match = name.match(new RegExp(`${fieldName}\\[(\\d+)\\]\\[(key|value)\\]`));
+          if (match) {
+            const index = match[1];
+            const field = match[2];
+            if (!groupedInputs[index]) {
+              groupedInputs[index] = {};
+            }
+            groupedInputs[index][field] = input.value;
+          }
+        });
+        
+        // Convert grouped inputs to array of objects
+        Object.keys(groupedInputs).forEach(index => {
+          const item = groupedInputs[index];
+          if (item.key && item.value) {
+            result.push({ 
+              [item.key]: item.value
+            });
+          }
+        });
+        
+        if (result.length > 0) {
+          cleanedFormData.append(fieldName, JSON.stringify(result));
+        }
+      }
 
       // Publish button handler (form submit)
       form?.addEventListener('submit', async function(e) {
@@ -459,241 +448,37 @@ append scripts
             }
           });
 
+          // Add all dynamically generated fields (string, number, date, boolean types)
+          // These are generated from productTypes.js configuration
+          const dynamicallyGeneratedFields = [
+            // Clothing
+            'material', 'fit', 'season', 'gender',
+            // Electronics
+            'modelNumber', 'warranty', 'weight',
+            // Furniture
+            'style', 'capacity', 'color', 'colorHex',
+            // Books
+            'author', 'publisher', 'isbn', 'language', 'format', 'pages', 'publicationDate',
+            // Food
+            'expiryDate',
+            // Sports
+            'sport', 'skillLevel',
+            // HomeGarden
+            'room',
+            // HealthBeauty
+            'skinType', 'expiryDate'
+          ];
+          
+          dynamicallyGeneratedFields.forEach(field => {
+            const value = formData.get(field);
+            if (value && value.trim() !== '') {
+              cleanedFormData.append(field, value.trim());
+            }
+          });
+
           // Handle boolean fields
           const isFeatured = formData.get('isFeatured') === 'on';
           cleanedFormData.append('isFeatured', isFeatured);
-
-          // Handle Clothing specific data
-          if (formData.get('productType') === 'Clothing') {
-            const clothingFields = ['material', 'fit', 'season', 'gender'];
-            clothingFields.forEach(field => {
-              const value = formData.get(field);
-              if (value && value.trim() !== '') {
-                cleanedFormData.append(field, value.trim());
-              }
-            });
-
-            // Handle materialComposition array
-            const materialCompositionInputs = document.querySelectorAll('input[name^="materialComposition["]');
-            const materialComposition = [];
-            for (let i = 0; i < materialCompositionInputs.length; i += 2) {
-              const materialInput = materialCompositionInputs[i];
-              const percentageInput = materialCompositionInputs[i + 1];
-              const material = materialInput ? materialInput.value : '';
-              const percentage = percentageInput ? percentageInput.value : '';
-              if (material && percentage) {
-                materialComposition.push({ material, percentage: Number(percentage) });
-              }
-            }
-            if (materialComposition.length > 0) {
-              cleanedFormData.append('materialComposition', JSON.stringify(materialComposition));
-            }
-
-            // Handle care instructions array
-            const careInputs = document.querySelectorAll('input[name^="care["]');
-            const care = Array.from(careInputs)
-              .map(input => input ? input.value : '')
-              .filter(value => value.trim() !== '');
-            if (care.length > 0) {
-              cleanedFormData.append('care', JSON.stringify(care));
-            }
-
-            // Handle variants array
-            const variantItems = document.querySelectorAll('.variant-item');
-            const variants = Array.from(variantItems).map(item => {
-              const sizeInput = item.querySelector('input[name^="variants["][name$="[size]"]');
-              const colorInput = item.querySelector('input[name^="variants["][name$="[color]"]');
-              const colorHexInput = item.querySelector('input[name^="variants["][name$="[colorHex]"]');
-              const skuInput = item.querySelector('input[name^="variants["][name$="[sku]"]');
-              return {
-                size: sizeInput ? sizeInput.value : '',
-                color: colorInput ? colorInput.value : '',
-                colorHex: colorHexInput ? colorHexInput.value : '',
-                sku: skuInput ? skuInput.value : ''
-              };
-            }).filter(variant => variant.size || variant.color || variant.colorHex || variant.sku);
-            if (variants.length > 0) {
-              cleanedFormData.append('variants', JSON.stringify(variants));
-            }
-          }
-
-          // Handle Furniture specific data
-          if (formData.get('productType') === 'Furniture') {
-            // Dimensions
-            const length = formData.get('dimensions.length');
-            const width = formData.get('dimensions.width');
-            const height = formData.get('dimensions.height');
-            const unit = formData.get('dimensions.unit');
-            if (length || width || height || unit) {
-              const dimensions = {
-                length: length ? Number(length) : undefined,
-                width: width ? Number(width) : undefined,
-                height: height ? Number(height) : undefined,
-                unit: unit || 'cm'
-              };
-              cleanedFormData.append('dimensions', JSON.stringify(dimensions));
-            }
-
-            // Weight
-            const weightValue = formData.get('weight.value');
-            const weightUnit = formData.get('weight.unit');
-            if (weightValue || weightUnit) {
-              const weight = {
-                value: weightValue ? Number(weightValue) : undefined,
-                unit: weightUnit || 'kg'
-              };
-              cleanedFormData.append('weight', JSON.stringify(weight));
-            }
-
-            // Materials (array, with index)
-            const materialItems = document.querySelectorAll('.furniture-fields .materials-container .material-item');
-            const materials = Array.from(materialItems).map(item => {
-              const typeInput = item.querySelector('input[name$="[type]"]');
-              const descInput = item.querySelector('input[name$="[description]"]');
-              return {
-                type: typeInput ? typeInput.value : '',
-                description: descInput ? descInput.value : ''
-              };
-            }).filter(mat => mat.type || mat.description);
-            if (materials.length > 0) {
-              cleanedFormData.append('materials', JSON.stringify(materials));
-            }
-
-            // Assembly (object)
-            const assemblyRequired = formData.get('assembly.required') === 'on';
-            const estimatedTime = formData.get('assembly.estimatedTime');
-            const toolsIncluded = formData.get('assembly.toolsIncluded') === 'on';
-            if (assemblyRequired || estimatedTime || toolsIncluded) {
-              const assembly = {
-                required: assemblyRequired,
-                estimatedTime: estimatedTime || '',
-                toolsIncluded: toolsIncluded
-              };
-              cleanedFormData.append('assembly', JSON.stringify(assembly));
-            }
-
-            // Warranty (object, ensure duration is number)
-            const warrantyDuration = formData.get('warranty.duration');
-            const warrantyCoverage = formData.get('warranty.coverage');
-            if (warrantyDuration !== '' || warrantyCoverage) {
-              const warranty = {
-                duration: warrantyDuration !== '' ? Number(warrantyDuration) : undefined,
-                coverage: warrantyCoverage || ''
-              };
-              cleanedFormData.append('warranty', JSON.stringify(warranty));
-            }
-
-            // Room Type (array)
-            const roomType = formData.get('roomType');
-            if (roomType && roomType.trim() !== '') {
-              const roomTypeArr = roomType.split(',').map(s => s.trim()).filter(Boolean);
-              cleanedFormData.append('roomType', JSON.stringify(roomTypeArr));
-            }
-
-            // Handle variants array for Furniture (with index)
-            const furnitureVariantItems = document.querySelectorAll('.furniture-fields .variants-container .variant-item');
-            const furnitureVariants = Array.from(furnitureVariantItems).map(item => {
-              const colorInput = item.querySelector('input[name$="[color]"]');
-              const colorHexInput = item.querySelector('input[name$="[colorHex]"]');
-              const skuInput = item.querySelector('input[name$="[sku]"]');
-              return {
-                color: colorInput ? colorInput.value : '',
-                colorHex: colorHexInput ? colorHexInput.value : '',
-                sku: skuInput ? skuInput.value : ''
-              };
-            }).filter(variant => variant.color || variant.colorHex || variant.sku);
-            if (furnitureVariants.length > 0) {
-              cleanedFormData.append('variants', JSON.stringify(furnitureVariants));
-            }
-
-            // Additional details (only style and capacity)
-            const additionalFields = ['style', 'capacity'];
-            additionalFields.forEach(field => {
-              const value = formData.get(field);
-              if (value && value.trim() !== '') {
-                cleanedFormData.append(field, value.trim());
-              }
-            });
-          }
-
-          // Handle Electronics specific data
-          if (formData.get('productType') === 'Electronics') {
-            // Collect ports
-            const portItems = document.querySelectorAll('.electronics-fields .ports-container .port-item');
-            const ports = Array.from(portItems).map(item => {
-              const typeInput = item.querySelector('input[name$=".type"]');
-              const quantityInput = item.querySelector('input[name$=".quantity"]');
-              return {
-                type: typeInput ? typeInput.value : '',
-                quantity: quantityInput ? Number(quantityInput.value) : undefined
-              };
-            }).filter(port => port.type || port.quantity);
-
-            // Collect specifications
-            const specifications = {
-              processor: {
-                name: formData.get('specifications.processor.name') || '',
-                cores: formData.get('specifications.processor.cores') ? Number(formData.get('specifications.processor.cores')) : undefined,
-                speed: formData.get('specifications.processor.speed') || '',
-                architecture: formData.get('specifications.processor.architecture') || ''
-              },
-              memory: {
-                ram: formData.get('specifications.memory.ram') ? Number(formData.get('specifications.memory.ram')) : undefined,
-                ramUnit: formData.get('specifications.memory.ramUnit') || '',
-                storage: formData.get('specifications.memory.storage') ? Number(formData.get('specifications.memory.storage')) : undefined,
-                storageUnit: formData.get('specifications.memory.storageUnit') || '',
-                storageType: formData.get('specifications.memory.storageType') || ''
-              },
-              display: {
-                size: formData.get('specifications.display.size') ? Number(formData.get('specifications.display.size')) : undefined,
-                resolution: formData.get('specifications.display.resolution') || '',
-                technology: formData.get('specifications.display.technology') || '',
-                refreshRate: formData.get('specifications.display.refreshRate') ? Number(formData.get('specifications.display.refreshRate')) : undefined,
-                brightness: formData.get('specifications.display.brightness') ? Number(formData.get('specifications.display.brightness')) : undefined,
-                hdr: formData.get('specifications.display.hdr') === 'on'
-              },
-              ports: ports
-            };
-            cleanedFormData.append('specifications', JSON.stringify(specifications));
-
-            // Weight
-            const weightValue = formData.get('weight.value');
-            const weightUnit = formData.get('weight.unit');
-            if (weightValue || weightUnit) {
-              const weight = {
-                value: weightValue ? Number(weightValue) : undefined,
-                unit: weightUnit || 'kg'
-              };
-              cleanedFormData.append('weight', JSON.stringify(weight));
-            }
-
-            // Warranty
-            const warrantyDuration = formData.get('warranty.duration');
-            const warrantyType = formData.get('warranty.type');
-            if (warrantyDuration !== '' || warrantyType) {
-              const warranty = {
-                duration: warrantyDuration !== '' ? Number(warrantyDuration) : undefined,
-                type: warrantyType || ''
-              };
-              cleanedFormData.append('warranty', JSON.stringify(warranty));
-            }
-
-            // Handle variants array for Electronics (with index)
-            const electronicsVariantItems = document.querySelectorAll('.electronics-fields .variants-container .variant-item');
-            const electronicsVariants = Array.from(electronicsVariantItems).map(item => {
-              const colorInput = item.querySelector('input[name$="[color]"]');
-              const colorHexInput = item.querySelector('input[name$="[colorHex]"]');
-              const skuInput = item.querySelector('input[name$="[sku]"]');
-              return {
-                color: colorInput ? colorInput.value : '',
-                colorHex: colorHexInput ? colorHexInput.value : '',
-                sku: skuInput ? skuInput.value : ''
-              };
-            }).filter(variant => variant.color || variant.colorHex || variant.sku);
-            if (electronicsVariants.length > 0) {
-              cleanedFormData.append('variants', JSON.stringify(electronicsVariants));
-            }
-          }
 
           // Add images from Dropzone
           const files = dropzone.getAcceptedFiles();
@@ -714,6 +499,56 @@ append scripts
           if (selectedTags.length > 0) {
             cleanedFormData.append('tags', JSON.stringify(selectedTags));
           }
+
+          // Handle array fields that need special processing
+          const arrayFields = ['care', 'ingredients', 'allergens', 'genre', 'roomType', 'materials'];
+          arrayFields.forEach(fieldName => {
+            handleArrayField(fieldName, cleanedFormData);
+          });
+
+          // Handle variants array (different structure than simple arrays)
+          const variantItems = document.querySelectorAll('.variant-item');
+          if (variantItems.length > 0) {
+            const variants = Array.from(variantItems).map(item => {
+              const sizeInput = item.querySelector('input[name*="[size]"]');
+              const colorInput = item.querySelector('input[name*="[color]"]');
+              const colorHexInput = item.querySelector('input[name*="[colorHex]"]');
+              const skuInput = item.querySelector('input[name*="[sku]"]');
+              
+              const variant = {};
+              if (sizeInput && sizeInput.value) variant.size = sizeInput.value;
+              if (colorInput && colorInput.value) variant.color = colorInput.value;
+              if (colorHexInput && colorHexInput.value) variant.colorHex = colorHexInput.value;
+              if (skuInput && skuInput.value) variant.sku = skuInput.value;
+              
+              return Object.keys(variant).length > 0 ? variant : null;
+            }).filter(v => v !== null);
+            
+            if (variants.length > 0) {
+              cleanedFormData.append('variants', JSON.stringify(variants));
+            }
+          }
+
+          // Handle key-value array fields
+          const keyValueArrayFields = ['materialComposition', 'specifications', 'dimensions', 'nutritionalInfo'];
+          keyValueArrayFields.forEach(fieldName => {
+            handleKeyValueArrayField(fieldName, cleanedFormData);
+          });
+
+          // Handle object fields (JSON textarea fields)
+          const objectFields = ['assembly', 'weight', 'volume'];
+          objectFields.forEach(fieldName => {
+            const value = formData.get(fieldName);
+            if (value && value.trim() !== '') {
+              try {
+                // Validate it's valid JSON
+                JSON.parse(value);
+                cleanedFormData.append(fieldName, value);
+              } catch (e) {
+                console.warn(`Field ${fieldName} is not valid JSON, skipping`);
+              }
+            }
+          });
 
           // Log the cleaned form data
           console.log('Cleaned form data:');

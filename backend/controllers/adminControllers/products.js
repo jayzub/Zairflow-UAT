@@ -162,39 +162,40 @@ exports.createProduct = asyncHandler(async (req, res) => {
             });
         }
 
-        // Parse fields
+        // Parse array/object fields that need special handling
         const categories = body.category ? (Array.isArray(body.category) ? body.category : parseField(body.category)) : [];
         const tags = body.tags ? (Array.isArray(body.tags) ? body.tags : parseField(body.tags)) : [];
+        
+        // Parse all fields that are type 'array', 'key_value_array', or 'object' from productTypes.js
+        // Clothing fields
         const materialComposition = parseField(body.materialComposition);
         const care = parseField(body.care);
+        
+        // Common fields
         const variants = parseField(body.variants);
+        
+        // Furniture fields
         const materials = parseField(body.materials);
         const roomType = parseField(body.roomType);
-        const specifications = parseField(body.specifications);
-        const warranty = parseField(body.warranty);
-        const dimensions = parseField(body.dimensions);
-        const weight = parseField(body.weight);
-        const assembly = parseField(body.assembly);
+        const assembly = parseField(body.assembly);  // object type
         
-        // Parse additional fields for all product types
-        const ingredients = parseField(body.ingredients);
+        // Electronics fields
+        const specifications = parseField(body.specifications);
+        const dimensions = parseField(body.dimensions);
+        const weight = parseField(body.weight);  // object type (for Sports)
+        
+        // Food fields
         const nutritionalInfo = parseField(body.nutritionalInfo);
+        
+        // Books fields
+        const genre = parseField(body.genre);
+        
+        // HealthBeauty fields
+        const ingredients = parseField(body.ingredients);
         const allergens = parseField(body.allergens);
         const volume = parseField(body.volume);
-        const genre = parseField(body.genre);
-        const author = body.author;
-        const publisher = body.publisher;
-        const isbn = body.isbn;
-        const language = body.language;
-        const format = body.format;
-        const pages = body.pages;
-        const publicationDate = body.publicationDate;
-        const brand = body.brand;
-        const expiryDate = body.expiryDate;
-        const sport = body.sport;
-        const skillLevel = body.skillLevel;
-        const room = body.room;
-        const skinType = body.skinType;
+        
+        // Note: string, number, and date fields don't need parsing - they'll be read from body by createProductSpecificData
 
         // Validate vendor if provided
         if (body.vendor) {
@@ -299,36 +300,45 @@ exports.createProduct = asyncHandler(async (req, res) => {
 
         // Add type-specific fields dynamically
         const { createProductSpecificData } = require('../../helpers/productHelpers');
-        const productSpecificData = createProductSpecificData(body.productType, body, {
-            materialComposition,
-            care,
-            variants,
-            materials,
-            roomType,
-            specifications,
-            warranty,
-            dimensions,
-            weight,
-            assembly,
-            ingredients,
-            nutritionalInfo,
-            allergens,
-            volume,
-            genre,
-            author,
-            publisher,
-            isbn,
-            language,
-            format,
-            pages,
-            publicationDate,
-            brand,
-            expiryDate,
-            sport,
-            skillLevel,
-            room,
-            skinType
-        });
+        
+        // Create parsed data object with only the fields that need special parsing
+        // These are array, key_value_array, and object types from productTypes.js
+        const parsedData = {
+            // Clothing
+            materialComposition,  // key_value_array
+            care,                 // array
+            
+            // Common
+            variants,             // array
+            
+            // Furniture
+            materials,            // array
+            roomType,             // array
+            assembly,             // object
+            
+            // Electronics
+            specifications,       // key_value_array
+            dimensions,           // key_value_array
+            
+            // Sports
+            weight,               // object
+            
+            // Food
+            nutritionalInfo,      // key_value_array
+            ingredients,          // array
+            allergens,            // array
+            
+            // Books
+            genre,                // array
+            
+            // HealthBeauty
+            volume                // array
+        };
+        
+        // createProductSpecificData will:
+        // - Read string/number/date fields from body (lines 445-448, 465-474 in productHelpers.js)
+        // - Read array/object/key_value_array fields from parsedData (lines 450-476 in productHelpers.js)
+        const productSpecificData = createProductSpecificData(body.productType, body, parsedData);
 
         // Create and save the product
         const product = new ProductModel({ ...productData, ...productSpecificData });

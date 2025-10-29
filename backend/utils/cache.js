@@ -98,7 +98,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.store;
-            await this.client.setex(`store:${storeId}`, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(`store:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache set error:', error);
@@ -150,7 +150,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.analytics;
-            await this.client.setex(`analytics:${storeId}`, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(`analytics:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache analytics set error:', error);
@@ -185,7 +185,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.settings;
-            await this.client.setex(`settings:${storeId}`, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(`settings:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache settings set error:', error);
@@ -220,7 +220,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.theme;
-            await this.client.setex(`theme:${storeId}`, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(`theme:${storeId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache theme set error:', error);
@@ -255,7 +255,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.userStores;
-            await this.client.setex(`user_stores:${userId}`, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(`user_stores:${userId}`, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache user stores set error:', error);
@@ -309,7 +309,7 @@ class StoreCache {
         try {
             const key = `discovery:${JSON.stringify(query)}`;
             const cacheTTL = ttl || this.defaultTTLs.discovery;
-            await this.client.setex(key, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(key, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache discovery set error:', error);
@@ -407,7 +407,7 @@ class StoreCache {
 
         try {
             const cacheTTL = ttl || this.defaultTTLs.generic;
-            await this.client.setex(key, cacheTTL, JSON.stringify(data));
+            await this.client.setEx(key, cacheTTL, JSON.stringify(data));
             return true;
         } catch (error) {
             console.error('Cache set error:', error);

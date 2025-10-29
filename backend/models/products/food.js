@@ -10,15 +10,9 @@ const foodVariantSchema = new mongoose.Schema({
 const foodSchema = new mongoose.Schema({
     brand: { type: String },
     ingredients: [{ type: String }],
-    nutritionalInfo: {
-        calories: { type: Number },
-        protein: { type: Number },
-        carbs: { type: Number },
-        fat: { type: Number },
-        fiber: { type: Number },
-        sugar: { type: Number },
-        sodium: { type: Number }
-    },
+    nutritionalInfo: [{ 
+        type: mongoose.Schema.Types.Mixed
+    }],
     expiryDate: { type: Date },
     allergens: [{ type: String }],
     variants: [foodVariantSchema]
