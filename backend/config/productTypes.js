@@ -17,7 +17,7 @@ const PRODUCT_TYPES = {
         color: '#007bff',
         fields: {
             material: { type: 'string', required: false, label: 'Material' },
-            materialComposition: { type: 'array', required: false, label: 'Material Composition' },
+            materialComposition: { type: 'key_value_array', required: false, label: 'Material Composition' },
             care: { type: 'array', required: false, label: 'Care Instructions' },
             fit: { type: 'string', required: false, label: 'Fit Type' },
             season: { type: 'string', required: false, label: 'Season' },
@@ -33,7 +33,7 @@ const PRODUCT_TYPES = {
                     { value: 'kids', label: 'Kids' }
                 ]
             },
-            variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
+            // variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
         },
         variantFields: ['size', 'color', 'colorHex', 'sku'],
         subscriptionPlans: ['free', 'basic', 'premium', 'enterprise']
@@ -47,11 +47,11 @@ const PRODUCT_TYPES = {
         color: '#28a745',
         fields: {
             modelNumber: { type: 'string', required: false, label: 'Model Number' },
-            specifications: { type: 'object', required: false, label: 'Specifications' },
-            warranty: { type: 'object', required: false, label: 'Warranty' },
-            dimensions: { type: 'object', required: false, label: 'Dimensions' },
-            weight: { type: 'object', required: false, label: 'Weight' },
-            variants: { type: 'array', required: false, label: 'Variants (Colors/SKUs)' }
+            specifications: { type: 'key_value_array', required: false, label: 'Specifications' },
+            warranty: { type: 'string', required: false, label: 'Warranty' },
+            dimensions: { type: 'key_value_array', required: false, label: 'Dimensions' },
+            weight: { type: 'string', required: false, label: 'Weight' },
+            // variants: { type: 'array', required: false, label: 'Variants (Colors/SKUs)' }
         },
         variantFields: ['color', 'colorHex', 'sku'],
         subscriptionPlans: ['basic', 'premium', 'enterprise']
@@ -64,17 +64,17 @@ const PRODUCT_TYPES = {
         icon: 'fas fa-couch',
         color: '#ffc107',
         fields: {
-            dimensions: { type: 'object', required: false, label: 'Dimensions' },
-            weight: { type: 'object', required: false, label: 'Weight' },
-            materials: { type: 'array', required: false, label: 'Materials' },
-            assembly: { type: 'object', required: false, label: 'Assembly' },
+            dimensions: { type: 'key_value_array', required: false, label: 'Dimensions' },
+            weight: { type: 'string', required: false, label: 'Weight' },
+            material: { type: 'array', required: false, label: 'Material' },
+            assembly: { type: 'boolean', required: false, label: 'Assembly Required' },
             style: { type: 'string', required: false, label: 'Style' },
             roomType: { type: 'array', required: false, label: 'Room Type' },
-            warranty: { type: 'object', required: false, label: 'Warranty' },
-            variants: { type: 'array', required: false, label: 'Variants (Colors/SKUs)' }
+            warranty: { type: 'string', required: false, label: 'Warranty' },
+            // variants: { type: 'array', required: false, label: 'Variants (Colors/SKUs)' }
         },
         variantFields: ['color', 'colorHex', 'sku'],
-        subscriptionPlans: ['premium', 'enterprise']
+        subscriptionPlans: ['free', 'basic', 'premium', 'enterprise']
     },
     
     BOOKS: {
@@ -103,7 +103,7 @@ const PRODUCT_TYPES = {
             genre: { type: 'array', required: false, label: 'Genre' },
             pages: { type: 'number', required: false, label: 'Pages' },
             publicationDate: { type: 'date', required: false, label: 'Publication Date' },
-            variants: { type: 'array', required: false, label: 'Variants (Formats/Languages)' }
+            // variants: { type: 'array', required: false, label: 'Variants (Formats/Languages)' }
         },
         variantFields: ['format', 'language', 'sku'],
         subscriptionPlans: ['free', 'basic', 'premium', 'enterprise']
@@ -116,12 +116,11 @@ const PRODUCT_TYPES = {
         icon: 'fas fa-utensils',
         color: '#fd7e14',
         fields: {
-            brand: { type: 'string', required: false, label: 'Brand' },
             ingredients: { type: 'array', required: false, label: 'Ingredients' },
-            nutritionalInfo: { type: 'object', required: false, label: 'Nutritional Information' },
+            nutritionalInfo: { type: 'key_value_array', required: false, label: 'Nutritional Information' },
             expiryDate: { type: 'date', required: false, label: 'Expiry Date' },
             allergens: { type: 'array', required: false, label: 'Allergens' },
-            variants: { type: 'array', required: false, label: 'Variants (Flavors/Sizes)' }
+            // variants: { type: 'array', required: false, label: 'Variants (Flavors/Sizes)' }
         },
         variantFields: ['flavor', 'size', 'sku'],
         subscriptionPlans: ['basic', 'premium', 'enterprise']
@@ -149,7 +148,7 @@ const PRODUCT_TYPES = {
             },
             material: { type: 'string', required: false, label: 'Material' },
             weight: { type: 'object', required: false, label: 'Weight' },
-            variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
+            // variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
         },
         variantFields: ['size', 'color', 'colorHex', 'sku'],
         subscriptionPlans: ['basic', 'premium', 'enterprise']
@@ -164,10 +163,10 @@ const PRODUCT_TYPES = {
         fields: {
             room: { type: 'string', required: false, label: 'Room Type' },
             material: { type: 'string', required: false, label: 'Material' },
-            dimensions: { type: 'object', required: false, label: 'Dimensions' },
-            variants: { type: 'array', required: false, label: 'Variants (Colors/Sizes)' }
+            dimensions: { type: 'key_value_array', required: false, label: 'Dimensions' },
+            // variants: { type: 'array', required: false, label: 'Variants (Colors/Sizes)' }
         },
-        variantFields: ['color', 'size', 'sku'],
+        variantFields: ['size', 'color', 'colorHex', 'sku'],
         subscriptionPlans: ['basic', 'premium', 'enterprise']
     },
 
@@ -195,7 +194,7 @@ const PRODUCT_TYPES = {
             ingredients: { type: 'array', required: false, label: 'Ingredients' },
             volume: { type: 'object', required: false, label: 'Volume' },
             expiryDate: { type: 'date', required: false, label: 'Expiry Date' },
-            variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
+            // variants: { type: 'array', required: false, label: 'Variants (Sizes/Colors)' }
         },
         variantFields: ['size', 'color', 'colorHex', 'sku'],
         subscriptionPlans: ['basic', 'premium', 'enterprise']

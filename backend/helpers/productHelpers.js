@@ -452,6 +452,11 @@ exports.createProductSpecificData = (productType, body, parsed) => {
                     productData[fieldName] = parsed[fieldName];
                 }
                 break;
+            case 'key_value_array':
+                if (parsed[fieldName]) {
+                    productData[fieldName] = parsed[fieldName];
+                }
+                break;
             case 'object':
                 if (parsed[fieldName]) {
                     productData[fieldName] = parsed[fieldName];

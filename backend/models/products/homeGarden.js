@@ -10,12 +10,9 @@ const homeGardenVariantSchema = new mongoose.Schema({
 const homeGardenSchema = new mongoose.Schema({
     room: { type: String },
     material: { type: String },
-    dimensions: {
-        length: { type: Number },
-        width: { type: Number },
-        height: { type: Number },
-        unit: { type: String, enum: ['cm', 'in', 'ft', 'm'] }
-    },
+    dimensions: [{ 
+        type: mongoose.Schema.Types.Mixed
+    }],
     variants: [homeGardenVariantSchema]
 });
 

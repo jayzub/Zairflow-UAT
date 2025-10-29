@@ -160,13 +160,13 @@ append scripts
     });
 
 block content
-  form.mb-9#productForm(action=`/api/products/${product._id}?_method=PUT` method="POST" enctype="multipart/form-data")
+  form.mb-9#productForm(action=`/admin/products/${product._id}?_method=PUT` method="POST" enctype="multipart/form-data")
     .row.g-3.flex-between-end.mb-5
       .col-auto
         h2.mb-2 #{pageTitle}
         h5.text-body-tertiary.fw-semibold Update Product
       .col-auto
-        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' onclick="window.location.href='/api/products/'") Cancel
+        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' onclick="window.location.href='/admin/products/'") Cancel
         button.btn.btn-primary.mb-2.mb-sm-0(type='submit') Update Product
     .row.g-5
       .col-12.col-xl-8

@@ -11,8 +11,7 @@ const clothingVariantSchema = new mongoose.Schema({
 const clothingSchema = new mongoose.Schema({
     material: { type: String },
     materialComposition: [{ 
-        material: { type: String },
-        percentage: { type: Number }
+        type: mongoose.Schema.Types.Mixed
     }],
     care: [{ type: String }],
     fit: { type: String },
