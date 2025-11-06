@@ -177,7 +177,7 @@ exports.getProductById = asyncHandler(async (req, res) => {
                     { field: 'material', label: 'Material', formatter: material => material?.join(', ') }
                 ], productObj);
                 addFieldSection('Room Type', ['roomType'], productObj);
-                addFieldSection('Additional Details', ['style', 'weight', 'assembly', 'warranty'], productObj);
+                addFieldSection('Additional Details', ['style', 'weight', 'isAssembly', 'warranty'], productObj);
                 break;
                 
             case 'Clothing':
