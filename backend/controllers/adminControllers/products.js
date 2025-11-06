@@ -177,7 +177,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
         // Furniture fields
         const materials = parseField(body.materials);
         const roomType = parseField(body.roomType);
-        const assembly = parseField(body.assembly);  // object type
+        const isAssembly = parseField(body.isAssembly);  // object type
         
         // Electronics fields
         const specifications = parseField(body.specifications);
@@ -314,7 +314,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
             // Furniture
             materials,            // array
             roomType,             // array
-            assembly,             // object
+            isAssembly,             // object
             
             // Electronics
             specifications,       // key_value_array
@@ -470,7 +470,7 @@ exports.updateProduct = [
                         dimensions: parsed.dimensions,
                         weight: parsed.weight,
                         materials: parsed.materials,
-                        assembly: parsed.assembly,
+                        isAssembly: parsed.isAssembly,
                         style: body.style,
                         capacity: body.capacity,
                         roomType: parsed.roomType,

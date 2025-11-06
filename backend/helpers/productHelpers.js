@@ -89,7 +89,7 @@ exports.buildAggregationPipeline = (filter, sort, order, skip, limit) => [
             dimensions: 1,
             weight: 1,
             materials: 1,
-            assembly: 1,
+            isAssembly: 1,
             material: 1,
             materialComposition: 1,
             care: 1,
@@ -230,7 +230,7 @@ exports.initProductFields = (product) => {
     product.materialComposition = product.materialComposition || [];
     product.care = product.care || [];
     product.materials = product.materials || [];
-    product.assembly = product.assembly || {};
+    product.isAssembly = product.isAssembly || {};
     product.dimensions = product.dimensions || {};
     product.variants = product.variants || [];
     return product;
@@ -266,7 +266,7 @@ exports.parseUpdateFields = (body) => {
         warranty: exports.parseField(body.warranty),
         dimensions: exports.parseField(body.dimensions),
         weight: exports.parseField(body.weight),
-        assembly: exports.parseField(body.assembly),
+        isAssembly: exports.parseField(body.isAssembly),
         ingredients: exports.parseField(body.ingredients),
         nutritionalInfo: exports.parseField(body.nutritionalInfo),
         allergens: exports.parseField(body.allergens),

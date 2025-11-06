@@ -67,7 +67,7 @@ const PRODUCT_TYPES = {
             dimensions: { type: 'key_value_array', required: false, label: 'Dimensions' },
             weight: { type: 'string', required: false, label: 'Weight' },
             material: { type: 'array', required: false, label: 'Material' },
-            assembly: { type: 'boolean', required: false, label: 'Assembly Required' },
+            isAssembly: { type: 'boolean', required: false, label: 'Assembly Required' },
             style: { type: 'string', required: false, label: 'Style' },
             roomType: { type: 'array', required: false, label: 'Room Type' },
             warranty: { type: 'string', required: false, label: 'Warranty' },

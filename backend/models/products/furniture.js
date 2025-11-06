@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const BaseProduct = require('./baseProduct');
 
 const furnitureVariantSchema = new mongoose.Schema({
+    size: { type: String },
     color: { type: String },
     colorHex: { type: String },
     sku: { type: String }
@@ -13,7 +14,7 @@ const furnitureSchema = new mongoose.Schema({
     }],
     weight: { type: String },
     material: [{ type: String }],
-    assembly: { type: Boolean, default: false },
+    isAssembly: { type: Boolean, default: false },
     style: { type: String },
     roomType: [{ type: String }],
     warranty: { type: String },

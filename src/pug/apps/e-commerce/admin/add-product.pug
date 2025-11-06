@@ -480,6 +480,9 @@ append scripts
           const isFeatured = formData.get('isFeatured') === 'on';
           cleanedFormData.append('isFeatured', isFeatured);
 
+          const isAssembly = formData.get('isAssembly') === 'on';
+          cleanedFormData.append('isAssembly', isAssembly);
+
           // Add images from Dropzone
           const files = dropzone.getAcceptedFiles();
           files.forEach((file) => {
@@ -501,7 +504,7 @@ append scripts
           }
 
           // Handle array fields that need special processing
-          const arrayFields = ['care', 'ingredients', 'allergens', 'genre', 'roomType', 'materials'];
+          const arrayFields = ['care', 'ingredients', 'allergens', 'genre', 'roomType', 'material'];
           arrayFields.forEach(fieldName => {
             handleArrayField(fieldName, cleanedFormData);
           });
@@ -536,7 +539,7 @@ append scripts
           });
 
           // Handle object fields (JSON textarea fields)
-          const objectFields = ['assembly', 'weight', 'volume'];
+          const objectFields = ['isAssembly', 'weight', 'volume'];
           objectFields.forEach(fieldName => {
             const value = formData.get(fieldName);
             if (value && value.trim() !== '') {
