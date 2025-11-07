@@ -265,6 +265,30 @@ const getProductTypesForPlan = (plan) => {
     }).map(type => type.name);
 };
 
+// Helper to get product types for a plan including custom product types (for premium+ plans)
+const getProductTypesForPlanWithCustom = async (plan, storeId) => {
+    // Get predefined product types for the plan
+    const predefinedTypes = getProductTypesForPlan(plan);
+    
+    // Premium plans and above include custom product types
+    const premiumPlans = ['premium', 'enterprise'];
+    
+    if (premiumPlans.includes(plan) && storeId) {
+        try {
+            const CustomProductType = require('../models/customProductType');
+            const customTypes = await CustomProductType.getByStore(storeId);
+            const customNames = customTypes.map(type => type.name);
+            
+            return [...predefinedTypes, ...customNames];
+        } catch (error) {
+            console.error('Error fetching custom product types for plan:', error);
+            return predefinedTypes;
+        }
+    }
+    
+    return predefinedTypes;
+};
+
 const getProductTypeFields = (productTypeName) => {
     const productType = getProductTypeByName(productTypeName);
     return productType ? productType.fields : {};
@@ -283,13 +307,81 @@ const getProductTypeConfig = (productTypeName) => {
     return getProductTypeByName(productTypeName);
 };
 
+// Helper to get product type config including custom product types
+const getProductTypeConfigWithCustom = async (productTypeName, storeId) => {
+    // First check predefined product types
+    const predefined = getProductTypeByName(productTypeName);
+    if (predefined) {
+        return predefined;
+    }
+    
+    // If not found, check custom product types
+    if (storeId) {
+        try {
+            const CustomProductType = require('../models/customProductType');
+            const customType = await CustomProductType.getByNameAndStore(productTypeName, storeId);
+            if (customType) {
+                return customType.toProductTypeConfig();
+            }
+        } catch (error) {
+            console.error('Error fetching custom product type:', error);
+        }
+    }
+    
+    return null;
+};
+
+// Helper to get all product types including custom ones for a store
+const getAllProductTypesWithCustom = async (storeId) => {
+    const predefined = getAllProductTypes();
+    
+    if (!storeId) {
+        return predefined;
+    }
+    
+    try {
+        const CustomProductType = require('../models/customProductType');
+        const customTypes = await CustomProductType.getByStore(storeId);
+        const customConfigs = customTypes.map(type => type.toProductTypeConfig());
+        
+        return [...predefined, ...customConfigs];
+    } catch (error) {
+        console.error('Error fetching custom product types:', error);
+        return predefined;
+    }
+};
+
+// Helper to get product type names including custom ones
+const getProductTypeNamesWithCustom = async (storeId) => {
+    const predefined = getProductTypeNames();
+    
+    if (!storeId) {
+        return predefined;
+    }
+    
+    try {
+        const CustomProductType = require('../models/customProductType');
+        const customTypes = await CustomProductType.getByStore(storeId);
+        const customNames = customTypes.map(type => type.name);
+        
+        return [...predefined, ...customNames];
+    } catch (error) {
+        console.error('Error fetching custom product type names:', error);
+        return predefined;
+    }
+};
+
 module.exports = {
     PRODUCT_TYPES,
     getProductTypeNames,
     getProductTypeByName,
     getProductTypesForPlan,
+    getProductTypesForPlanWithCustom,
     getProductTypeFields,
     getProductTypeVariantFields,
     getAllProductTypes,
-    getProductTypeConfig
+    getProductTypeConfig,
+    getProductTypeConfigWithCustom,
+    getAllProductTypesWithCustom,
+    getProductTypeNamesWithCustom
 }; 

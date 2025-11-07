@@ -1,0 +1,355 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      let customProductTypes = [];
+      
+      // Fetch custom product types
+      async function fetchCustomProductTypes() {
+        try {
+          const response = await fetch('/admin/custom-product-types/api', {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            customProductTypes = result.data || [];
+            renderCustomProductTypes();
+          } else {
+            console.error('Failed to fetch custom product types');
+          }
+        } catch (error) {
+          console.error('Error fetching custom product types:', error);
+        }
+      }
+      
+      // Render custom product types table
+      function renderCustomProductTypes() {
+        const tbody = document.querySelector('#customProductTypesTable tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (customProductTypes.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">
+                No custom product types found. <a href="#" onclick="showCreateModal()">Create one</a>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+        
+        customProductTypes.forEach(type => {
+          const row = document.createElement('tr');
+          const typeId = type._id || type.id || '';
+          row.innerHTML = `
+            <td>${type.displayName || type.name}</td>
+            <td>${type.description || '-'}</td>
+            <td>${Object.keys(type.fields || {}).length} fields</td>
+            <td>${type.variantFields?.length || 0} variant fields</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-2" onclick="editCustomProductType('${typeId}', '${type.name}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomProductType('${typeId}', '${type.name}')">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      
+      // Show create modal
+      window.showCreateModal = function() {
+        const modal = new bootstrap.Modal(document.getElementById('customProductTypeModal'));
+        document.getElementById('customProductTypeForm').reset();
+        document.getElementById('name').disabled = false; // Enable name field for create
+        document.getElementById('modalTitle').textContent = 'Create Custom Product Type';
+        document.getElementById('submitBtn').textContent = 'Create';
+        document.getElementById('customProductTypeForm').dataset.mode = 'create';
+        document.getElementById('customProductTypeForm').dataset.id = '';
+        
+        // Clear fields container
+        document.getElementById('fieldsContainer').innerHTML = '';
+        addFieldRow();
+        modal.show();
+      };
+      
+      // Edit custom product type
+      window.editCustomProductType = async function(typeId, typeName) {
+        try {
+          // Fetch the full custom product type
+          const response = await fetch(`/admin/custom-product-types/${typeId}`, {
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            alert('Custom product type not found');
+            return;
+          }
+          
+          const result = await response.json();
+          const type = result.data;
+          
+          // Populate form
+          document.getElementById('name').value = type.name;
+          document.getElementById('name').disabled = true; // Can't change name
+          document.getElementById('displayName').value = type.displayName;
+          document.getElementById('description').value = type.description || '';
+          document.getElementById('icon').value = type.icon || 'fas fa-box';
+          document.getElementById('color').value = type.color || '#6c757d';
+          
+          // Populate variant fields
+          const variantFieldsInput = document.getElementById('variantFields');
+          variantFieldsInput.value = (type.variantFields || []).join(', ');
+          
+          // Populate fields
+          const fieldsContainer = document.getElementById('fieldsContainer');
+          fieldsContainer.innerHTML = '';
+          
+          if (type.fields && Object.keys(type.fields).length > 0) {
+            Object.entries(type.fields).forEach(([fieldName, fieldConfig]) => {
+              addFieldRow(fieldName, fieldConfig);
+            });
+          } else {
+            addFieldRow();
+          }
+          
+          document.getElementById('modalTitle').textContent = 'Edit Custom Product Type';
+          document.getElementById('submitBtn').textContent = 'Update';
+          document.getElementById('customProductTypeForm').dataset.mode = 'edit';
+          document.getElementById('customProductTypeForm').dataset.id = typeId;
+          
+          const modal = new bootstrap.Modal(document.getElementById('customProductTypeModal'));
+          modal.show();
+        } catch (error) {
+          console.error('Error editing custom product type:', error);
+          alert('Error loading custom product type');
+        }
+      };
+      
+      // Delete custom product type
+      window.deleteCustomProductType = async function(typeId, typeName) {
+        if (!confirm(`Are you sure you want to delete "${typeName}"? This action cannot be undone.`)) {
+          return;
+        }
+        
+        try {
+          const deleteResponse = await fetch(`/admin/custom-product-types/${typeId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          
+          if (deleteResponse.ok) {
+            alert('Custom product type deleted successfully');
+            fetchCustomProductTypes();
+          } else {
+            const error = await deleteResponse.json();
+            alert(error.message || 'Error deleting custom product type');
+          }
+        } catch (error) {
+          console.error('Error deleting custom product type:', error);
+          alert('Error deleting custom product type');
+        }
+      };
+      
+      // Add field row
+      function addFieldRow(fieldName = '', fieldConfig = {}) {
+        const container = document.getElementById('fieldsContainer');
+        const row = document.createElement('div');
+        row.className = 'field-row mb-3 p-3 border rounded';
+        
+        const fieldTypes = ['string', 'number', 'boolean', 'date', 'array', 'key_value_array', 'object'];
+        
+        row.innerHTML = `
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Field Name</label>
+              <input type="text" class="form-control field-name" value="${fieldName}" placeholder="e.g. material" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Type</label>
+              <select class="form-select field-type" required>
+                ${fieldTypes.map(type => `<option value="${type}" ${fieldConfig.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Label</label>
+              <input type="text" class="form-control field-label" value="${fieldConfig.label || ''}" placeholder="Display label">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Required</label>
+              <select class="form-select field-required">
+                <option value="false" ${!fieldConfig.required ? 'selected' : ''}>No</option>
+                <option value="true" ${fieldConfig.required ? 'selected' : ''}>Yes</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">&nbsp;</label>
+              <button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.field-row').remove()">Remove</button>
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(row);
+      }
+      
+      window.addFieldRow = addFieldRow;
+      
+      // Handle form submission
+      document.getElementById('customProductTypeForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const mode = this.dataset.mode;
+        const id = this.dataset.id;
+        
+        // Collect fields
+        const fields = {};
+        const fieldRows = document.querySelectorAll('.field-row');
+        fieldRows.forEach(row => {
+          const fieldName = row.querySelector('.field-name').value.trim();
+          const fieldType = row.querySelector('.field-type').value;
+          const fieldLabel = row.querySelector('.field-label').value.trim();
+          const fieldRequired = row.querySelector('.field-required').value === 'true';
+          
+          if (fieldName) {
+            fields[fieldName] = {
+              type: fieldType,
+              label: fieldLabel || fieldName.charAt(0).toUpperCase() + fieldName.slice(1),
+              required: fieldRequired
+            };
+          }
+        });
+        
+        // Collect variant fields
+        const variantFields = formData.get('variantFields')
+          ? formData.get('variantFields').split(',').map(f => f.trim()).filter(f => f)
+          : [];
+        
+        const payload = {
+          name: formData.get('name'),
+          displayName: formData.get('displayName'),
+          description: formData.get('description') || '',
+          icon: formData.get('icon') || 'fas fa-box',
+          color: formData.get('color') || '#6c757d',
+          fields: fields,
+          variantFields: variantFields,
+          isActive: true
+        };
+        
+        try {
+          const url = mode === 'edit' && id 
+            ? `/admin/custom-product-types/${id}`
+            : '/admin/custom-product-types';
+          
+          const method = mode === 'edit' ? 'PUT' : 'POST';
+          
+          const response = await fetch(url, {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            alert(result.message || 'Custom product type saved successfully');
+            const modalElement = document.getElementById('customProductTypeModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            } else {
+              // Fallback if modal instance doesn't exist
+              const newModal = new bootstrap.Modal(modalElement);
+              newModal.hide();
+            }
+            fetchCustomProductTypes();
+          } else {
+            const error = await response.json();
+            alert(error.message || 'Error saving custom product type');
+          }
+        } catch (error) {
+          console.error('Error saving custom product type:', error);
+          alert('Error saving custom product type');
+        }
+      });
+      
+      // Modal close is handled by Bootstrap's data-bs-dismiss attribute
+      
+      // Initial fetch
+      fetchCustomProductTypes();
+    });
+
+block content
+  .mb-9
+    .row.g-3.flex-between-end.mb-5
+      .col-auto
+        h2.mb-2 Custom Product Types
+        h5.text-body-tertiary.fw-semibold Manage store-specific product types
+      .col-auto
+        button.btn.btn-primary(type='button' onclick='showCreateModal()') Create Custom Product Type
+    
+    .card
+      .card-body
+        table.table.table-hover#customProductTypesTable
+          thead
+            tr
+              th Display Name
+              th Description
+              th Fields
+              th Variant Fields
+              th Actions
+          tbody
+            tr
+              td.text-center.text-muted.py-5(colspan='5') Loading...
+    
+    // Modal for Create/Edit
+    .modal.fade#customProductTypeModal(tabindex='-1' role='dialog' aria-labelledby='modalTitle' aria-hidden='true')
+      .modal-dialog.modal-lg(role='document')
+        .modal-content
+          .modal-header
+            h5.modal-title#modalTitle Create Custom Product Type
+            button.btn-close.modal-close(type='button' aria-label='Close' data-bs-dismiss='modal')
+          .modal-body
+            form#customProductTypeForm
+              .mb-3
+                label.form-label Name *
+                input.form-control#name(type='text' name='name' required placeholder='e.g. CustomType' pattern='[A-Za-z][A-Za-z0-9]*' title='Must start with a letter and contain only letters and numbers')
+                small.form-text.text-muted Internal name (no spaces, must be unique for this store)
+              
+              .mb-3
+                label.form-label Display Name *
+                input.form-control#displayName(type='text' name='displayName' required placeholder='e.g. Custom Product Type')
+                small.form-text.text-muted User-friendly name displayed in the UI
+              
+              .mb-3
+                label.form-label Description
+                textarea.form-control#description(name='description' rows='2' placeholder='Brief description of this product type')
+              
+              .row.g-3.mb-3
+                .col-md-6
+                  label.form-label Icon
+                  input.form-control#icon(type='text' name='icon' placeholder='fas fa-box' value='fas fa-box')
+                  small.form-text.text-muted Font Awesome icon class
+                .col-md-6
+                  label.form-label Color
+                  input.form-control#color(type='color' name='color' value='#6c757d')
+              
+              .mb-3
+                label.form-label Variant Fields
+                input.form-control#variantFields(type='text' name='variantFields' placeholder='size, color, sku')
+                small.form-text.text-muted Comma-separated list of variant field names
+              
+              .mb-3
+                label.form-label Fields
+                button.btn.btn-sm.btn-outline-primary.mb-2(type='button' onclick='addFieldRow()') Add Field
+                #fieldsContainer
+          
+          .modal-footer
+            button.btn.btn-secondary.modal-close(type='button' data-bs-dismiss='modal') Cancel
+            button.btn.btn-primary#submitBtn(type='submit' form='customProductTypeForm') Create
+

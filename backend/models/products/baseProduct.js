@@ -25,10 +25,10 @@ const baseProductSchema = new mongoose.Schema({
     price: { type: mongoose.Schema.Types.Decimal128, min: 0.0, default: 0.0 },
     salePrice: { type: mongoose.Schema.Types.Decimal128, min: 0.0, default: 0.0 },
     // Product type is required - determines which specific fields are available
+    // Can be predefined or custom product type (custom types are store-specific)
     productType: { 
         type: String, 
         required: true,
-        enum: require('../../config/productTypes').getProductTypeNames(),
         index: true
     },
     // Categories are optional - can be assigned later
@@ -111,15 +111,31 @@ baseProductSchema.pre('save', async function(next) {
         const store = await Store.findById(this.store);
         
         if (store) {
-            // Use the centralized product type configuration instead of hardcoded limits
-            const { getProductTypesForPlan } = require('../../config/productTypes');
-            const allowedTypes = getProductTypesForPlan(store.subscription.plan);
+            // Check if this is a custom product type
+            const CustomProductType = require('../../models/customProductType');
+            const customType = await CustomProductType.getByNameAndStore(this.productType, store._id);
             
-            if (!allowedTypes.includes(this.productType)) {
-                return next(new Error(
-                    `Product type "${this.productType}" is not allowed in your current plan (${store.subscription.plan}). ` +
-                    `Allowed types: ${allowedTypes.join(', ')}`
-                ));
+            if (customType) {
+                // Custom product types are only allowed for premium plans and above
+                const premiumPlans = ['premium', 'enterprise'];
+                if (!premiumPlans.includes(store.subscription?.plan)) {
+                    return next(new Error(
+                        `Custom product types are only available for premium and enterprise plans. ` +
+                        `Your current plan is: ${store.subscription?.plan || 'none'}`
+                    ));
+                }
+                // Custom product type is allowed for premium+ plans
+            } else {
+                // Use the centralized product type configuration for predefined types
+                const { getProductTypesForPlan } = require('../../config/productTypes');
+                const allowedTypes = getProductTypesForPlan(store.subscription?.plan);
+                
+                if (!allowedTypes.includes(this.productType)) {
+                    return next(new Error(
+                        `Product type "${this.productType}" is not allowed in your current plan (${store.subscription?.plan || 'none'}). ` +
+                        `Allowed types: ${allowedTypes.join(', ')}`
+                    ));
+                }
             }
         }
         
