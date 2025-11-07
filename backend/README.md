@@ -218,3 +218,6 @@ This full E-Commerce API build using Express and Mongo. Here it contains all the
 
 `DELETE |  /api/orders/{id}` 
 
+
+### * To update a store subscription, run the script, e.g. 
+`node backend/scripts/updateStoreSubscription.js store-2 premium`

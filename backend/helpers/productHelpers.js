@@ -429,8 +429,16 @@ exports.validateProductTypeData = (productType, data) => {
 };
 
 // Helper to create product-specific data dynamically
-exports.createProductSpecificData = (productType, body, parsed) => {
-    const config = require('../config/productTypes').getProductTypeConfig(productType);
+exports.createProductSpecificData = async (productType, body, parsed, storeId) => {
+    // First try to get predefined product type config
+    let config = require('../config/productTypes').getProductTypeConfig(productType);
+    
+    // If not found, try to get custom product type config
+    if (!config && storeId) {
+        const { getProductTypeConfigWithCustom } = require('../config/productTypes');
+        config = await getProductTypeConfigWithCustom(productType, storeId);
+    }
+    
     if (!config) {
         throw new Error(`Invalid product type: ${productType}`);
     }
@@ -486,12 +494,28 @@ exports.createProductSpecificData = (productType, body, parsed) => {
 // Helper to validate product type against store subscription
 exports.validateProductTypeForStore = async (productType, storeId) => {
     const Store = require('../models/store');
-    const { getProductTypesForPlan } = require('../config/productTypes');
+    const { getProductTypesForPlan, getProductTypeConfigWithCustom } = require('../config/productTypes');
+    const CustomProductType = require('../models/customProductType');
     
     try {
         const store = await Store.findById(storeId);
         if (!store) {
             return { valid: false, message: 'Store not found' };
+        }
+        
+        // Check if this is a custom product type for this store
+        const customType = await CustomProductType.getByNameAndStore(productType, storeId);
+        if (customType) {
+            // Custom product types are only allowed for premium plans and above
+            const premiumPlans = ['premium', 'enterprise'];
+            if (!premiumPlans.includes(store.subscription?.plan)) {
+                return {
+                    valid: false,
+                    message: `Custom product types are only available for premium and enterprise plans. ` +
+                            `Your current plan is: ${store.subscription?.plan || 'none'}`
+                };
+            }
+            return { valid: true, message: 'Custom product type is allowed for this store' };
         }
         
         // Check if store has subscription info
@@ -517,18 +541,38 @@ exports.validateProductTypeForStore = async (productType, storeId) => {
     }
 };
 
-// Helper to get allowed product types for a store
+// Helper to get allowed product types for a store (including custom product types for premium+ plans)
 exports.getAllowedProductTypesForStore = async (storeId) => {
     const Store = require('../models/store');
-    const { getProductTypesForPlan } = require('../config/productTypes');
+    const { getProductTypesForPlanWithCustom } = require('../config/productTypes');
     
     try {
         const store = await Store.findById(storeId);
         if (!store) {
+            console.warn(`Store ${storeId} not found`);
             return [];
         }
         
-        return getProductTypesForPlan(store.subscription.plan);
+        // Ensure subscription object exists
+        if (!store.subscription) {
+            console.warn(`Store ${storeId} has no subscription object, initializing with 'free' plan`);
+            store.subscription = {
+                plan: 'free',
+                startDate: new Date(),
+                features: []
+            };
+            await store.save();
+        }
+        
+        const plan = store.subscription.plan || 'free';
+        console.log(`Getting product types for store ${storeId} (${store.name}), plan: ${plan}`);
+        console.log(`Store subscription object:`, JSON.stringify(store.subscription, null, 2));
+        
+        // Get product types for the plan including custom types (for premium+ plans)
+        const productTypes = await getProductTypesForPlanWithCustom(plan, storeId);
+        console.log(`Found ${productTypes.length} product types for store ${storeId}:`, productTypes);
+        
+        return productTypes;
     } catch (error) {
         console.error('Error getting allowed product types:', error);
         return [];

@@ -216,9 +216,9 @@ exports.createProduct = asyncHandler(async (req, res) => {
             });
         }
 
-        // Validate product type is valid
-        const { getStoreProductTypes } = require('../../helpers/productHelpers');
-        const validProductTypes = getStoreProductTypes();
+        // Validate product type is valid (including custom product types)
+        const { getAllowedProductTypesForStore } = require('../../helpers/productHelpers');
+        const validProductTypes = await getAllowedProductTypesForStore(storeId);
         if (!validProductTypes.includes(body.productType)) {
             return res.status(400).json({ 
                 success: false, 
@@ -292,10 +292,22 @@ exports.createProduct = asyncHandler(async (req, res) => {
             isFeatured: body.isFeatured === 'true' || body.isFeatured === true
         };
 
-        // Use mapping for product type models
-        const ProductModel = productTypeModelMap[body.productType];
+        // Check if this is a custom product type
+        const { getProductTypeConfigWithCustom } = require('../../config/productTypes');
+        const productTypeConfig = await getProductTypeConfigWithCustom(body.productType, storeId);
+        
+        if (!productTypeConfig) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Invalid product type: ${body.productType}` 
+            });
+        }
+        
+        // Use mapping for predefined product type models, or BaseProduct for custom types
+        let ProductModel = productTypeModelMap[body.productType];
         if (!ProductModel) {
-            return res.status(400).json({ success: false, message: 'Invalid product type' });
+            // Custom product types use BaseProduct model
+            ProductModel = BaseProduct;
         }
 
         // Add type-specific fields dynamically
@@ -338,7 +350,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
         // createProductSpecificData will:
         // - Read string/number/date fields from body (lines 445-448, 465-474 in productHelpers.js)
         // - Read array/object/key_value_array fields from parsedData (lines 450-476 in productHelpers.js)
-        const productSpecificData = createProductSpecificData(body.productType, body, parsedData);
+        const productSpecificData = await createProductSpecificData(body.productType, body, parsedData, storeId);
 
         // Create and save the product
         const product = new ProductModel({ ...productData, ...productSpecificData });

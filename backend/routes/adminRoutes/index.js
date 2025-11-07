@@ -11,6 +11,7 @@ const ordersRoutes = require('./orders');
 const storesRoutes = require('./stores');
 const usersRoutes = require('./users');
 const productTypesRoutes = require('./productTypes');
+const customProductTypesRoutes = require('./customProductTypes');
 
 // Mount all admin route modules
 // router.use('/', authRoutes);
@@ -22,5 +23,6 @@ router.use('/', ordersRoutes);
 router.use('/', storesRoutes);
 router.use('/', usersRoutes);
 router.use('/', productTypesRoutes);
+router.use('/custom-product-types', customProductTypesRoutes);
 
 module.exports = router; 

@@ -240,6 +240,59 @@ exports.getProductById = asyncHandler(async (req, res) => {
                     { field: 'expiryDate', label: 'Expiry Date', formatter: date => date ? new Date(date).toLocaleDateString() : null }
                 ], productObj);
                 break;
+                
+            default:
+                // Handle custom product types - dynamically generate sections based on fields
+                // Get product type config to determine fields
+                const { getProductTypeConfigWithCustom } = require('../config/productTypes');
+                // Note: This is synchronous, but we need async for custom types
+                // For now, we'll handle custom types generically
+                // Custom product types will be handled by dynamically processing all fields
+                const customFields = Object.keys(productObj).filter(key => 
+                    !['_id', 'store', 'name', 'description', 'image', 'images', 'brand', 'tags', 
+                      'price', 'salePrice', 'productType', 'category', 'vendor', 'reviews', 
+                      'rating', 'numReviews', 'isFeatured', 'isActive', 'dateCreated', 
+                      'countInStock', 'status', 'slug', 'metaTitle', 'metaDescription',
+                      'variants', '__v'].includes(key)
+                );
+                
+                if (customFields.length > 0) {
+                    const customSpecs = customFields.map(fieldName => {
+                        const value = productObj[fieldName];
+                        let displayValue = value;
+                        
+                        // Format arrays
+                        if (Array.isArray(value)) {
+                            if (value.length > 0 && typeof value[0] === 'object') {
+                                // Key-value arrays
+                                displayValue = value.map(item => {
+                                    const key = Object.keys(item)[0];
+                                    return `${key}: ${item[key]}`;
+                                }).join(', ');
+                            } else {
+                                displayValue = value.join(', ');
+                            }
+                        } else if (value && typeof value === 'object') {
+                            // Objects
+                            displayValue = JSON.stringify(value);
+                        } else if (value instanceof Date) {
+                            displayValue = value.toLocaleDateString();
+                        }
+                        
+                        return {
+                            label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1'),
+                            value: displayValue
+                        };
+                    }).filter(spec => spec.value);
+                    
+                    if (customSpecs.length > 0) {
+                        sections.push({
+                            title: 'Product Details',
+                            specs: customSpecs
+                        });
+                    }
+                }
+                break;
         }
         
         return sections;
