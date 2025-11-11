@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 const BaseProduct = require('./baseProduct');
 
 const foodVariantSchema = new mongoose.Schema({
-    flavor: { type: String },
     size: { type: String },
+    color: { type: String },
+    colorHex: { type: String },
     sku: { type: String },
 }, { _id: false });
 

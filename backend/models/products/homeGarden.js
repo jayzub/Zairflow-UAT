@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 const BaseProduct = require('./baseProduct');
 
 const homeGardenVariantSchema = new mongoose.Schema({
-    color: { type: String },
     size: { type: String },
+    color: { type: String },
+    colorHex: { type: String },
     sku: { type: String },
 }, { _id: false });
 

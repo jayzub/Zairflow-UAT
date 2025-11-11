@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const BaseProduct = require('./baseProduct');
 
 const booksVariantSchema = new mongoose.Schema({
-    format: { type: String, enum: ['hardcover', 'paperback', 'ebook', 'audiobook'] },
-    language: { type: String },
+    size: { type: String },
+    color: { type: String },
+    colorHex: { type: String },
     sku: { type: String },
-    price: { type: mongoose.Schema.Types.Decimal128, min: 0.0 }
 }, { _id: false });
 
 const booksSchema = new mongoose.Schema({
