@@ -24,8 +24,10 @@ const {
 } = require('../../controllers/adminControllers/stores');
 
 // Admin store management pages and API endpoints (with store isolation)
-router.get('/create-store', requireAuth, requirePermission('store:create'), checkUserStores, extractStore, requireStoreAccess('any'), createStorePage);
-router.post('/stores', requireAuth, requirePermission('store:create'), checkUserStores, extractStore, requireStoreAccess('any'), createStore);
+// Note: create-store routes don't use checkUserStores, extractStore, or requireStoreAccess
+// because users creating their first store won't have a store context yet
+router.get('/create-store', requireAuth, requirePermission('store:create'), createStorePage);
+router.post('/stores', requireAuth, requirePermission('store:create'), createStore);
 // Get user's stores (this should be before /:id routes to avoid conflicts)
 router.get('/stores/my-stores', requireAuth, getUserStores);
 // List stores page
