@@ -210,18 +210,564 @@ append scripts
         return window.productTypesConfig?.[productTypeName];
       }
 
+      // Initialize Choices.js for category dropdown
+      let categoryChoices = null;
+      function initializeCategoryDropdown() {
+        const categorySelect = document.querySelector('#categorySelect') || document.querySelector('select[name="category"]');
+        if (!categorySelect) {
+          console.warn('Category select element not found');
+          return false;
+        }
+        
+        // Check if Choices is already initialized
+        try {
+          // Try to get existing instance first
+          const existingInstance = Choices.getInstance(categorySelect);
+          if (existingInstance) {
+            categoryChoices = existingInstance;
+            console.log('Found existing Choices instance');
+            return true;
+          }
+        } catch (e) {
+          // No existing instance, continue to create one
+          console.log('No existing Choices instance found, creating new one');
+        }
+        
+        // Manually initialize if not already done
+        try {
+          categoryChoices = new Choices(categorySelect, {
+            removeItemButton: true,
+            placeholder: true,
+            placeholderValue: 'Select categories...',
+            searchEnabled: true,
+            searchChoices: true,
+            allowHTML: false
+          });
+          console.log('Choices initialized successfully');
+          return true;
+        } catch (e) {
+          console.error('Could not initialize Choices:', e);
+          return false;
+        }
+      }
+
+      // Fetch compatible categories for a product type
+      async function fetchCompatibleCategories(productType) {
+        if (!productType) {
+          return [];
+        }
+        
+        try {
+          const response = await fetch(`/admin/categories/compatible?productType=${encodeURIComponent(productType)}`, {
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to fetch compatible categories:', response.status);
+            return [];
+          }
+          
+          const result = await response.json();
+          return result.success ? result.data : [];
+        } catch (error) {
+          console.error('Error fetching compatible categories:', error);
+          return [];
+        }
+      }
+
+      // Fetch all categories for the store
+      async function fetchAllCategories() {
+        try {
+          const response = await fetch('/admin/categories', {
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to fetch all categories:', response.status);
+            return [];
+          }
+          
+          // Check if response is JSON (from API) or HTML (from view)
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const result = await response.json();
+            return result.success && result.data ? result.data : (result.categories || []);
+          }
+          
+          // If HTML response, return empty array (we'll use the server-rendered categories)
+          return [];
+        } catch (error) {
+          console.error('Error fetching all categories:', error);
+          return [];
+        }
+      }
+
+      // Store all categories for fallback
+      const allCategories = !{JSON.stringify(categories || [])};
+
+      // Update category dropdown with compatible categories
+      async function updateCategoryDropdown(productType) {
+        // Ensure Choices is initialized
+        if (!categoryChoices) {
+          const initialized = initializeCategoryDropdown();
+          if (!initialized || !categoryChoices) {
+            console.warn('Category Choices instance not initialized');
+            return;
+          }
+        }
+        
+        // Verify Choices instance is valid
+        if (!categoryChoices || typeof categoryChoices.setChoices !== 'function') {
+          console.error('Invalid Choices instance:', categoryChoices);
+          return;
+        }
+        
+        try {
+          // Store currently selected values
+          let selectedValues = [];
+          try {
+            selectedValues = categoryChoices.getValue(true) || [];
+          } catch (e) {
+            console.warn('Could not get selected values:', e);
+          }
+          
+          // Clear existing choices first
+          try {
+            categoryChoices.clearChoices();
+            // Wait a bit for clearChoices to complete
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (e) {
+            console.warn('Error clearing choices:', e);
+          }
+          
+          let choicesToSet = [];
+          
+          if (!productType) {
+            // If no product type selected, show all categories
+            if (allCategories && allCategories.length > 0) {
+              choicesToSet = allCategories.map(category => ({
+                value: category._id.toString(),
+                label: category.name,
+                selected: selectedValues.includes(category._id.toString())
+              }));
+            } else {
+              choicesToSet = [{
+                value: '',
+                label: 'No categories available',
+                disabled: true
+              }];
+            }
+          } else {
+            // Fetch compatible categories
+            const compatibleCategories = await fetchCompatibleCategories(productType);
+            
+            if (compatibleCategories.length === 0) {
+              choicesToSet = [{
+                value: '',
+                label: 'No compatible categories available',
+                disabled: true
+              }];
+            } else {
+              // Add compatible categories to dropdown
+              choicesToSet = compatibleCategories.map(category => ({
+                value: category._id.toString(),
+                label: category.name,
+                selected: selectedValues.includes(category._id.toString())
+              }));
+            }
+          }
+          
+          // Set choices with proper error handling
+          if (choicesToSet.length > 0) {
+            categoryChoices.setChoices(choicesToSet, 'value', 'label', true);
+          }
+        } catch (error) {
+          console.error('Error updating category dropdown:', error);
+          console.error('Error stack:', error.stack);
+          
+          // Fallback: try to reinitialize
+          const categorySelect = document.querySelector('#categorySelect') || document.querySelector('select[name="category"]');
+          if (categorySelect && typeof Choices !== 'undefined') {
+            try {
+              // Destroy existing instance if any
+              const existingInstance = Choices.getInstance(categorySelect);
+              if (existingInstance) {
+                existingInstance.destroy();
+                categoryChoices = null;
+              }
+            } catch (e) {
+              // Ignore destroy errors
+            }
+            // Reinitialize after a delay
+            setTimeout(() => {
+              initializeCategoryDropdown();
+            }, 200);
+          }
+        }
+      }
+
       // Product type selection handler
-      const productTypeSelect = document.querySelector('select[name="productType"]');
+      const productTypeSelect = document.querySelector('#productTypeSelect') || document.querySelector('select[name="productType"]');
       
-      productTypeSelect?.addEventListener('change', function() {
+      productTypeSelect?.addEventListener('change', async function() {
         const selectedType = this.value;
         console.log('Product type selected:', selectedType);
         console.log('Available configs:', window.productTypesConfig);
+        
+        // Generate product type specific fields
         generateProductTypeFields(selectedType);
+        
+        // Update category dropdown with compatible categories
+        await updateCategoryDropdown(selectedType);
       });
 
       // Call the function when page loads
       populateProductTypes();
+      
+      // Initialize category dropdown after DOM is ready and Choices.js is loaded
+      function waitForChoicesAndInit() {
+        if (typeof Choices === 'undefined') {
+          console.warn('Choices.js not loaded yet, retrying...');
+          setTimeout(waitForChoicesAndInit, 100);
+          return;
+        }
+        
+        // Wait a bit more to ensure Choices is fully ready
+        setTimeout(async () => {
+          const initialized = initializeCategoryDropdown();
+          if (initialized && categoryChoices) {
+            // Initially show all categories (no product type selected yet)
+            await updateCategoryDropdown('');
+          } else {
+            console.warn('Failed to initialize category dropdown, retrying...');
+            setTimeout(waitForChoicesAndInit, 200);
+          }
+        }, 200);
+      }
+      
+      // Start initialization after DOM is ready
+      setTimeout(waitForChoicesAndInit, 300);
+
+      // ===== Add Category Modal Functionality =====
+      
+      // Initialize Choices for product types in modal
+      let modalProductTypesChoices = null;
+      
+      // Populate product types in modal
+      async function populateModalProductTypes() {
+        try {
+          const response = await fetch('/admin/product-types/config');
+          if (response.ok) {
+            const result = await response.json();
+            const productTypeSelect = document.querySelector('#categoryAllowedProductTypes');
+            
+            if (!productTypeSelect) return;
+            
+            // Destroy existing Choices instance if any
+            if (modalProductTypesChoices) {
+              try {
+                modalProductTypesChoices.destroy();
+                modalProductTypesChoices = null;
+              } catch (e) {
+                // Ignore errors
+              }
+            }
+            
+            // Clear existing options
+            productTypeSelect.innerHTML = '';
+            
+            // Add fetched product types
+            result.data.forEach(type => {
+              const option = document.createElement('option');
+              option.value = type.name;
+              option.textContent = type.displayName || type.name;
+              productTypeSelect.appendChild(option);
+            });
+            
+            // Initialize Choices for product types select after options are added
+            if (typeof Choices !== 'undefined') {
+              try {
+                // Wait a bit for DOM to update
+                setTimeout(() => {
+                  modalProductTypesChoices = new Choices(productTypeSelect, {
+                    removeItemButton: true,
+                    placeholder: true,
+                    placeholderValue: 'Select product types...',
+                    searchEnabled: true
+                  });
+                }, 100);
+              } catch (e) {
+                console.warn('Could not initialize Choices for modal product types:', e);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch product types for modal:', error);
+        }
+      }
+      
+      // Auto-generate slug from name in modal
+      const categoryNameInput = document.querySelector('#categoryName');
+      const categorySlugInput = document.querySelector('#categorySlug');
+      
+      categoryNameInput?.addEventListener('input', function() {
+        const slug = this.value
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '');
+        if (categorySlugInput) {
+          categorySlugInput.value = slug;
+        }
+      });
+      
+      // Handle modal form submission
+      const addCategoryModalForm = document.getElementById('addCategoryModalForm');
+      const createCategoryBtn = document.getElementById('createCategoryBtn');
+      
+      addCategoryModalForm?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const name = this.querySelector('[name="name"]').value;
+        
+        // Get selected product types from Choices or fallback to native select
+        let allowedProductTypes = [];
+        if (modalProductTypesChoices) {
+          allowedProductTypes = modalProductTypesChoices.getValue(true) || [];
+        } else {
+          allowedProductTypes = Array.from(this.querySelectorAll('#categoryAllowedProductTypes option:checked'))
+            .map(option => option.value);
+        }
+        
+        if (!name || allowedProductTypes.length === 0) {
+          alert('Please fill in Category Name and select at least one Allowed Product Type');
+          return;
+        }
+        
+        try {
+          createCategoryBtn.disabled = true;
+          createCategoryBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+          
+          // Prepare form data
+          const formData = {
+            name: name.trim(),
+            slug: categorySlugInput?.value.trim() || '',
+            description: this.querySelector('[name="description"]').value || '',
+            icon: this.querySelector('[name="icon"]').value || '',
+            color: this.querySelector('[name="color"]').value || '#007bff',
+            parent: this.querySelector('[name="parent"]').value || null,
+            displayOrder: parseInt(this.querySelector('[name="displayOrder"]').value) || 1,
+            allowedProductTypes: allowedProductTypes,
+            isActive: this.querySelector('[name="isActive"]').checked
+          };
+          
+          // Submit category
+          const response = await fetch('/admin/categories', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData),
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Error creating category' }));
+            throw new Error(errorData.message || 'Error creating category');
+          }
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Update allCategories array with new category
+            const newCategory = result.data;
+            if (newCategory && newCategory._id) {
+              allCategories.push({
+                _id: newCategory._id,
+                name: newCategory.name
+              });
+            }
+            
+            // Close modal
+            const modalElement = document.getElementById('addCategoryModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            }
+            
+            // Reset form
+            addCategoryModalForm.reset();
+            if (categorySlugInput) categorySlugInput.value = '';
+            
+            // Refresh category dropdown
+            // Get current product type to filter categories
+            const currentProductType = productTypeSelect?.value || '';
+            await updateCategoryDropdown(currentProductType);
+            
+            // Show success message
+            alert('Category created successfully! It has been added to the category list.');
+          } else {
+            throw new Error(result.message || 'Error creating category');
+          }
+        } catch (error) {
+          console.error('Error creating category:', error);
+          alert('Error creating category: ' + error.message);
+        } finally {
+          createCategoryBtn.disabled = false;
+          createCategoryBtn.innerHTML = 'Create Category';
+        }
+      });
+      
+      // Populate product types when modal is shown
+      const addCategoryModal = document.getElementById('addCategoryModal');
+      addCategoryModal?.addEventListener('show.bs.modal', function() {
+        populateModalProductTypes();
+      });
+      
+      // Reset form when modal is hidden
+      addCategoryModal?.addEventListener('hidden.bs.modal', function() {
+        addCategoryModalForm.reset();
+        if (categorySlugInput) categorySlugInput.value = '';
+        // Reset Choices if initialized
+        if (modalProductTypesChoices) {
+          try {
+            modalProductTypesChoices.clearChoices();
+          } catch (e) {
+            // Ignore errors
+          }
+        }
+      });
+
+      // ===== Add Vendor Modal Functionality =====
+      
+      // Store all vendors for fallback
+      const allVendors = !{JSON.stringify(vendors || [])};
+
+      // Handle vendor modal form submission
+      const addVendorModalForm = document.getElementById('addVendorModalForm');
+      const createVendorBtn = document.getElementById('createVendorBtn');
+      
+      addVendorModalForm?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const name = this.querySelector('[name="name"]').value;
+        const email = this.querySelector('[name="email"]').value;
+        
+        if (!name) {
+          alert('Please fill in Vendor Name');
+          return;
+        }
+        
+        // Email validation (only if provided)
+        if (email && email.trim() !== '') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email.trim())) {
+            alert('Please enter a valid email address');
+            return;
+          }
+        }
+        
+        try {
+          createVendorBtn.disabled = true;
+          createVendorBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+          
+          // Prepare form data
+          const emailValue = email && email.trim() !== '' ? email.trim() : null;
+          const vendorData = {
+            name: name.trim(),
+            email: emailValue,
+            phone: this.querySelector('[name="phone"]').value || '',
+            address: this.querySelector('[name="address"]').value || '',
+            description: this.querySelector('[name="description"]').value || '',
+            isActive: this.querySelector('[name="isActive"]').checked
+          };
+          
+          // Submit vendor
+          const response = await fetch('/admin/vendors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(vendorData),
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Error creating vendor' }));
+            throw new Error(errorData.message || 'Error creating vendor');
+          }
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Update allVendors array with new vendor
+            const newVendor = result.data;
+            if (newVendor && newVendor._id) {
+              allVendors.push({
+                _id: newVendor._id,
+                name: newVendor.name
+              });
+            }
+            
+            // Close modal
+            const modalElement = document.getElementById('addVendorModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            }
+            
+            // Reset form
+            addVendorModalForm.reset();
+            
+            // Refresh vendor dropdown
+            const vendorSelect = document.querySelector('select[name="vendor"]');
+            if (vendorSelect) {
+              // Clear existing options except the first one
+              const firstOption = vendorSelect.querySelector('option[value=""]');
+              vendorSelect.innerHTML = '';
+              if (firstOption) {
+                vendorSelect.appendChild(firstOption);
+              }
+              
+              // Add all vendors including the new one
+              allVendors.forEach(vendor => {
+                const option = document.createElement('option');
+                option.value = vendor._id.toString();
+                option.textContent = vendor.name;
+                vendorSelect.appendChild(option);
+              });
+              
+              // Select the newly created vendor
+              if (newVendor && newVendor._id) {
+                vendorSelect.value = newVendor._id.toString();
+              }
+            }
+            
+            // Show success message
+            alert('Vendor created successfully! It has been added to the vendor list.');
+          } else {
+            throw new Error(result.message || 'Error creating vendor');
+          }
+        } catch (error) {
+          console.error('Error creating vendor:', error);
+          alert('Error creating vendor: ' + error.message);
+        } finally {
+          createVendorBtn.disabled = false;
+          createVendorBtn.innerHTML = 'Create Vendor';
+        }
+      });
+      
+      // Reset form when vendor modal is hidden
+      const addVendorModal = document.getElementById('addVendorModal');
+      addVendorModal?.addEventListener('hidden.bs.modal', function() {
+        addVendorModalForm.reset();
+      });
 
       // Event delegation for dynamic array fields
       document.addEventListener('click', function(e) {
@@ -272,6 +818,9 @@ append scripts
             <input class="form-control mb-2" type="text" name="variants[${idx}][size]" placeholder="Size">
             <input class="form-control mb-2" type="text" name="variants[${idx}][color]" placeholder="Color">
             <input class="form-control mb-2" type="text" name="variants[${idx}][colorHex]" placeholder="Color Hex Code">
+            <input class="form-control mb-2" type="number" name="variants[${idx}][price]" placeholder="Price" step="0.01">
+            <input class="form-control mb-2" type="number" name="variants[${idx}][salePrice]" placeholder="Sale Price" step="0.01">
+            <input class="form-control mb-2" type="number" name="variants[${idx}][countInStock]" placeholder="Stock Quantity" min="0">
             <input class="form-control mb-2" type="text" name="variants[${idx}][sku]" placeholder="SKU">
             <button class="btn btn-outline-danger" type="button" onclick="this.closest('.variant-item').remove()">Remove Variant</button>
           </div>
@@ -516,12 +1065,20 @@ append scripts
               const sizeInput = item.querySelector('input[name*="[size]"]');
               const colorInput = item.querySelector('input[name*="[color]"]');
               const colorHexInput = item.querySelector('input[name*="[colorHex]"]');
+              const priceInput = item.querySelector('input[name*="[price]"]');
+              const salePriceInput = item.querySelector('input[name*="[salePrice]"]');
+              const countInStockInput = item.querySelector('input[name*="[countInStock]"]');
               const skuInput = item.querySelector('input[name*="[sku]"]');
               
               const variant = {};
               if (sizeInput && sizeInput.value) variant.size = sizeInput.value;
               if (colorInput && colorInput.value) variant.color = colorInput.value;
               if (colorHexInput && colorHexInput.value) variant.colorHex = colorHexInput.value;
+              if (priceInput && priceInput.value) variant.price = parseFloat(priceInput.value) || 0;
+              if (salePriceInput && salePriceInput.value) variant.salePrice = parseFloat(salePriceInput.value) || 0;
+              if (countInStockInput && countInStockInput.value !== '') {
+                variant.countInStock = parseInt(countInStockInput.value) || 0;
+              }
               if (skuInput && skuInput.value) variant.sku = skuInput.value;
               
               return Object.keys(variant).length > 0 ? variant : null;
@@ -629,3 +1186,99 @@ block content
             +OrganizeCard({ categories, vendors }).mb-3
           .col-12.col-xl-12
             +DynamicProductFields
+
+  // Modal for Add Category
+  .modal.fade#addCategoryModal(tabindex='-1' aria-labelledby='addCategoryModalLabel' aria-hidden='true')
+    .modal-dialog.modal-lg.modal-dialog-scrollable
+      .modal-content
+        .modal-header
+          h5.modal-title#addCategoryModalLabel Add New Category
+          button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+        .modal-body
+          form#addCategoryModalForm
+            .row.g-3
+              .col-12.col-sm-6
+                label.form-label(for='categoryName') Category Name *
+                input.form-control#categoryName(type='text' name='name' placeholder='Enter category name' required)
+              
+              .col-12.col-sm-6
+                label.form-label(for='categorySlug') URL Slug
+                input.form-control#categorySlug(type='text' name='slug' placeholder='auto-generated' readonly)
+                small.form-text.text-muted Auto-generated from category name
+              
+              .col-12
+                label.form-label(for='categoryDescription') Description
+                textarea.form-control#categoryDescription(name='description' rows='3' placeholder='Describe this category...')
+              
+              .col-12.col-sm-6
+                label.form-label(for='categoryIcon') Icon Class
+                input.form-control#categoryIcon(type='text' name='icon' placeholder='fas fa-laptop')
+                small.form-text.text-muted FontAwesome icon class
+              
+              .col-12.col-sm-6
+                label.form-label(for='categoryColor') Color
+                input.form-control#categoryColor(type='color' name='color' value='#007bff')
+              
+              .col-12.col-sm-6
+                label.form-label(for='categoryParent') Parent Category
+                select.form-select#categoryParent(name='parent')
+                  option(value='') No parent (top-level category)
+                  if categories && categories.length > 0
+                    each parentCategory in categories
+                      option(value=parentCategory._id)= parentCategory.name
+              
+              .col-12.col-sm-6
+                label.form-label(for='categoryDisplayOrder') Display Order
+                input.form-control#categoryDisplayOrder(type='number' name='displayOrder' placeholder='1' value='1' min='1')
+              
+              .col-12
+                label.form-label(for='categoryAllowedProductTypes') Allowed Product Types *
+                select.form-select#categoryAllowedProductTypes(name='allowedProductTypes' multiple required)
+                  // Will be populated dynamically
+                small.form-text.text-muted Select which product types are allowed in this category
+              
+              .col-12
+                .form-check
+                  input.form-check-input#categoryIsActive(type='checkbox' name='isActive' checked)
+                  label.form-check-label(for='categoryIsActive') Active Category
+        .modal-footer
+          button.btn.btn-secondary(type='button' data-bs-dismiss='modal') Cancel
+          button.btn.btn-primary(type='submit' form='addCategoryModalForm' id='createCategoryBtn') Create Category
+
+  // Modal for Add Vendor
+  .modal.fade#addVendorModal(tabindex='-1' aria-labelledby='addVendorModalLabel' aria-hidden='true')
+    .modal-dialog.modal-dialog-scrollable
+      .modal-content
+        .modal-header
+          h5.modal-title#addVendorModalLabel Add New Vendor
+          button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+        .modal-body
+          form#addVendorModalForm
+            .row.g-3
+              .col-12.col-sm-6
+                label.form-label(for='vendorName') Vendor Name *
+                input.form-control#vendorName(type='text' name='name' placeholder='Enter vendor name' required)
+              
+              .col-12.col-sm-6
+                label.form-label(for='vendorEmail') Email
+                input.form-control#vendorEmail(type='email' name='email' placeholder='vendor@example.com')
+              
+              .col-12.col-sm-6
+                label.form-label(for='vendorPhone') Phone
+                input.form-control#vendorPhone(type='tel' name='phone' placeholder='+1 (555) 123-4567')
+              
+              .col-12.col-sm-6
+                label.form-label(for='vendorAddress') Address
+                input.form-control#vendorAddress(type='text' name='address' placeholder='123 Main St, City, State')
+              
+              .col-12
+                label.form-label(for='vendorDescription') Description
+                textarea.form-control#vendorDescription(name='description' rows='3' placeholder='Describe the vendor...')
+              
+              .col-12
+                .form-check
+                  input.form-check-input#vendorIsActive(type='checkbox' name='isActive' checked)
+                  label.form-check-label(for='vendorIsActive') Active Vendor
+        .modal-footer
+          button.btn.btn-secondary(type='button' data-bs-dismiss='modal') Cancel
+          button.btn.btn-primary(type='submit' form='addVendorModalForm' id='createVendorBtn') Create Vendor

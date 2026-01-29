@@ -11,7 +11,7 @@ exports.storage = new CloudinaryStorage({
         folder: 'products', // Folder name in Cloudinary where files will be stored
         allowed_formats: Object.values(FILE_TYPE_MAP), // Allowed file types (e.g., ['jpg', 'png'])
         public_id: (req, file) => {
-            const productName = req.body.name.replace(/\s/g, '-') || 'unknown'; // Assuming productId is passed in the request body
+            const productName = (req.body && req.body.name) ? req.body.name.replace(/\s/g, '-') : 'unknown';
             const truncatedId = productName.substring(0, 10); // Take first 10 characters of the product Name
             const uuid = uuidv4().split('-')[0]; // Use first part of UUID for brevity
             return `product-${truncatedId}-${uuid}`; // Unique filename with UUID
@@ -19,5 +19,12 @@ exports.storage = new CloudinaryStorage({
     },
 });
 
-// Export Multer instance
-exports.upload = multer({ storage: exports.storage });
+// Configure Multer to accept images field and allow other form fields to pass through
+// When using upload.array('images', 5), multer will only process the 'images' field as files
+// and automatically allow all other fields to pass through as req.body
+exports.upload = multer({ 
+    storage: exports.storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit per file
+    }
+});

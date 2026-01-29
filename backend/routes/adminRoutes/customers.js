@@ -22,7 +22,7 @@ const checkUserStores = async (req, res, next) => {
         
         if (!hasStores) {
             // User has no stores, redirect to create-store page
-            return res.redirect('admin/create-store');
+            return res.redirect('/admin/create-store');
         }
         
         // User has stores, proceed with normal flow

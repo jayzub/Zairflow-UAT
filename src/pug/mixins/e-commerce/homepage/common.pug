@@ -34,13 +34,23 @@ mixin Product(product)
         if product.extra2
           p.fs-9(class=product.extra2Class)=product.extra2
         // Price section
-        if product.salePrice
-          if product.price
-            .d-flex.align-items-center.mb-1
-              p.me-2.text-body.text-decoration-line-through.mb-0=`$${product.price}`
-              h3.text-body-emphasis.mb-0=`$${product.salePrice}`
-          else
-            h3.text-body-emphasis=`$${product.salePrice}`
+        - 
+          // Validate sale price is less than regular price
+          var showSalePrice = false;
+          var salePriceVal = null;
+          var regularPriceVal = null;
+          
+          if (product.salePrice && product.price) {
+            salePriceVal = parseFloat(product.salePrice.toString().split(' - ')[0]);
+            regularPriceVal = parseFloat(product.price.toString().split(' - ')[0]);
+            if (!isNaN(salePriceVal) && !isNaN(regularPriceVal) && salePriceVal > 0 && salePriceVal < regularPriceVal) {
+              showSalePrice = true;
+            }
+          }
+        if showSalePrice && salePriceVal && regularPriceVal
+          .d-flex.align-items-center.mb-1
+            p.me-2.text-body.text-decoration-line-through.mb-0=`$${product.price}`
+            h3.text-body-emphasis.mb-0=`$${product.salePrice}`
         else if product.price
           h3.text-body-emphasis=`$${product.price}`
         if product.colors

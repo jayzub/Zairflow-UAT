@@ -20,8 +20,8 @@ mixin OrganizeCard(options = {})
           .mb-4
             .d-flex.flex-wrap.mb-2
               h5.mb-0.text-body-highlight.me-2 Categories
-              a.fw-bold.fs-9(href='#!') Add new category
-            select.form-select.mb-3(data-choices multiple data-options!={removeItemButton: true, placeholder: true} name='category')
+              a.fw-bold.fs-9(href='#!' data-bs-toggle='modal' data-bs-target='#addCategoryModal') Add new category
+            select.form-select.mb-3(multiple name='category' id='categorySelect')
               if categories.length > 0
                 option(value='') Add categories...
                 each category in categories
@@ -33,7 +33,7 @@ mixin OrganizeCard(options = {})
           .mb-4
             .d-flex.flex-wrap.mb-2
               h5.mb-0.text-body-highlight.me-2 Vendor
-              a.fw-bold.fs-9(href='#!') Add new vendor
+              a.fw-bold.fs-9(href='#!' data-bs-toggle='modal' data-bs-target='#addVendorModal') Add new vendor
             select.form-select.mb-3(name='vendor')
               option(value='') Select vendor...
               if vendors.length > 0

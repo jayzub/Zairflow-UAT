@@ -1,0 +1,166 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../mixins/dashboard/common
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Button handlers
+      const form = document.getElementById('vendorForm');
+      const discardBtn = document.getElementById('discardBtn');
+      const createBtn = document.getElementById('createBtn');
+
+      // Discard button handler
+      discardBtn?.addEventListener('click', function() {
+        if (confirm('Are you sure you want to discard this vendor?')) {
+          window.location.href = '/admin/vendors';
+        }
+      });
+
+      // Form submission handler
+      form?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submission started');
+
+        // Basic validation
+        const name = this.querySelector('[name="name"]').value;
+        const email = this.querySelector('[name="email"]').value;
+
+        if (!name) {
+          alert('Please fill in the required field (Name)');
+          return;
+        }
+
+        // Email validation (only if provided)
+        if (email && email.trim() !== '') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email.trim())) {
+            alert('Please enter a valid email address');
+            return;
+          }
+        }
+
+        await submitForm();
+      });
+
+      // Form submission helper function
+      async function submitForm() {
+        try {
+          const form = document.getElementById('vendorForm');
+          const formData = new FormData(form);
+          
+          createBtn.disabled = true;
+          createBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+          // Prepare form data
+          const emailInput = formData.get('email')?.trim();
+          const emailValue = emailInput && emailInput !== '' ? emailInput : null;
+          const vendorData = {
+            name: formData.get('name').trim(),
+            email: emailValue,
+            description: formData.get('description') || '',
+            phone: formData.get('phone') || '',
+            address: formData.get('address') || '',
+            isActive: formData.get('isActive') === 'on'
+          };
+
+          console.log('Submitting vendor data:', vendorData);
+
+          const response = await fetch('/admin/vendors', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(vendorData),
+            credentials: 'include'
+          });
+
+          console.log('Response status:', response.status);
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Error creating vendor' }));
+            throw new Error(errorData.message || 'Error creating vendor');
+          }
+
+          const result = await response.json();
+          console.log('Server response:', result);
+
+          if (result.success) {
+            window.location.href = '/admin/vendors';
+          } else {
+            throw new Error(result.message || 'Error creating vendor');
+          }
+        } catch (error) {
+          console.error('Error details:', error);
+          alert('Error creating vendor: ' + error.message);
+        } finally {
+          createBtn.disabled = false;
+          createBtn.innerHTML = 'Create Vendor';
+        }
+      }
+    });
+
+append variables
+  - var pageTitle = 'Add Vendor'
+
+block content
+  form.mb-9#vendorForm(action="/admin/vendors" method="POST")
+    .row.g-3.flex-between-end.mb-5
+      .col-auto
+        h2.mb-2 #{pageTitle}
+        h5.text-body-tertiary.fw-semibold Create a new Vendor
+      .col-auto
+        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' id='discardBtn') Discard
+        button.btn.btn-primary.mb-2.mb-sm-0(type='submit' id='createBtn') Create Vendor
+    
+    .row.g-5
+      .col-12.col-xl-8
+        .card
+          .card-body
+            h4.card-title.mb-4 Basic Information
+            
+            .row.g-3
+              .col-12.col-sm-6
+                label.form-label(for='name') Vendor Name *
+                input.form-control#name(type='text' name='name' placeholder='Enter vendor name' required)
+                .form-text The name of the vendor/supplier
+              
+              .col-12.col-sm-6
+                label.form-label(for='email') Email
+                input.form-control#email(type='email' name='email' placeholder='vendor@example.com')
+                .form-text Contact email address (optional)
+              
+              .col-12.col-sm-6
+                label.form-label(for='phone') Phone
+                input.form-control#phone(type='tel' name='phone' placeholder='+1 (555) 123-4567')
+                .form-text Contact phone number
+              
+              .col-12.col-sm-6
+                label.form-label(for='address') Address
+                input.form-control#address(type='text' name='address' placeholder='123 Main St, City, State')
+                .form-text Physical address
+              
+              .col-12
+                label.form-label(for='description') Description
+                textarea.form-control#description(name='description' rows='4' placeholder='Describe the vendor...')
+                .form-text Additional information about the vendor
+
+      .col-12.col-xl-4
+        .card
+          .card-body
+            h4.card-title.mb-4 Settings
+            
+            .mb-3
+              .form-check
+                input.form-check-input#isActive(type='checkbox' name='isActive' checked)
+                label.form-check-label(for='isActive') Active Vendor
+                .form-text Inactive vendors won't appear in product creation forms
+            
+            .alert.alert-info.mb-0
+              h6.mb-2
+                i.fas.fa-info-circle.me-2
+                | Tips
+              ul.mb-0.fs-9
+                li Use clear, descriptive vendor names
+                li Ensure email addresses are valid and active
+                li Add contact information for easy communication
+                li Keep vendor information up to date

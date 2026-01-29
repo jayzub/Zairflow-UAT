@@ -20,17 +20,43 @@ exports.createStorePage = asyncHandler(async (req, res) => {
 // Admin: Create a new store (admin function)
 exports.createStore = asyncHandler(async (req, res) => {
     try {
-        const { name, description, address, phone, email, website } = req.body;
+        const { name, description, contactInfo, settings, theme, website } = req.body;
         
+        // Generate slug from store name if not provided
+        const generateSlug = (storeName) => {
+            return storeName
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '') // Remove special characters
+                .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+        };
+
+        let slug = generateSlug(name);
+        let originalSlug = slug;
+        let counter = 1;
+
+        // Ensure slug uniqueness
+        while (await Store.exists({ slug })) {
+            slug = `${originalSlug}-${counter}`;
+            counter++;
+        }
+
+        // Build store data structure
         const storeData = {
             name,
-            description,
-            address,
-            phone,
-            email,
-            website,
-            owner: req.user._id
+            slug,
+            description: description || '',
+            owner: req.user._id,
+            contactInfo: contactInfo || {},
+            settings: settings || {},
+            theme: theme || {}
         };
+
+        // Add website if provided (though it's not in the schema, we'll handle it gracefully)
+        if (website) {
+            storeData.website = website;
+        }
 
         const store = new Store(storeData);
         await store.save();

@@ -106,11 +106,128 @@ exports.buildAggregationPipeline = (filter, sort, order, skip, limit) => [
 ];
 
 // Helper to serialize products (convert Decimal128 to string)
-exports.serializeProducts = (productList) => productList.map(product => ({
-    ...product,
-    price: product.price ? product.price.toString() : null,
-    salePrice: product.salePrice ? product.salePrice.toString() : null,
-}));
+// Helper to calculate price range from product and variants
+exports.calculatePriceRange = (product) => {
+    const prices = [];
+    const salePrices = [];
+    
+    // Add base product price (exclude 0 or less)
+    if (product.price) {
+        const basePrice = parseFloat(product.price.toString());
+        if (!isNaN(basePrice) && basePrice > 0) {
+            prices.push(basePrice);
+        }
+    }
+    
+    // Add base product sale price (exclude 0 or less, and only if less than regular price)
+    if (product.salePrice) {
+        const baseSalePrice = parseFloat(product.salePrice.toString());
+        const basePrice = product.price ? parseFloat(product.price.toString()) : null;
+        // Only include sale price if it's valid and less than regular price
+        if (!isNaN(baseSalePrice) && baseSalePrice > 0) {
+            // If there's a base price, only include sale price if it's less
+            if (basePrice === null || baseSalePrice < basePrice) {
+                salePrices.push(baseSalePrice);
+            }
+        }
+    }
+    
+    // Add variant prices (exclude 0 or less)
+    if (product.variants && Array.isArray(product.variants)) {
+        product.variants.forEach(variant => {
+            if (variant.price) {
+                const variantPrice = parseFloat(variant.price.toString());
+                if (!isNaN(variantPrice) && variantPrice > 0) {
+                    prices.push(variantPrice);
+                }
+            }
+            if (variant.salePrice) {
+                const variantSalePrice = parseFloat(variant.salePrice.toString());
+                const variantPrice = variant.price ? parseFloat(variant.price.toString()) : null;
+                // Only include sale price if it's valid and less than regular price
+                if (!isNaN(variantSalePrice) && variantSalePrice > 0) {
+                    // If there's a variant price, only include sale price if it's less
+                    if (variantPrice === null || variantSalePrice < variantPrice) {
+                        salePrices.push(variantSalePrice);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Calculate min and max
+    const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+    const minSalePrice = salePrices.length > 0 ? Math.min(...salePrices) : null;
+    const maxSalePrice = salePrices.length > 0 ? Math.max(...salePrices) : null;
+    
+    // Determine if there's a price range
+    const hasPriceRange = minPrice !== null && maxPrice !== null && minPrice !== maxPrice;
+    const hasSalePriceRange = minSalePrice !== null && maxSalePrice !== null && minSalePrice !== maxSalePrice;
+    
+    // Calculate maximum discount percentage from variants
+    // This finds the variant with the highest discount percentage
+    // Calculate if ANY variant or base product has a sale price
+    let maxDiscountPercentage = null;
+    let hasAnySalePrice = false;
+    
+    // Check variants for sale prices
+    if (product.variants && Array.isArray(product.variants)) {
+        product.variants.forEach(variant => {
+            if (variant.price && variant.salePrice) {
+                const variantPrice = parseFloat(variant.price.toString());
+                const variantSalePrice = parseFloat(variant.salePrice.toString());
+                if (!isNaN(variantPrice) && !isNaN(variantSalePrice) && variantPrice > 0 && variantSalePrice > 0 && variantSalePrice < variantPrice) {
+                    hasAnySalePrice = true;
+                    const discount = Math.round(((variantPrice - variantSalePrice) / variantPrice) * 100);
+                    if (maxDiscountPercentage === null || discount > maxDiscountPercentage) {
+                        maxDiscountPercentage = discount;
+                    }
+                }
+            }
+        });
+    }
+    
+    // Also check base product sale price
+    if (product.price && product.salePrice) {
+        const basePrice = parseFloat(product.price.toString());
+        const baseSalePrice = parseFloat(product.salePrice.toString());
+        if (!isNaN(basePrice) && !isNaN(baseSalePrice) && basePrice > 0 && baseSalePrice > 0 && baseSalePrice < basePrice) {
+            hasAnySalePrice = true;
+            const discount = Math.round(((basePrice - baseSalePrice) / basePrice) * 100);
+            if (maxDiscountPercentage === null || discount > maxDiscountPercentage) {
+                maxDiscountPercentage = discount;
+            }
+        }
+    }
+    
+    // Only set maxDiscountPercentage if there's at least one sale price
+    if (!hasAnySalePrice) {
+        maxDiscountPercentage = null;
+    }
+    
+    return {
+        price: product.price ? product.price.toString() : null,
+        salePrice: product.salePrice ? product.salePrice.toString() : null,
+        minPrice: minPrice !== null ? minPrice.toFixed(2) : null,
+        maxPrice: maxPrice !== null ? maxPrice.toFixed(2) : null,
+        minSalePrice: minSalePrice !== null ? minSalePrice.toFixed(2) : null,
+        maxSalePrice: maxSalePrice !== null ? maxSalePrice.toFixed(2) : null,
+        hasPriceRange,
+        hasSalePriceRange,
+        priceRange: hasPriceRange ? `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}` : (minPrice !== null ? minPrice.toFixed(2) : null),
+        salePriceRange: hasSalePriceRange ? `${minSalePrice.toFixed(2)} - ${maxSalePrice.toFixed(2)}` : (minSalePrice !== null ? minSalePrice.toFixed(2) : null),
+        maxDiscountPercentage: maxDiscountPercentage !== null ? maxDiscountPercentage : null
+    };
+};
+
+exports.serializeProducts = (productList) => productList.map(product => {
+    const priceInfo = exports.calculatePriceRange(product);
+    return {
+        ...product,
+        ...priceInfo
+    };
+});
 
 // Helper to generate page range for pagination bar
 exports.getPageRange = (current, total) => {
@@ -152,6 +269,24 @@ exports.parseField = (field) => {
         }
     }
     return field;
+};
+
+// Helper to convert variant prices to Decimal128 format
+exports.convertVariantPrices = (variants) => {
+    if (!variants || !Array.isArray(variants)) {
+        return variants;
+    }
+    const mongoose = require('mongoose');
+    return variants.map(variant => {
+        const convertedVariant = { ...variant };
+        if (variant.price !== undefined && variant.price !== null) {
+            convertedVariant.price = mongoose.Types.Decimal128.fromString(variant.price.toString());
+        }
+        if (variant.salePrice !== undefined && variant.salePrice !== null) {
+            convertedVariant.salePrice = mongoose.Types.Decimal128.fromString(variant.salePrice.toString());
+        }
+        return convertedVariant;
+    });
 };
 
 // Helper to validate ObjectId
@@ -485,7 +620,8 @@ exports.createProductSpecificData = async (productType, body, parsed, storeId) =
     
     // Add variants if they exist
     if (parsed.variants) {
-        productData.variants = parsed.variants;
+        // Convert variant prices to Decimal128 format
+        productData.variants = exports.convertVariantPrices(parsed.variants);
     }
     
     return productData;

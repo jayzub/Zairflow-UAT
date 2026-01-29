@@ -60,7 +60,7 @@ const baseProductSchema = new mongoose.Schema({
     isFeatured: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     dateCreated: { type: Date, default: Date.now },
-    countInStock: { type: Number, default: 0, min: 0, max: 255 },
+    countInStock: { type: Number, default: 0, min: 0 },
     // SEO fields
     metaTitle: { type: String },
     metaDescription: { type: String },

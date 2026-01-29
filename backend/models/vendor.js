@@ -16,9 +16,9 @@ const vendorSchema = new mongoose.Schema({
         default: '' 
     },
     email: { 
-        type: String, 
-        required: true
-        // Removed global unique - will be store-specific unique
+        type: String,
+        default: null
+        // Optional - store-specific unique when provided (sparse index)
     },
     phone: { 
         type: String 
@@ -45,8 +45,8 @@ vendorSchema.virtual('id').get(function () {
 // Indexes for store isolation
 vendorSchema.index({ store: 1, isActive: 1 });
 vendorSchema.index({ store: 1, name: 1 });
-// Compound unique index for store + email combination
-vendorSchema.index({ store: 1, email: 1 }, { unique: true });
+// Compound unique index for store + email combination (sparse - only when email exists)
+vendorSchema.index({ store: 1, email: 1 }, { unique: true, sparse: true });
 
 const Vendor = mongoose.model('Vendor', vendorSchema);
 

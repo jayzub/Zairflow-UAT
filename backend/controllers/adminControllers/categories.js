@@ -119,6 +119,19 @@ exports.createCategory = asyncHandler(async (req, res) => {
             counter++;
         }
         
+        // Check if category with same name already exists in this store
+        const existingCategory = await Category.findOne({
+            store: req.store._id,
+            name: name.trim()
+        });
+        
+        if (existingCategory) {
+            return res.status(400).json({
+                success: false,
+                message: `A category with the name "${name.trim()}" already exists in your store`
+            });
+        }
+        
         // Handle allowedProductTypes array
         let allowedProductTypes = [];
         if (req.body.allowedProductTypes) {
@@ -155,6 +168,35 @@ exports.createCategory = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating category:', error);
+        console.error('Error details:', {
+            code: error.code,
+            keyPattern: error.keyPattern,
+            keyValue: error.keyValue
+        });
+        
+        // Handle duplicate key error (unique index violation)
+        if (error.code === 11000) {
+            // Check if it's a name duplicate
+            if (error.keyPattern && (error.keyPattern.name || error.keyValue?.name)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `A category with the name "${error.keyValue?.name || name}" already exists in your store`
+                });
+            }
+            // Check if it's a slug duplicate
+            if (error.keyPattern && (error.keyPattern.slug || error.keyValue?.slug)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `A category with the slug "${error.keyValue?.slug || slug}" already exists in your store`
+                });
+            }
+            // Generic duplicate error
+            return res.status(400).json({
+                success: false,
+                message: 'A category with these details already exists in your store'
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: 'Error creating category',
@@ -282,6 +324,37 @@ exports.getCategoryStats = asyncHandler(async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching category statistics',
+            error: error.message
+        });
+    }
+});
+
+// Admin: Get compatible categories for a product type
+exports.getCompatibleCategories = asyncHandler(async (req, res) => {
+    try {
+        const { productType } = req.query;
+        const storeId = req.store._id;
+        
+        if (!productType) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product type is required'
+            });
+        }
+        
+        // Use the helper function to get compatible categories
+        const { getCompatibleCategories } = require('../../helpers/productHelpers');
+        const categories = await getCompatibleCategories(productType, storeId);
+        
+        res.status(200).json({
+            success: true,
+            data: categories
+        });
+    } catch (error) {
+        console.error('Error fetching compatible categories:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching compatible categories',
             error: error.message
         });
     }

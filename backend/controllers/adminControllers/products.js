@@ -10,7 +10,7 @@ const { asyncHandler } = require('../../middleware/asyncHandler');
 const sanitizeHtml = require('sanitize-html');
 const cloudinary = require('../../config/cloudinary');
 const { sanitizeOptions } = require('../../helpers/sanitizeOptions');
-const { buildProductFilter, buildAggregationPipeline, serializeProducts, getPageRange, getProductTypes, fetchCategoriesAndVendors, parseField, isValidObjectId, resolveStoreId, productTypeModelMap, initProductFields, fetchProductWithRelated, parseUpdateFields, mergeImages, prepareUpdateData } = require('../../helpers/productHelpers');
+const { buildProductFilter, buildAggregationPipeline, serializeProducts, getPageRange, getProductTypes, fetchCategoriesAndVendors, parseField, isValidObjectId, resolveStoreId, productTypeModelMap, initProductFields, fetchProductWithRelated, parseUpdateFields, mergeImages, prepareUpdateData, convertVariantPrices } = require('../../helpers/productHelpers');
 const { DEFAULT_LIMIT, DEFAULT_PAGE, DEFAULT_SORT, DEFAULT_ORDER } = require('../../utils/constants');
 
 // Admin: Get all products with admin-specific logic
@@ -456,6 +456,9 @@ exports.updateProduct = [
             // Prepare update data
             const updateData = prepareUpdateData(body, parsed, images, price, salePrice);
             // Add type-specific fields
+            // Convert variant prices to Decimal128 format
+            const convertedVariants = parsed.variants ? convertVariantPrices(parsed.variants) : [];
+            
             switch (product.productType) {
                 case 'Clothing':
                     Object.assign(updateData, {
@@ -465,7 +468,7 @@ exports.updateProduct = [
                         fit: body.fit,
                         season: body.season,
                         gender: body.gender,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'Electronics':
@@ -474,7 +477,7 @@ exports.updateProduct = [
                         warranty: parsed.warranty,
                         dimensions: parsed.dimensions,
                         weight: parsed.weight,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'Furniture':
@@ -487,7 +490,7 @@ exports.updateProduct = [
                         capacity: body.capacity,
                         roomType: parsed.roomType,
                         warranty: parsed.warranty,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'Books':
@@ -500,7 +503,7 @@ exports.updateProduct = [
                         genre: parsed.genre || [],
                         pages: body.pages,
                         publicationDate: body.publicationDate,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'Food':
@@ -510,7 +513,7 @@ exports.updateProduct = [
                         nutritionalInfo: parsed.nutritionalInfo,
                         expiryDate: body.expiryDate,
                         allergens: parsed.allergens || [],
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'Sports':
@@ -519,7 +522,7 @@ exports.updateProduct = [
                         skillLevel: body.skillLevel,
                         material: body.material,
                         weight: parsed.weight,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'HomeGarden':
@@ -527,7 +530,7 @@ exports.updateProduct = [
                         room: body.room,
                         material: body.material,
                         dimensions: parsed.dimensions,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
                 case 'HealthBeauty':
@@ -537,7 +540,7 @@ exports.updateProduct = [
                         ingredients: parsed.ingredients || [],
                         volume: parsed.volume,
                         expiryDate: body.expiryDate,
-                        variants: parsed.variants || []
+                        variants: convertedVariants
                     });
                     break;
             }

@@ -335,7 +335,17 @@ append scripts
 							<div>
 								${product.extra ? `<p class="fs-9 ${product.extraClass || ''}">${product.extra}</p>` : ''}
 								${product.extra2 ? `<p class="fs-9 ${product.extra2Class || ''}">${product.extra2}</p>` : ''}
-								${product.salePrice ? (product.price ? `<div class="d-flex align-items-center mb-1"><p class="me-2 text-body text-decoration-line-through mb-0">$${product.price}</p><h3 class="text-body-emphasis mb-0">$${product.salePrice}</h3></div>` : `<h3 class="text-body-emphasis">$${product.salePrice}</h3>`) : (product.price ? `<h3 class="text-body-emphasis">$${product.price}</h3>` : '')}
+								${(() => {
+									const salePrice = product.salePrice ? parseFloat(product.salePrice.toString().split(' - ')[0]) : null;
+									const regularPrice = product.price ? parseFloat(product.price.toString().split(' - ')[0]) : null;
+									const showSale = salePrice && regularPrice && !isNaN(salePrice) && !isNaN(regularPrice) && salePrice > 0 && salePrice < regularPrice;
+									if (showSale) {
+										return `<div class="d-flex align-items-center mb-1"><p class="me-2 text-body text-decoration-line-through mb-0">$${product.price}</p><h3 class="text-body-emphasis mb-0">$${product.salePrice}</h3></div>`;
+									} else if (product.price) {
+										return `<h3 class="text-body-emphasis">$${product.price}</h3>`;
+									}
+									return '';
+								})()}
 								${product.colors ? `<p class="text-body-tertiary fw-semibold fs-9 lh-1 ${product.dealEndTime ? '' : 'mb-0'}">${product.colors} colors</p>` : ''}
 								${product.dealEndTime ? `<p class="text-success fw-bold fs-9 lh-1 mb-0">Deal time ends in ${product.dealEndTime}</p>` : ''}
 								${product.offer ? `<h6 class="text-success lh-1 mb-0">${product.offer} off</h6>` : ''}
