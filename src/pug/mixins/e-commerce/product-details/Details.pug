@@ -61,16 +61,42 @@ mixin Details
               each cat in product.category
                 span.badge.text-bg-success.fs-9.rounded-pill.me-2.fw-semibold= cat.name
 
-          .d-flex.flex-wrap.align-items-center
-            if product && product.formattedSalePrice
-                h1.me-3 $#{product.formattedSalePrice}
-                p.text-body-quaternary.text-decoration-line-through.fs-6.mb-0.me-3 $#{product.formattedPrice}
-                p.text-warning.fw-bolder.fs-6.mb-0 #{product.discountPercentage}% off
+          .d-flex.flex-wrap.align-items-center(data-product-price-container)
+            - 
+              // Determine initial display price
+              var hasSalePrice = product && product.formattedSalePrice;
+              var displayPrice = product ? (product.minPrice || product.formattedPrice || '0.00') : '0.00';
+              var displaySalePrice = null;
+              var showDiscount = false;
+              
+              if (hasSalePrice) {
+                // Use minSalePrice if available (single price), otherwise formattedSalePrice (could be range)
+                var salePriceValue = product.minSalePrice || product.formattedSalePrice;
+                var regularPriceValue = product.minPrice || product.formattedPrice;
+                
+                // Parse prices to compare
+                var salePriceNum = parseFloat(salePriceValue.toString().split(' - ')[0]);
+                var regularPriceNum = parseFloat(regularPriceValue.toString().split(' - ')[0]);
+                
+                // Only show sale price if it's actually less than regular price
+                if (!isNaN(salePriceNum) && !isNaN(regularPriceNum) && salePriceNum > 0 && salePriceNum < regularPriceNum) {
+                  displaySalePrice = salePriceValue;
+                  displayPrice = regularPriceValue;
+                  showDiscount = true;
+                }
+              }
+            if showDiscount && displaySalePrice
+                h1.me-3(data-product-price data-sale-price=displaySalePrice data-regular-price=displayPrice) $#{displaySalePrice}
+                p.text-body-quaternary.text-decoration-line-through.fs-6.mb-0.me-3(data-product-regular-price) $#{displayPrice}
+                if product && product.discountPercentage
+                  p.text-warning.fw-bolder.fs-6.mb-0(data-product-discount) #{product.discountPercentage}% off
             else
-              h1.me-3 $#{product ? product.formattedPrice || '0.00' : '0.00'}
+              h1.me-3(data-product-price data-regular-price=displayPrice) $#{displayPrice}
+              p.text-body-quaternary.text-decoration-line-through.fs-6.mb-0.me-3(data-product-regular-price style='display: none;')
+              p.text-warning.fw-bolder.fs-6.mb-0(data-product-discount style='display: none;')
 
           if product && product.stockLevel
-            p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2`)= product.stockStatus
+            p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2` data-product-stock-status)= product.stockStatus
           
           if product && product.description
             p.mb-2.text-body-secondary!= product.description
@@ -87,10 +113,27 @@ mixin Details
                 span.text-body-emphasis(data-product-color)= product.availableColors[0]
               .d-flex.product-color-variants(data-product-color-variants)
                 each color in product.availableColors
+                  - 
+                    // Find variant with this color to get price
+                    var colorVariant = product.variants && product.variants.length > 0 
+                      ? product.variants.find(v => v.color === color) 
+                      : null;
+                    var variantPrice = colorVariant && colorVariant.price ? parseFloat(colorVariant.price.toString()).toFixed(2) : null;
+                    var variantSalePrice = null;
+                    if (colorVariant && colorVariant.salePrice) {
+                      var salePriceVal = parseFloat(colorVariant.salePrice.toString());
+                      var regularPriceVal = variantPrice ? parseFloat(variantPrice) : null;
+                      // Only include sale price if it's valid, greater than 0, and less than regular price
+                      if (salePriceVal > 0 && (regularPriceVal === null || salePriceVal < regularPriceVal)) {
+                        variantSalePrice = salePriceVal.toFixed(2);
+                      }
+                    }
                   .rounded-1.border.border-translucent.me-2(
                     class={active: color === product.availableColors[0]} 
                     data-variant=color 
                     data-products-images!= product.colorVariantImages[color] || []
+                    data-variant-price=variantPrice || ''
+                    data-variant-sale-price=variantSalePrice || ''
                   )
                     if product.gallery && product.gallery[0]
                       img(src=product.gallery[0].url alt=color width=38)
@@ -100,9 +143,28 @@ mixin Details
               .col-12.col-sm-auto
                 p.fw-semibold.mb-2.text-body Size:
                 .d-flex.align-items-center
-                  select.form-select.w-auto
+                  select.form-select.w-auto(data-product-size-select)
                     each size in product.availableSizes
-                      option(value=size)= size
+                      - 
+                        // Find variant with this size to get price
+                        var sizeVariant = product.variants && product.variants.length > 0 
+                          ? product.variants.find(v => v.size === size) 
+                          : null;
+                        var sizeVariantPrice = sizeVariant && sizeVariant.price ? parseFloat(sizeVariant.price.toString()).toFixed(2) : null;
+                        var sizeVariantSalePrice = null;
+                        if (sizeVariant && sizeVariant.salePrice) {
+                          var salePriceVal = parseFloat(sizeVariant.salePrice.toString());
+                          var regularPriceVal = sizeVariantPrice ? parseFloat(sizeVariantPrice) : null;
+                          // Only include sale price if it's valid, greater than 0, and less than regular price
+                          if (salePriceVal > 0 && (regularPriceVal === null || salePriceVal < regularPriceVal)) {
+                            sizeVariantSalePrice = salePriceVal.toFixed(2);
+                          }
+                        }
+                      option(
+                        value=size
+                        data-variant-price=sizeVariantPrice || ''
+                        data-variant-sale-price=sizeVariantSalePrice || ''
+                      )= size
                   if product.sizeChart
                     a.ms-2.fs-9.fw-semibold(href="#!")= product.sizeChart
 
@@ -126,7 +188,63 @@ mixin Details
                   span.fas.fa-share-alt.fs-7
 
 append scripts
+  - 
+    // Prepare variants data for JavaScript
+    var variantsData = [];
+    if (product && product.variants && product.variants.length > 0) {
+      variantsData = product.variants.map(function(v) {
+        var variant = {
+          color: v.color || null,
+          size: v.size || null,
+          sku: v.sku || null,
+          colorHex: v.colorHex || null,
+          price: null,
+          salePrice: null,
+          countInStock: null
+        };
+        if (v.price) {
+          variant.price = parseFloat(v.price.toString());
+        }
+        if (v.salePrice) {
+          var salePrice = parseFloat(v.salePrice.toString());
+          var variantRegularPrice = variant.price || null;
+          // Only include sale price if it's valid, greater than 0, and less than regular price
+          if (salePrice > 0) {
+            // If variant has a regular price, only include sale price if it's less
+            if (variantRegularPrice === null || salePrice < variantRegularPrice) {
+              variant.salePrice = salePrice;
+            }
+          }
+        }
+        if (v.countInStock !== null && v.countInStock !== undefined) {
+          variant.countInStock = parseInt(v.countInStock) || 0;
+        }
+        return variant;
+      });
+    }
+    var basePrice = product && product.price ? parseFloat(product.price.toString()) : 0;
+    var baseSalePrice = 0;
+    if (product && product.salePrice) {
+      var salePrice = parseFloat(product.salePrice.toString());
+      var baseRegularPrice = basePrice || 0;
+      // Only include sale price if it's valid, greater than 0, and less than regular price
+      if (salePrice > 0 && (baseRegularPrice === 0 || salePrice < baseRegularPrice)) {
+        baseSalePrice = salePrice;
+      }
+    }
+    var baseCountInStock = product && product.countInStock ? parseInt(product.countInStock) : 0;
   script.
+    // Embed product variants data for price calculation
+    window.productVariantsData = !{JSON.stringify(variantsData)};
+    window.productBasePrice = !{basePrice};
+    window.productBaseSalePrice = !{baseSalePrice};
+    window.productBaseCountInStock = !{baseCountInStock};
+    
+    console.log('Product variants data:', window.productVariantsData);
+    console.log('Base price:', window.productBasePrice);
+    console.log('Base sale price:', window.productBaseSalePrice);
+    console.log('Base stock:', window.productBaseCountInStock);
+    
     document.addEventListener('DOMContentLoaded', function() {
       // Initialize thumbnail swiper
       const thumbSwiper = new Swiper('#productGalleryThumb', {
@@ -161,4 +279,215 @@ append scripts
           mainSwiper.slideTo(index);
         });
       });
+
+      // Dynamic price and stock update based on variant selection
+      const priceContainer = document.querySelector('[data-product-price-container]');
+      const priceElement = document.querySelector('[data-product-price]');
+      const regularPriceElement = document.querySelector('[data-product-regular-price]');
+      const discountElement = document.querySelector('[data-product-discount]');
+      const stockStatusElement = document.querySelector('[data-product-stock-status]');
+      
+      // Store original prices from product
+      const originalPrice = priceElement ? parseFloat(priceElement.getAttribute('data-regular-price') || '0') : 0;
+      const originalSalePrice = priceElement ? parseFloat(priceElement.getAttribute('data-sale-price') || '0') : 0;
+      
+      // Helper function to calculate stock level and status
+      function getStockInfo(countInStock) {
+        const stock = countInStock || 0;
+        let level = 'low';
+        let status = 'Out of stock';
+        let className = 'danger';
+        
+        if (stock > 10) {
+          level = 'high';
+          status = 'In stock';
+          className = 'success';
+        } else if (stock > 5) {
+          level = 'medium';
+          status = 'In stock';
+          className = 'warning';
+        } else if (stock > 0) {
+          level = 'low';
+          status = 'Low stock';
+          className = 'warning';
+        } else {
+          level = 'low';
+          status = 'Out of stock';
+          className = 'danger';
+        }
+        
+        return { level, status, className, count: stock };
+      }
+      
+      function updatePrice(selectedColor, selectedSize) {
+        if (!priceElement || !priceContainer) return;
+        
+        console.log('Updating price for color:', selectedColor, 'size:', selectedSize);
+        
+        let variantPrice = null;
+        let variantSalePrice = null;
+        let variantCountInStock = null;
+        let variantFound = false;
+        
+        // Find matching variant from embedded data
+        if (window.productVariantsData && window.productVariantsData.length > 0) {
+          let matchingVariant = null;
+          
+          // Strategy: Try exact match first, then partial matches
+          // 1. Try exact match (both color and size)
+          if (selectedColor && selectedSize) {
+            matchingVariant = window.productVariantsData.find(v => {
+              const vColor = v.color ? String(v.color).trim() : '';
+              const vSize = v.size ? String(v.size).trim() : '';
+              const sColor = selectedColor ? String(selectedColor).trim() : '';
+              const sSize = selectedSize ? String(selectedSize).trim() : '';
+              return vColor === sColor && vSize === sSize;
+            });
+            console.log('Exact match search:', { selectedColor, selectedSize, found: !!matchingVariant });
+          }
+          
+          // 2. If no exact match and both are selected, try color only (first match)
+          if (!matchingVariant && selectedColor) {
+            matchingVariant = window.productVariantsData.find(v => {
+              const vColor = v.color ? String(v.color).trim() : '';
+              const sColor = selectedColor ? String(selectedColor).trim() : '';
+              return vColor === sColor;
+            });
+            console.log('Color match search:', { selectedColor, found: !!matchingVariant });
+          }
+          
+          // 3. If still no match and size is selected, try size only (first match)
+          if (!matchingVariant && selectedSize) {
+            matchingVariant = window.productVariantsData.find(v => {
+              const vSize = v.size ? String(v.size).trim() : '';
+              const sSize = selectedSize ? String(selectedSize).trim() : '';
+              return vSize === sSize;
+            });
+            console.log('Size match search:', { selectedSize, found: !!matchingVariant });
+          }
+          
+          // Extract price and stock from matching variant
+          if (matchingVariant) {
+            variantFound = true;
+            console.log('Found matching variant:', matchingVariant);
+            if (matchingVariant.price !== null && matchingVariant.price !== undefined) {
+              const price = typeof matchingVariant.price === 'number' ? matchingVariant.price : parseFloat(matchingVariant.price);
+              if (!isNaN(price) && price > 0) {
+                variantPrice = price;
+              }
+            }
+            if (matchingVariant.salePrice !== null && matchingVariant.salePrice !== undefined) {
+              const salePrice = typeof matchingVariant.salePrice === 'number' ? matchingVariant.salePrice : parseFloat(matchingVariant.salePrice);
+              // Only use sale price if it's valid, greater than 0, and less than regular price
+              if (!isNaN(salePrice) && salePrice > 0) {
+                // If variant has a regular price, only use sale price if it's less
+                if (variantPrice === null || salePrice < variantPrice) {
+                  variantSalePrice = salePrice;
+                }
+              }
+            }
+            if (matchingVariant.countInStock !== null && matchingVariant.countInStock !== undefined) {
+              variantCountInStock = parseInt(matchingVariant.countInStock) || 0;
+            }
+          } else {
+            console.log('No matching variant found');
+          }
+        }
+        
+        // Use variant price if available, otherwise use base product price
+        const displayPrice = variantPrice !== null && variantPrice > 0 
+          ? variantPrice 
+          : (window.productBasePrice > 0 ? window.productBasePrice : originalPrice);
+        
+        // For sale price: if a variant was found, ONLY use variant sale price (don't fall back to base)
+        // If no variant was found, use base product sale price
+        let displaySalePrice = null;
+        if (variantFound) {
+          // Variant is selected - only show sale price if this specific variant has one
+          displaySalePrice = variantSalePrice !== null && variantSalePrice > 0 ? variantSalePrice : null;
+        } else {
+          // No variant selected - use base product sale price
+          displaySalePrice = window.productBaseSalePrice > 0 ? window.productBaseSalePrice : (originalSalePrice > 0 ? originalSalePrice : null);
+        }
+        
+        // Use variant stock if available, otherwise use base product stock
+        const displayCountInStock = variantCountInStock !== null && variantCountInStock !== undefined
+          ? variantCountInStock
+          : window.productBaseCountInStock;
+        
+        console.log('Final prices:', { displayPrice, displaySalePrice, variantPrice, variantSalePrice });
+        console.log('Final stock:', { displayCountInStock, variantCountInStock });
+        
+        // Update price display
+        // Only show sale price if it's less than regular price
+        if (displaySalePrice && displaySalePrice > 0 && displayPrice > 0 && displaySalePrice < displayPrice) {
+          priceElement.textContent = `$${displaySalePrice.toFixed(2)}`;
+          if (regularPriceElement) {
+            regularPriceElement.textContent = `$${displayPrice.toFixed(2)}`;
+            regularPriceElement.style.display = 'block';
+          }
+          if (discountElement) {
+            const discount = Math.round(((displayPrice - displaySalePrice) / displayPrice) * 100);
+            discountElement.textContent = `${discount}% off`;
+            discountElement.style.display = 'block';
+          }
+        } else {
+          priceElement.textContent = `$${displayPrice.toFixed(2)}`;
+          if (regularPriceElement) regularPriceElement.style.display = 'none';
+          if (discountElement) discountElement.style.display = 'none';
+        }
+        
+        // Update stock status display
+        if (stockStatusElement) {
+          const stockInfo = getStockInfo(displayCountInStock);
+          stockStatusElement.textContent = stockInfo.status;
+          stockStatusElement.className = `text-${stockInfo.className} fw-semibold fs-7 mb-2`;
+        }
+      }
+      
+      // Track current selections
+      let currentColor = null;
+      let currentSize = null;
+      
+      // Initialize with default selections
+      const defaultColorVariant = document.querySelector('[data-product-color-variants] [data-variant].active');
+      if (defaultColorVariant) {
+        currentColor = defaultColorVariant.getAttribute('data-variant');
+      }
+      const sizeSelect = document.querySelector('[data-product-size-select]');
+      if (sizeSelect && sizeSelect.options.length > 0) {
+        currentSize = sizeSelect.value;
+      }
+      
+      // Initial price update
+      updatePrice(currentColor, currentSize);
+      
+      // Handle color variant selection
+      const colorVariants = document.querySelectorAll('[data-product-color-variants] [data-variant]');
+      colorVariants.forEach(variant => {
+        variant.addEventListener('click', function(e) {
+          e.preventDefault();
+          // Remove active class from all color variants
+          colorVariants.forEach(v => v.classList.remove('active'));
+          // Add active class to clicked variant
+          this.classList.add('active');
+          
+          // Update current color
+          currentColor = this.getAttribute('data-variant');
+          
+          // Update price with current selections
+          updatePrice(currentColor, currentSize);
+        });
+      });
+      
+      // Handle size variant selection
+      if (sizeSelect) {
+        sizeSelect.addEventListener('change', function() {
+          // Update current size
+          currentSize = this.value;
+          
+          // Update price with current selections
+          updatePrice(currentColor, currentSize);
+        });
+      }
     });

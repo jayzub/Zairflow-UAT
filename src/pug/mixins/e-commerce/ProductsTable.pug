@@ -10,7 +10,107 @@ mixin ProductTableRow(product,index)
     td.product.align-middle.ps-4
       //- a.fw-semibold.line-clamp-3.mb-0(href=`${CWD}${paths['e-commerce-fe-product-details']}`)=`${data.product.slice(0,138)}${data.product.length > 138 ? '...' : '' }`
       a.fw-semibold.line-clamp-3.mb-0(href=`/api/products/${product._id}`)= `${product.name}`
-    td.price.align-middle.white-space-nowrap.text-end.fw-bold.text-body-tertiary.ps-4= `$${product.price}`
+    td.price.align-middle.white-space-nowrap.text-end.fw-bold.text-body-tertiary.ps-4
+      - 
+        // Determine what to display
+        var showSalePrice = false;
+        var displayRegularPrice = null;
+        var displaySalePrice = null;
+        var showMaxDiscount = false;
+        // Only show "up to X% off" when regular price is a RANGE
+        var isPriceRangeDisplay = !!(product && (product.hasPriceRange || (product.priceRange && product.priceRange.toString().includes(' - '))));
+        
+        if (product.hasPriceRange && product.priceRange) {
+          displayRegularPrice = product.priceRange;
+          // Check if sale price exists and is valid
+          if (product.hasSalePriceRange && product.salePriceRange) {
+            var salePriceMin = parseFloat(product.minSalePrice || product.salePriceRange.toString().split(' - ')[0]);
+            var regularPriceMin = parseFloat(product.minPrice || product.priceRange.toString().split(' - ')[0]);
+            if (!isNaN(salePriceMin) && !isNaN(regularPriceMin) && salePriceMin < regularPriceMin) {
+              // If any variant has sale price, show "up to X% off" (only when price is a range)
+              if (isPriceRangeDisplay && product.maxDiscountPercentage !== null && product.maxDiscountPercentage !== undefined) {
+                displaySalePrice = `up to ${product.maxDiscountPercentage}% off`;
+                showMaxDiscount = true;
+              } else {
+                displaySalePrice = product.salePriceRange;
+              }
+              showSalePrice = true;
+            }
+          } else if (product.salePriceRange) {
+            var salePriceMin = parseFloat(product.salePriceRange.toString().split(' - ')[0]);
+            var regularPriceMin = parseFloat(product.priceRange.toString().split(' - ')[0]);
+            if (!isNaN(salePriceMin) && !isNaN(regularPriceMin) && salePriceMin < regularPriceMin) {
+              // If any variant has sale price, show "up to X% off" (only when price is a range)
+              if (isPriceRangeDisplay && product.maxDiscountPercentage !== null && product.maxDiscountPercentage !== undefined) {
+                displaySalePrice = `up to ${product.maxDiscountPercentage}% off`;
+                showMaxDiscount = true;
+              } else {
+                displaySalePrice = product.salePriceRange;
+              }
+              showSalePrice = true;
+            }
+          } else if (product.salePrice) {
+            var salePriceVal = parseFloat(product.salePrice.toString());
+            var regularPriceVal = parseFloat(product.priceRange.toString().split(' - ')[0]);
+            if (!isNaN(salePriceVal) && !isNaN(regularPriceVal) && salePriceVal < regularPriceVal) {
+              // If any variant has sale price, show "up to X% off" (only when price is a range)
+              if (isPriceRangeDisplay && product.maxDiscountPercentage !== null && product.maxDiscountPercentage !== undefined) {
+                displaySalePrice = `up to ${product.maxDiscountPercentage}% off`;
+                showMaxDiscount = true;
+              } else {
+                displaySalePrice = product.salePrice;
+              }
+              showSalePrice = true;
+            }
+          }
+        } else if (product.priceRange) {
+          displayRegularPrice = product.priceRange;
+          if (product.salePriceRange) {
+            var salePriceMin = parseFloat(product.salePriceRange.toString().split(' - ')[0]);
+            var regularPriceMin = parseFloat(product.priceRange.toString().split(' - ')[0]);
+            if (!isNaN(salePriceMin) && !isNaN(regularPriceMin) && salePriceMin < regularPriceMin) {
+              // If any variant has sale price, show "up to X% off" (only when price is a range)
+              if (isPriceRangeDisplay && product.maxDiscountPercentage !== null && product.maxDiscountPercentage !== undefined) {
+                displaySalePrice = `up to ${product.maxDiscountPercentage}% off`;
+                showMaxDiscount = true;
+              } else {
+                displaySalePrice = product.salePriceRange;
+              }
+              showSalePrice = true;
+            }
+          } else if (product.salePrice) {
+            var salePriceVal = parseFloat(product.salePrice.toString());
+            var regularPriceVal = parseFloat(product.priceRange.toString().split(' - ')[0]);
+            if (!isNaN(salePriceVal) && !isNaN(regularPriceVal) && salePriceVal < regularPriceVal) {
+              // Single-price display: show actual sale price (not "up to")
+              displaySalePrice = product.salePrice;
+              showSalePrice = true;
+            }
+          }
+        } else if (product.price) {
+          displayRegularPrice = product.price;
+          if (product.salePrice) {
+            var salePriceVal = parseFloat(product.salePrice.toString());
+            var regularPriceVal = parseFloat(product.price.toString());
+            if (!isNaN(salePriceVal) && !isNaN(regularPriceVal) && salePriceVal < regularPriceVal) {
+              // Single-price display: show actual sale price (not "up to")
+              displaySalePrice = product.salePrice;
+              showSalePrice = true;
+            }
+          }
+        }
+      if displayRegularPrice
+        .d-flex.flex-column.align-items-end
+          if showSalePrice && displaySalePrice
+            span.text-body-quaternary.fs-9= `$${displayRegularPrice}`
+            if showMaxDiscount
+              span.text-success.fw-bold.fs-9= displaySalePrice
+            else
+              span.text-success.fw-bold= `$${displaySalePrice}`
+          else
+            span= `$${displayRegularPrice}`
+      else
+        span.text-body-quaternary N/A
     td.category.align-middle.white-space-nowrap.text-body-quaternary.fs-9.ps-4.fw-semibold
       each cat in product.category
         a(href="#!").text-decoration-none

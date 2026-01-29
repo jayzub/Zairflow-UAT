@@ -139,6 +139,8 @@ categorySchema.index({ store: 1, isActive: 1 });
 categorySchema.index({ store: 1, allowedProductTypes: 1 });
 // Compound unique index for store + slug combination
 categorySchema.index({ store: 1, slug: 1 }, { unique: true });
+// Compound unique index for store + name combination (ensures names are unique per store)
+categorySchema.index({ store: 1, name: 1 }, { unique: true });
 
 const Category = mongoose.model('Category', categorySchema);
 

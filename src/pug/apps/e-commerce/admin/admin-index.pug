@@ -65,6 +65,15 @@ block wrapperContent
             .col-md-6.col-lg-3
               .card.border-0.shadow-sm
                 .card-body.text-center
+                  .fs-1.mb-2(style='color: #20c997;')
+                    i.fas.fa-truck
+                  h5.card-title Vendors
+                  p.card-text.text-muted Manage suppliers and vendors
+                  a.btn.btn-sm(href='/admin/vendors' style='background-color: #20c997; color: white;') View Vendors
+            
+            .col-md-6.col-lg-3
+              .card.border-0.shadow-sm
+                .card-body.text-center
                   .fs-1.text-secondary.mb-2
                     i.fas.fa-chart-line
                   h5.card-title Admin Dashboard
@@ -77,7 +86,7 @@ block wrapperContent
                   .fs-1.text-purple.mb-2(style='color: #6f42c1;')
                     i.fas.fa-puzzle-piece
                   h5.card-title Custom Product Types
-                  p.card-text.text-muted Create and manage custom product types
+                  p.card-text.text-muted Manage custom product types
                   a.btn.btn-sm(href='/admin/custom-product-types' style='background-color: #6f42c1; color: white;') Manage Types
             
             .col-md-6.col-lg-3#createAdminCard

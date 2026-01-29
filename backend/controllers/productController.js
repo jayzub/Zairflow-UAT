@@ -68,18 +68,24 @@ exports.getProductById = asyncHandler(async (req, res) => {
         relatedProducts = await getRelatedProducts(productObj._id, productObj.category[0]._id);
     }
 
-    // Format prices
-    const formattedPrice = productObj.price ? productObj.price.toString() : null;
-    const formattedSalePrice = productObj.salePrice && parseFloat(productObj.salePrice.toString()) > 0 
-        ? productObj.salePrice.toString() 
-        : null;
+    // Calculate price range from variants
+    const { calculatePriceRange } = require('../helpers/productHelpers');
+    const priceInfo = calculatePriceRange(productObj);
+    
+    // Format prices (for backward compatibility)
+    const formattedPrice = priceInfo.priceRange || priceInfo.minPrice || null;
+    const formattedSalePrice = priceInfo.salePriceRange || priceInfo.minSalePrice || null;
 
-    // Calculate discount percentage if there's a sale price
+    // Calculate discount percentage if there's a sale price (use min prices)
+    // Only calculate if sale price is actually less than regular price
     let discountPercentage = null;
-    if (productObj.salePrice && parseFloat(productObj.salePrice.toString()) > 0 && productObj.price) {
-        const originalPrice = parseFloat(productObj.price.toString());
-        const salePrice = parseFloat(productObj.salePrice.toString());
-        discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+    if (priceInfo.minSalePrice && parseFloat(priceInfo.minSalePrice) > 0 && priceInfo.minPrice) {
+        const originalPrice = parseFloat(priceInfo.minPrice);
+        const salePrice = parseFloat(priceInfo.minSalePrice);
+        // Only show discount if sale price is less than regular price
+        if (salePrice < originalPrice) {
+            discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+        }
     }
 
     // Prepare variants data (sizes, colors, etc.)
@@ -309,6 +315,14 @@ exports.getProductById = asyncHandler(async (req, res) => {
             formattedPrice,
             formattedSalePrice,
             discountPercentage,
+            priceRange: priceInfo.priceRange,
+            salePriceRange: priceInfo.salePriceRange,
+            hasPriceRange: priceInfo.hasPriceRange,
+            hasSalePriceRange: priceInfo.hasSalePriceRange,
+            minPrice: priceInfo.minPrice,
+            maxPrice: priceInfo.maxPrice,
+            minSalePrice: priceInfo.minSalePrice,
+            maxSalePrice: priceInfo.maxSalePrice,
             stockStatus,
             stockLevel,
             brand: productObj.brand,
@@ -507,14 +521,23 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
     }
 
     // Transform products to match the expected format for the template
+    const { calculatePriceRange } = require('../helpers/productHelpers');
     const transformedProducts = productList.map(product => {
-        // Calculate discount percentage
+        // Calculate price range from variants
+        const priceInfo = calculatePriceRange(product);
+        
+        // Calculate discount percentage (use min prices for calculation)
+        // Only calculate if sale price is actually less than regular price
         let discountPercentage = null;
-        if (product.salePrice && parseFloat(product.salePrice.toString()) > 0 && product.price) {
-            const originalPrice = parseFloat(product.price.toString());
-            const salePrice = parseFloat(product.salePrice.toString());
-            discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+        if (priceInfo.minSalePrice && parseFloat(priceInfo.minSalePrice) > 0 && priceInfo.minPrice) {
+            const originalPrice = parseFloat(priceInfo.minPrice);
+            const salePrice = parseFloat(priceInfo.minSalePrice);
+            // Only show discount if sale price is less than regular price
+            if (salePrice < originalPrice) {
+                discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+            }
         }
+        
         // Get available colors from variants or base product
         let availableColors = [];
         if (product.variants && product.variants.length > 0) {
@@ -532,10 +555,16 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
             name: product.name,
             star: Math.round(product.rating || 0),
             rated: product.numReviews || 0,
-            price: product.price ? product.price.toString() : '0.00',
-            salePrice: product.salePrice && parseFloat(product.salePrice.toString()) > 0
-                ? product.salePrice.toString() 
-                : null,
+            price: priceInfo.priceRange || priceInfo.minPrice || '0.00',
+            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || null,
+            priceRange: priceInfo.priceRange,
+            salePriceRange: priceInfo.salePriceRange,
+            hasPriceRange: priceInfo.hasPriceRange,
+            hasSalePriceRange: priceInfo.hasSalePriceRange,
+            minPrice: priceInfo.minPrice,
+            maxPrice: priceInfo.maxPrice,
+            minSalePrice: priceInfo.minSalePrice,
+            maxSalePrice: priceInfo.maxSalePrice,
             off: discountPercentage ? `${discountPercentage}%` : null,
             colors: availableColors.length,
             verified: product.isFeatured || false,
@@ -817,14 +846,23 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
     }
 
     // Transform products to match the expected format for the template
+    const { calculatePriceRange } = require('../helpers/productHelpers');
     const transformedProducts = productList.map(product => {
-        // Calculate discount percentage
+        // Calculate price range from variants
+        const priceInfo = calculatePriceRange(product);
+        
+        // Calculate discount percentage (use min prices for calculation)
+        // Only calculate if sale price is actually less than regular price
         let discountPercentage = null;
-        if (product.salePrice && parseFloat(product.salePrice.toString()) > 0 && product.price) {
-            const originalPrice = parseFloat(product.price.toString());
-            const salePrice = parseFloat(product.salePrice.toString());
-            discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+        if (priceInfo.minSalePrice && parseFloat(priceInfo.minSalePrice) > 0 && priceInfo.minPrice) {
+            const originalPrice = parseFloat(priceInfo.minPrice);
+            const salePrice = parseFloat(priceInfo.minSalePrice);
+            // Only show discount if sale price is less than regular price
+            if (salePrice < originalPrice) {
+                discountPercentage = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+            }
         }
+        
         // Get available colors from variants or base product
         let availableColors = [];
         if (product.variants && product.variants.length > 0) {
@@ -842,10 +880,16 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
             name: product.name,
             star: Math.round(product.rating || 0),
             rated: product.numReviews || 0,
-            price: product.price ? product.price.toString() : '0.00',
-            salePrice: product.salePrice && parseFloat(product.salePrice.toString()) > 0
-                ? product.salePrice.toString() 
-                : null,
+            price: priceInfo.priceRange || priceInfo.minPrice || '0.00',
+            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || null,
+            priceRange: priceInfo.priceRange,
+            salePriceRange: priceInfo.salePriceRange,
+            hasPriceRange: priceInfo.hasPriceRange,
+            hasSalePriceRange: priceInfo.hasSalePriceRange,
+            minPrice: priceInfo.minPrice,
+            maxPrice: priceInfo.maxPrice,
+            minSalePrice: priceInfo.minSalePrice,
+            maxSalePrice: priceInfo.maxSalePrice,
             off: discountPercentage ? `${discountPercentage}%` : null,
             colors: availableColors.length,
             verified: product.isFeatured || false,

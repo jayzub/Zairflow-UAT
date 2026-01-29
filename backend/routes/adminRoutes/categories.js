@@ -13,7 +13,8 @@ const {
     createCategory,
     updateCategory,
     deleteCategory,
-    getCategoryStats
+    getCategoryStats,
+    getCompatibleCategories
 } = require('../../controllers/adminControllers/categories');
 
 // Admin category management pages (with store isolation)
@@ -24,5 +25,6 @@ router.post('/categories', requireAuth, checkUserStores, extractStore, requireSt
 router.put('/categories/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), updateCategory);
 router.delete('/categories/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), deleteCategory);
 router.get('/categories/stats', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getCategoryStats);
+router.get('/categories/compatible', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getCompatibleCategories);
 
 module.exports = router; 

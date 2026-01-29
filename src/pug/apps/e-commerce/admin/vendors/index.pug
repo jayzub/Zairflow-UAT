@@ -1,0 +1,176 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../mixins/dashboard/common
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Search functionality
+      const searchInput = document.getElementById('searchVendors');
+      const vendorRows = document.querySelectorAll('.vendor-row');
+      
+      searchInput?.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        vendorRows.forEach(row => {
+          const name = row.querySelector('.vendor-name')?.textContent.toLowerCase() || '';
+          const email = row.querySelector('.vendor-email')?.textContent.toLowerCase() || '';
+          const phone = row.querySelector('.vendor-phone')?.textContent.toLowerCase() || '';
+          
+          // Handle '-' as empty for search purposes
+          const emailValue = email === '-' ? '' : email;
+          const phoneValue = phone === '-' ? '' : phone;
+          
+          if (name.includes(searchTerm) || emailValue.includes(searchTerm) || phoneValue.includes(searchTerm)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+
+      // Status filter
+      const statusFilter = document.getElementById('statusFilter');
+      statusFilter?.addEventListener('change', function() {
+        const filterValue = this.value;
+        vendorRows.forEach(row => {
+          if (!filterValue) {
+            row.style.display = '';
+            return;
+          }
+          
+          const isActive = row.dataset.active === 'true';
+          if (filterValue === 'active' && isActive) {
+            row.style.display = '';
+          } else if (filterValue === 'inactive' && !isActive) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+
+      // Delete vendor handler
+      document.querySelectorAll('.delete-vendor-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const vendorId = this.dataset.vendorId;
+          const vendorName = this.dataset.vendorName;
+          
+          if (!confirm(`Are you sure you want to delete "${vendorName}"? This action cannot be undone.`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/admin/vendors/${vendorId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              // Remove the row from the table
+              const row = this.closest('.vendor-row');
+              row.remove();
+              
+              // Show success message
+              showAlert('Vendor deleted successfully', 'success');
+            } else {
+              alert(result.message || 'Error deleting vendor');
+            }
+          } catch (error) {
+            console.error('Error deleting vendor:', error);
+            alert('Error deleting vendor');
+          }
+        });
+      });
+
+      function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const container = document.querySelector('.vendors-container');
+        if (container) {
+          container.insertBefore(alertDiv, container.firstChild);
+          
+          // Auto-dismiss after 5 seconds
+          setTimeout(() => {
+            alertDiv.remove();
+          }, 5000);
+        }
+      }
+    });
+
+append variables
+  - var pageTitle = 'Vendors'
+
+block content
+  .row.g-3.flex-between-end.mb-5
+    .col-auto
+      h2.mb-2 #{pageTitle}
+      h5.text-body-tertiary.fw-semibold Manage your vendors
+    .col-auto
+      a.btn.btn-primary(href='/admin/vendors/add')
+        i.fas.fa-plus.me-2
+        | Add Vendor
+
+  .row.g-3.mb-4
+    .col-12.col-sm-6.col-md-4
+      label.form-label(for='searchVendors') Search Vendors
+      input.form-control#searchVendors(type='text' placeholder='Search by name, email, or phone...')
+    
+    .col-12.col-sm-6.col-md-4
+      label.form-label(for='statusFilter') Filter by Status
+      select.form-select#statusFilter
+        option(value='') All Status
+        option(value='active') Active
+        option(value='inactive') Inactive
+
+  .vendors-container
+    if vendors && vendors.length > 0
+      .card
+        .card-body
+          .table-responsive
+            table.table.table-hover
+              thead
+                tr
+                  th Name
+                  th Email
+                  th Phone
+                  th Address
+                  th Status
+                  th Date Created
+                  th Actions
+              tbody
+                each vendor in vendors
+                  tr.vendor-row(data-active=vendor.isActive)
+                    td.vendor-name.fw-semibold= vendor.name
+                    td.vendor-email.text-body-tertiary= (vendor.email && vendor.email !== '') ? vendor.email : '-'
+                    td.vendor-phone.text-body-tertiary= vendor.phone || '-'
+                    td.text-body-tertiary= vendor.address || '-'
+                    td
+                      if vendor.isActive
+                        span.badge.bg-success Active
+                      else
+                        span.badge.bg-secondary Inactive
+                    td.text-body-tertiary= vendor.dateCreated ? new Date(vendor.dateCreated).toLocaleDateString() : '-'
+                    td
+                      .d-flex.gap-2
+                        a.btn.btn-sm.btn-outline-primary(href=`/admin/vendors/edit/${vendor._id}`)
+                          i.fas.fa-edit
+                        button.btn.btn-sm.btn-outline-danger.delete-vendor-btn(
+                          data-vendor-id=vendor._id
+                          data-vendor-name=vendor.name
+                        )
+                          i.fas.fa-trash
+    else
+      .text-center.py-8
+        .mb-4
+          i.fas.fa-truck.fa-3x.text-body-tertiary
+        h4.mb-3 No vendors found
+        p.text-body-tertiary.mb-4 Create your first vendor to manage your suppliers
+        a.btn.btn-primary(href='/admin/vendors/add')
+          i.fas.fa-plus.me-2
+          | Create First Vendor

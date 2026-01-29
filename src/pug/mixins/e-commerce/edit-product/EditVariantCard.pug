@@ -91,11 +91,17 @@ mixin EditVariantCard(options = {})
             .variant-item.mb-3
               input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
               input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='number' name=`variants[${index}].price` placeholder='Price' step='0.01' value=variant.price ? parseFloat(variant.price.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].salePrice` placeholder='Sale Price' step='0.01' value=variant.salePrice ? parseFloat(variant.salePrice.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].countInStock` placeholder='Stock Quantity' min='0' value=variant.countInStock)
               input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
           if !variants.length
             .variant-item.mb-3
               input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
               input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='number' name='variants[0].price' placeholder='Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].salePrice' placeholder='Sale Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].countInStock' placeholder='Stock Quantity' min='0')
               input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
         button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
 
@@ -173,12 +179,18 @@ mixin EditVariantCard(options = {})
               input.form-control.mb-2(type='text' name=`variants[${index}].size` placeholder='Size' value=variant.size)
               input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
               input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='number' name=`variants[${index}].price` placeholder='Price' step='0.01' value=variant.price ? parseFloat(variant.price.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].salePrice` placeholder='Sale Price' step='0.01' value=variant.salePrice ? parseFloat(variant.salePrice.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].countInStock` placeholder='Stock Quantity' min='0' value=variant.countInStock)
               input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
           if !variants.length
             .variant-item.mb-3
               input.form-control.mb-2(type='text' name='variants[0].size' placeholder='Size')
               input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
               input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='number' name='variants[0].price' placeholder='Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].salePrice' placeholder='Sale Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].countInStock' placeholder='Stock Quantity' min='0')
               input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
         button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
 
@@ -240,11 +252,17 @@ mixin EditVariantCard(options = {})
             .variant-item.mb-3
               input.form-control.mb-2(type='text' name=`variants[${index}].color` placeholder='Color' value=variant.color)
               input.form-control.mb-2(type='text' name=`variants[${index}].colorHex` placeholder='Color Hex Code' value=variant.colorHex)
+              input.form-control.mb-2(type='number' name=`variants[${index}].price` placeholder='Price' step='0.01' value=variant.price ? parseFloat(variant.price.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].salePrice` placeholder='Sale Price' step='0.01' value=variant.salePrice ? parseFloat(variant.salePrice.toString()) : '')
+              input.form-control.mb-2(type='number' name=`variants[${index}].countInStock` placeholder='Stock Quantity' min='0' value=variant.countInStock)
               input.form-control.mb-2(type='text' name=`variants[${index}].sku` placeholder='SKU' value=variant.sku)
           if !variants.length
             .variant-item.mb-3
               input.form-control.mb-2(type='text' name='variants[0].color' placeholder='Color')
               input.form-control.mb-2(type='text' name='variants[0].colorHex' placeholder='Color Hex Code')
+              input.form-control.mb-2(type='number' name='variants[0].price' placeholder='Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].salePrice' placeholder='Sale Price' step='0.01')
+              input.form-control.mb-2(type='number' name='variants[0].countInStock' placeholder='Stock Quantity' min='0')
               input.form-control.mb-2(type='text' name='variants[0].sku' placeholder='SKU')
         button.btn.btn-phoenix-primary.w-100.add-variant-btn(type='button') Add Variant
 
