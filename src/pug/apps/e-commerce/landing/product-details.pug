@@ -40,13 +40,17 @@ block ecomContent
     +Section(null,'container-small').py-0
       nav.mb-3(aria-label='breadcrumb')
         ol.breadcrumb.mb-0
-          li.breadcrumb-item
-            a(href='#') Fashion
-          li.breadcrumb-item
-            a(href='#') Womens fashion
-          li.breadcrumb-item
-            a(href='#') Footwear
-          li.breadcrumb-item.active(aria-current='page') Hills
+          - var crumbItems = (typeof breadcrumbs !== 'undefined' && breadcrumbs) ? breadcrumbs : []
+          if crumbItems && crumbItems.length
+            each crumb, idx in crumbItems
+              if idx === crumbItems.length - 1
+                li.breadcrumb-item.active(aria-current='page')= crumb.label
+              else
+                li.breadcrumb-item
+                  a(href=crumb.href || '#!')= crumb.label
+          else if product && product.productType
+            // Fallback: productType only
+            li.breadcrumb-item.active(aria-current='page')= product.productType
       +Details(product)
     +Section(null,'container-small').py-0
       ul#productTab.nav.nav-underline.fs-9.mb-4(role='tablist')
@@ -162,4 +166,4 @@ block ecomContent
         .col-12.col-lg-5.col-xl-4
           +ProductDetailsCard
   +Section.py-0.mb-9
-    +SimilarProducts
+    +SimilarProducts(relatedProducts)

@@ -34,25 +34,32 @@ mixin Product(product)
         if product.extra2
           p.fs-9(class=product.extra2Class)=product.extra2
         // Price section
-        - 
-          // Validate sale price is less than regular price
-          var showSalePrice = false;
-          var salePriceVal = null;
-          var regularPriceVal = null;
-          
-          if (product.salePrice && product.price) {
-            salePriceVal = parseFloat(product.salePrice.toString().split(' - ')[0]);
-            regularPriceVal = parseFloat(product.price.toString().split(' - ')[0]);
-            if (!isNaN(salePriceVal) && !isNaN(regularPriceVal) && salePriceVal > 0 && salePriceVal < regularPriceVal) {
-              showSalePrice = true;
+        -
+          // Match admin/products style:
+          // - Range price: show "$min - $max" and "up to X% off" (when discounted)
+          // - Single price: show regular + sale (no "up to")
+          var displayRegular = product.priceRange || product.price || null;
+          var isRange = !!(product && (product.hasPriceRange || (displayRegular && displayRegular.toString().includes(' - '))));
+          var hasMaxDiscount = product && product.maxDiscountPercentage !== null && product.maxDiscountPercentage !== undefined;
+          var showSaleSingle = false;
+          if (!isRange && product && product.price && product.salePrice) {
+            var sp = parseFloat(product.salePrice.toString().split(' - ')[0]);
+            var rp = parseFloat(product.price.toString().split(' - ')[0]);
+            if (!isNaN(sp) && !isNaN(rp) && sp > 0 && sp < rp) {
+              showSaleSingle = true;
             }
           }
-        if showSalePrice && salePriceVal && regularPriceVal
-          .d-flex.align-items-center.mb-1
-            p.me-2.text-body.text-decoration-line-through.mb-0=`$${product.price}`
+
+        if displayRegular
+          if isRange
+            h3.text-body-emphasis.mb-0=`$${displayRegular}`
+            if hasMaxDiscount
+              p.text-success.fw-bold.fs-9.lh-1.mb-0=`up to ${product.maxDiscountPercentage}% off`
+          else if showSaleSingle
+            p.text-body-quaternary.fw-semibold.mb-1=`$${product.price}`
             h3.text-body-emphasis.mb-0=`$${product.salePrice}`
-        else if product.price
-          h3.text-body-emphasis=`$${product.price}`
+          else
+            h3.text-body-emphasis.mb-0=`$${displayRegular}`
         if product.colors
           p.text-body-tertiary.fw-semibold.fs-9.lh-1(class=`${product.dealEndTime ? '' : 'mb-0'}`)=`${product.colors} colors`
         if product.dealEndTime

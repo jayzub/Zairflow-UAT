@@ -10,9 +10,10 @@ const jwt = require('jsonwebtoken');
  */
 const registerCustomer = asyncHandler(async (req, res) => {
     const { name, email, password, phone, dateOfBirth, gender } = req.body;
+    const emailInput = (email || '').trim();
 
     // Check if customer already exists
-    const existingCustomer = await Customer.findOne({ email });
+    const existingCustomer = await Customer.findOne({ email: new RegExp(`^${emailInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
     if (existingCustomer) {
         return res.status(400).json({
             success: false,
@@ -27,7 +28,7 @@ const registerCustomer = asyncHandler(async (req, res) => {
     // Create customer
     const customer = new Customer({
         name,
-        email,
+        email: emailInput.toLowerCase(),
         passwordHash,
         phone,
         dateOfBirth,
@@ -67,9 +68,10 @@ const registerCustomer = asyncHandler(async (req, res) => {
  */
 const loginCustomer = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    const emailInput = (email || '').trim();
 
     // Find customer
-    const customer = await Customer.findOne({ email });
+    const customer = await Customer.findOne({ email: new RegExp(`^${emailInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
     if (!customer) {
         return res.status(401).json({
             success: false,

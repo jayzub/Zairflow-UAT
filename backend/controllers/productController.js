@@ -4,7 +4,7 @@ const Category = require('../models/category');
 const Vendor = require('../models/vendor');
 const BaseProduct = require('../models/products/baseProduct');
 const storeCache = require('../utils/cache');
-const { getRelatedProducts } = require('../helpers/productHelpers');
+const { getSimilarProducts } = require('../helpers/productHelpers');
 const { upload } = require('../config/multerConfig');
 const Review = require('../models/review');
 const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson');
@@ -62,10 +62,73 @@ exports.getProductById = asyncHandler(async (req, res) => {
     // Convert the Mongoose document to a plain object early
     const productObj = product.toObject();
 
-    // Check if product has a category before getting related products
+    // Build breadcrumbs: productType > category chain (if applicable)
+    let breadcrumbs = [];
+    try {
+        const formatProductType = (type) => {
+            if (!type || typeof type !== 'string') return null;
+            // Turn "HealthBeauty" -> "Health Beauty"
+            return type.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+        };
+
+        const productTypeLabel = formatProductType(productObj.productType);
+        if (productTypeLabel) {
+            breadcrumbs.push({ label: productTypeLabel, href: '#!' });
+        }
+
+        // Use the first category as the primary breadcrumb path (breadcrumb is a single path)
+        const primaryCategory = Array.isArray(productObj.category) && productObj.category.length > 0
+            ? (productObj.category[0]?._id || productObj.category[0])
+            : null;
+
+        if (primaryCategory) {
+            const chain = [];
+            const visited = new Set();
+            let currentId = String(primaryCategory);
+            let depth = 0;
+
+            while (currentId && !visited.has(currentId) && depth < 10) {
+                visited.add(currentId);
+                // Store-isolated lookup (Category schema is store-scoped)
+                const catDoc = await Category.findById(currentId).select('name parent slug').lean();
+                if (!catDoc) break;
+
+                chain.unshift({ label: catDoc.name, href: '#!' });
+                currentId = catDoc.parent ? String(catDoc.parent) : null;
+                depth++;
+            }
+
+            breadcrumbs = breadcrumbs.concat(chain);
+        }
+    } catch (e) {
+        console.error('Error building breadcrumbs:', e.message);
+        breadcrumbs = [];
+    }
+
+    // Build "similar products" list (up to 10, in-stock)
     let relatedProducts = [];
-    if (productObj.category?.length > 0) {
-        relatedProducts = await getRelatedProducts(productObj._id, productObj.category[0]._id);
+    try {
+        const { calculatePriceRange } = require('../helpers/productHelpers');
+        const currentPriceInfo = calculatePriceRange(productObj);
+        const targetMinPrice = currentPriceInfo.minPrice ? parseFloat(currentPriceInfo.minPrice) : null;
+        const targetMaxPrice = currentPriceInfo.maxPrice ? parseFloat(currentPriceInfo.maxPrice) : targetMinPrice;
+
+        const categoryIds = Array.isArray(productObj.category)
+            ? productObj.category.map(c => (c && c._id ? c._id : c)).filter(Boolean)
+            : [];
+
+        relatedProducts = await getSimilarProducts({
+            currentProductId: productObj._id,
+            categoryIds,
+            productType: productObj.productType,
+            storeId: productObj.store || null,
+            targetMinPrice,
+            targetMaxPrice,
+            limit: 10
+        });
+    } catch (e) {
+        console.error('Error building similar products:', e.message);
+        relatedProducts = [];
     }
 
     // Calculate price range from variants
@@ -310,6 +373,7 @@ exports.getProductById = asyncHandler(async (req, res) => {
 
     const data = {
         pageTitle: productObj.name,
+        breadcrumbs,
         product: {
             ...productObj,
             formattedPrice,

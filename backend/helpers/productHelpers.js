@@ -27,6 +27,128 @@ exports.getRelatedProducts = async (currentProductId, categoryId, storeId = null
     }
 };
 
+/**
+ * Fetch up to `limit` similar products for product-details page.
+ *
+ * Criteria:
+ * - In stock only (countInStock > 0)
+ * - Prefer same category (if provided), then fill with same productType
+ * - Exclude the current product
+ * - Keep results store-scoped when storeId is provided
+ * - Order by closest price-range similarity (min/max) to target
+ */
+exports.getSimilarProducts = async ({
+    currentProductId,
+    categoryIds = [],
+    productType,
+    storeId = null,
+    targetMinPrice = null,
+    targetMaxPrice = null,
+    limit = 10
+}) => {
+    try {
+        const { calculatePriceRange } = exports;
+        const seenIds = new Set([String(currentProductId)]);
+
+        const baseFilter = {
+            _id: { $ne: currentProductId },
+            isActive: true,
+            countInStock: { $gt: 0 }
+        };
+        if (storeId) baseFilter.store = storeId;
+
+        const selectFields = 'name price salePrice images image category productType variants rating numReviews countInStock store';
+
+        // 1) Same category (if available)
+        let categoryProducts = [];
+        const normalizedCategoryIds = Array.isArray(categoryIds) ? categoryIds.filter(Boolean) : [];
+        if (normalizedCategoryIds.length > 0) {
+            categoryProducts = await BaseProduct.find({
+                ...baseFilter,
+                category: { $in: normalizedCategoryIds }
+            })
+                .select(selectFields)
+                .populate('category', 'name')
+                .limit(limit * 2); // oversample; we'll sort by price similarity after
+        }
+
+        categoryProducts.forEach(p => seenIds.add(String(p._id)));
+
+        // 2) Fill with same productType (category not required)
+        let typeProducts = [];
+        const remaining = Math.max(0, limit - categoryProducts.length);
+        if (remaining > 0 && productType) {
+            typeProducts = await BaseProduct.find({
+                ...baseFilter,
+                productType,
+                _id: { $nin: Array.from(seenIds) }
+            })
+                .select(selectFields)
+                .populate('category', 'name')
+                .limit(limit * 3); // oversample; we'll sort
+        }
+
+        const candidates = [...categoryProducts, ...typeProducts];
+
+        const targetMin = typeof targetMinPrice === 'number' && !Number.isNaN(targetMinPrice) ? targetMinPrice : null;
+        const targetMax = typeof targetMaxPrice === 'number' && !Number.isNaN(targetMaxPrice) ? targetMaxPrice : targetMin;
+
+        const scored = candidates.map(doc => {
+            const obj = doc.toObject();
+            const priceInfo = calculatePriceRange(obj);
+            const minP = priceInfo.minPrice ? parseFloat(priceInfo.minPrice) : null;
+            const maxP = priceInfo.maxPrice ? parseFloat(priceInfo.maxPrice) : minP;
+
+            const score =
+                targetMin !== null && minP !== null
+                    ? Math.abs(minP - targetMin) + (targetMax !== null && maxP !== null ? Math.abs(maxP - targetMax) : 0)
+                    : Number.POSITIVE_INFINITY;
+
+            const mainImageUrl =
+                obj.image?.url ||
+                (Array.isArray(obj.images) && obj.images[0]?.url) ||
+                null;
+
+            return {
+                ...obj,
+                // Shape fields expected by `+Product(product)` card mixin
+                image: mainImageUrl || '1.png',
+                star: Math.round(obj.rating || 0),
+                rated: obj.numReviews || 0,
+                price: priceInfo.priceRange || priceInfo.minPrice || '0.00',
+                salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || null,
+                hasPriceRange: !!priceInfo.hasPriceRange,
+                priceRange: priceInfo.priceRange || null,
+                minPrice: priceInfo.minPrice || null,
+                maxPrice: priceInfo.maxPrice || null,
+                maxDiscountPercentage: priceInfo.maxDiscountPercentage !== null && priceInfo.maxDiscountPercentage !== undefined
+                    ? priceInfo.maxDiscountPercentage
+                    : null,
+                colors: Array.isArray(obj.variants) ? new Set(obj.variants.map(v => v.color).filter(Boolean)).size : 0,
+                _similarityScore: score
+            };
+        });
+
+        // Order by closest price-range similarity, then stable by name/id
+        scored.sort((a, b) => {
+            if (a._similarityScore !== b._similarityScore) return a._similarityScore - b._similarityScore;
+            const an = (a.name || '').toLowerCase();
+            const bn = (b.name || '').toLowerCase();
+            if (an < bn) return -1;
+            if (an > bn) return 1;
+            return String(a._id).localeCompare(String(b._id));
+        });
+
+        return scored.slice(0, limit).map(p => {
+            const { _similarityScore, ...rest } = p;
+            return rest;
+        });
+    } catch (error) {
+        console.error('Error getting similar products:', error.message);
+        return [];
+    }
+};
+
 // Helper to build product filter from request
 exports.buildProductFilter = (req) => {
     let filter = { isActive: true };

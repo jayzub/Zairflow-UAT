@@ -4,9 +4,14 @@ const Store = require('../../models/store');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+function escapeRegex(str = '') {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Authentication functions
 exports.login = asyncHandler(async (req, res) => {
-    const user = await User.findOne({ email: req.body.email });
+    const emailInput = (req.body.email || '').trim();
+    const user = await User.findOne({ email: new RegExp(`^${escapeRegex(emailInput)}$`, 'i') });
     const secret = process.env.JWT_SECRET || process.env.secret;
 
     // Check if user exists and password is correct
@@ -43,7 +48,8 @@ exports.login = asyncHandler(async (req, res) => {
 
 exports.register = asyncHandler(async (req, res) => {
     // Check if user already exists
-    const existingUser = await User.findOne({ email: req.body.email });
+    const emailInput = (req.body.email || '').trim();
+    const existingUser = await User.findOne({ email: new RegExp(`^${escapeRegex(emailInput)}$`, 'i') });
     if (existingUser) {
         return res.status(409).json({
             success: false,
@@ -53,7 +59,7 @@ exports.register = asyncHandler(async (req, res) => {
 
     const user = new User({
         name: req.body.name,
-        email: req.body.email,
+        email: emailInput.toLowerCase(),
         passwordHash: bcrypt.hashSync(req.body.password, 10),
         phone: req.body.phone,
         role: req.body.role || 'store_owner',
@@ -177,9 +183,10 @@ exports.createAdminPage = asyncHandler(async (req, res) => {
 exports.createAdmin = asyncHandler(async (req, res) => {
     try {
         const { firstName, lastName, email, password, role, storeId } = req.body;
+        const emailInput = (email || '').trim();
         
         // Check if user already exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: new RegExp(`^${escapeRegex(emailInput)}$`, 'i') });
         if (existingUser) {
             return res.status(400).json({ 
                 success: false, 
@@ -191,7 +198,7 @@ exports.createAdmin = asyncHandler(async (req, res) => {
         const userData = {
             firstName,
             lastName,
-            email,
+            email: emailInput.toLowerCase(),
             password,
             role: role || 'admin',
             isActive: true
@@ -385,9 +392,10 @@ exports.deleteUser = asyncHandler(async (req, res) => {
 exports.createStoreAdmin = asyncHandler(async (req, res) => {
     try {
         const { firstName, lastName, email, password, phone, position, department, storeId } = req.body;
+        const emailInput = (email || '').trim();
         
         // Check if user already exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: new RegExp(`^${escapeRegex(emailInput)}$`, 'i') });
         if (existingUser) {
             return res.status(409).json({
                 success: false,
@@ -399,7 +407,7 @@ exports.createStoreAdmin = asyncHandler(async (req, res) => {
         const userData = {
             firstName,
             lastName,
-            email,
+            email: emailInput.toLowerCase(),
             password,
             phone,
             role: 'store_admin',
