@@ -25,7 +25,7 @@ append scripts
 block ecomContent
   .ecommerce-homepage.pt-5.mb-9
     +Section(null,'container-small').py-0
-      +Categories
+      +Categories(categories)
     +Section(null,'container px-xl-0 px-xxl-3').py-0.px-xl-3
       .row.g-3.mb-9
         .col-12
@@ -80,7 +80,7 @@ block ecomContent
                   a.btn.btn-lg.btn-warning.rounded-pill.banner-button(href='#!') Buy Now
               .col-4
                 img.w-100.w-sm-75(src=`${CWD}assets/img/e-commerce/5.png` alt="")
-      +TopDeals
+      +TopDeals(topDeals)
       +TopElectronics
       +BestOffers
       +Cta

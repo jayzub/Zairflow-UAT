@@ -8,6 +8,7 @@ const {
     getProductById
 } = require('../controllers/productController');
 const { storage } = require('../config/multerConfig');
+const { extractStoreOptional } = require('../middleware/storeIsolation');
 // const { requireAuth } = require('../middleware/jwt');
 
 const upload = multer({ storage });
@@ -17,6 +18,7 @@ const upload = multer({ storage });
 router.get('/test-ajax', testAjax);
 router.get('/marketplace', getAllProductsMarketplace); // Main product browsing route
 router.get('/store/:storeSlug', getStoreProducts); // Store-specific products
-router.get('/:id', getProductById);
+// When accessed via store subdomain, scope product lookup to that store.
+router.get('/:id', extractStoreOptional, getProductById);
 
 module.exports = router;

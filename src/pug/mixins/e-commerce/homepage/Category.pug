@@ -1,12 +1,23 @@
 mixin CategoryItem(data, index)
-  a.icon-nav-item(href='#!')
-    .icon-container.mb-2(class=`${data.bgClass ? data.bgClass : ''}` data-bs-theme=`${index === 0 ? 'light' : undefined}`)
-      span.fs-4(class=data.icon)
-    p.nav-label=data.label
+  -
+    var label = data && (data.label || data.name) ? (data.label || data.name) : 'Category';
+    var iconClass = data && data.icon && typeof data.icon === 'string' && data.icon.includes('uil')
+      ? data.icon
+      : 'uil uil-shopping-bag';
+    var bgClass = (data && data.bgClass) ? data.bgClass : (index === 0 ? 'bg-warning-subtle' : '');
+    var categoryId = data && (data._id || data.id) ? (data._id || data.id) : null;
+    var href = '#!';
+    if (typeof store !== 'undefined' && store && store.slug && categoryId) {
+      href = `/api/products/store/${store.slug}?categories=${categoryId}`;
+    }
+  a.icon-nav-item(href=href)
+    .icon-container.mb-2(class=`${bgClass}` data-bs-theme=`${index === 0 ? 'light' : undefined}`)
+      span.fs-4(class=iconClass)
+    p.nav-label=label
 
-mixin Categories
-  - 
-    var items = [
+mixin Categories(categories)
+  -
+    var items = (Array.isArray(categories) && categories.length > 0) ? categories : [
       {
         label: 'Deals',
         bgClass: 'bg-warning-subtle',
@@ -18,49 +29,39 @@ mixin Categories
       },
       {
         label: 'Fashion',
-        iconClass: 'text-white',
-        selected: true,
         icon: 'uil uil-watch-alt'
       },
       {
         label: 'Mobile',
-        iconClass: 'text-body',
         icon: 'uil uil-mobile-android'
       },
       {
         label: 'Electronics',
-        icon: 'uil uil-monitor',
-        iconClass: 'uil uil-mobile-android'
+        icon: 'uil uil-monitor'
       },
       {
         label: 'Home',
-        icon: 'uil uil-estate',
-        iconClass: 'text-body'
+        icon: 'uil uil-estate'
       },
       {
         label: 'Dining',
-        icon: 'uil uil-lamp',
-        iconClass: 'text-body'
+        icon: 'uil uil-lamp'
       },
       {
         label: 'Gifts',
-        icon: 'uil uil-gift',
-        iconClass: 'text-body'
+        icon: 'uil uil-gift'
       },
       {
         label: 'Tools',
-        icon: 'uil uil-wrench',
-        iconClass: 'text-body'
+        icon: 'uil uil-wrench'
       },
       {
         label: 'Travel',
-        icon: 'uil uil-plane-departure',
-        iconClass: 'text-body'
+        icon: 'uil uil-plane-departure'
       },
       {
         label: 'Others',
-        icon: 'uil uil-palette',
-        iconClass: 'text-body'
+        icon: 'uil uil-palette'
       },
     ]
 

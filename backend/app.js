@@ -76,6 +76,8 @@ const orderRoute = require('./routes/orders');
 const storeRoutes = require('./routes/stores');
 const platformRoutes = require('./routes/platform');
 const customerRoutes = require('./routes/customers');
+const customerAuthPagesRoutes = require('./routes/customerAuthPages');
+const customerPagesRoutes = require('./routes/customerPages');
 const adminRoutes = require('./routes/adminRoutes');
 const { authJwt } = require('./middleware/jwt');
 
@@ -115,6 +117,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
 app.get('/', (req, res) => {
   res.render('index');
 });
+
+// Customer UI routes (server-rendered)
+app.use('/', customerPagesRoutes);
+
+// Customer auth UI routes (server-rendered)
+app.use('/', customerAuthPagesRoutes);
 
 // API Routes
 app.use(`${API_URL}/products`, productRoutes);

@@ -1,6 +1,17 @@
 mixin Logo(config)
   - var config = Object.assign({logo:'logo', text: true, width: 27}, config)
+  -
+    var brandText = (typeof store !== 'undefined' && store && store.name) ? store.name : 'Griffin';
+    var logoUrl = null;
+    if (config.logoUrl) {
+      logoUrl = config.logoUrl;
+    } else if (typeof store !== 'undefined' && store && store.logo && store.logo.url) {
+      logoUrl = store.logo.url;
+    }
   .d-flex.align-items-center&attributes(attributes)
-    img(src=`${CWD}assets/img/icons/${config.logo}.png` alt='griffin' width=config.width)
+    if logoUrl
+      img(src=logoUrl alt=brandText width=config.width)
+    else
+      img(src=`${CWD}assets/img/icons/${config.logo}.png` alt=brandText width=config.width)
     if config.text
-      h5.logo-text.ms-2(class=config.textClass ? config.textClass : '') Griffin
+      h5.logo-text.ms-2(class=config.textClass ? config.textClass : '')= brandText

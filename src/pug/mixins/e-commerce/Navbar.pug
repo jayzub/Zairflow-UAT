@@ -119,7 +119,11 @@ mixin Navbar
       +CategoryDropdown
       ul.navbar-nav.justify-content-end.align-items-center
         li.nav-item(data-nav-item)
-          a.nav-link.ps-0(class=activeNavItem === 'home' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-home']}`) Home
+          -
+            var homeHref = (typeof isCustomerStorefront !== 'undefined' && isCustomerStorefront)
+              ? '/home'
+              : `${CWD}${paths['e-commerce-fe-home']}`;
+          a.nav-link.ps-0(class=activeNavItem === 'home' ? 'active' : '' href=homeHref) Home
         li.nav-item(data-nav-item)
           a.nav-link(class=activeNavItem === 'store' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-favourite-stores']}`) My Favourite Stores
         li.nav-item(data-nav-item)

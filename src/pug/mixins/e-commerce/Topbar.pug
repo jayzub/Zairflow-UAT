@@ -3,7 +3,11 @@ mixin Topbar
     nav.navbar.navbar-expand-lg.navbar-light.px-0
       .row.gx-0.gy-2.w-100.flex-between-center
         .col-auto
-          a.text-decoration-none(href=`${CWD}${paths['default-dashboard']}`)
+          -
+            var homeHref = (typeof isCustomerStorefront !== 'undefined' && isCustomerStorefront)
+              ? '/home'
+              : `${CWD}${paths['default-dashboard']}`;
+          a.text-decoration-none(href=homeHref)
             +Logo
         .col-auto.order-md-1
           ul.navbar-nav.navbar-nav-icons.flex-row.me-n2

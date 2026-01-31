@@ -1,6 +1,6 @@
-mixin TopDeals
-  - 
-    var products = [
+mixin TopDeals(productsData)
+  -
+    var products = (Array.isArray(productsData) && productsData.length > 0) ? productsData : [
       {
         image: '6.png',
         name: 'PlayStation 5 DualSense Wireless Controller',

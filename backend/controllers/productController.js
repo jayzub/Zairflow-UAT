@@ -41,7 +41,13 @@ exports.testAjax = asyncHandler(async (req, res) => {
 
 // Fetch product by ID
 exports.getProductById = asyncHandler(async (req, res) => {
-    const product = await BaseProduct.findById(req.params.id)
+    const productFilter = { _id: req.params.id };
+    // If request carries store context (e.g., via subdomain), enforce store isolation.
+    if (req.store && req.store._id) {
+        productFilter.store = req.store._id;
+    }
+
+    const product = await BaseProduct.findOne(productFilter)
         .populate('category')
         .populate('vendor')
         .populate({

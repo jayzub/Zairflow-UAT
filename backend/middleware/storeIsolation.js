@@ -1,6 +1,41 @@
 const Store = require('../models/store');
 const { handleAuthError, handleError } = require('../utils/responseHandler');
 
+function getHostWithoutPort(req) {
+    const host = (req.get('host') || '').trim();
+    // "nike.localhost:3001" -> "nike.localhost"
+    return host.split(':')[0];
+}
+
+function getStoreSlugFromHost(req) {
+    const hostNoPort = getHostWithoutPort(req);
+    if (!hostNoPort) return null;
+
+    const parts = hostNoPort.split('.').filter(Boolean);
+
+    // For local dev: "<storeslug>.localhost"
+    if (parts.length === 2 && parts[1].toLowerCase() === 'localhost') {
+        return parts[0].toLowerCase();
+    }
+
+    // For real domains: "<storeslug>.<domain>.<tld>" (or deeper)
+    if (parts.length >= 3) {
+        return parts[0].toLowerCase();
+    }
+
+    // Root domain like "yourdomain.com" (2 parts) or "localhost" (1 part) => no store slug.
+    return null;
+}
+
+function hasExplicitStoreHint(req) {
+    return Boolean(
+        req.headers['x-store-slug'] ||
+        req.query?.storeSlug ||
+        req.params?.storeSlug ||
+        getStoreSlugFromHost(req)
+    );
+}
+
 /**
  * Middleware to extract store information from request
  * Can be used with subdomain routing or custom headers
@@ -10,8 +45,7 @@ const extractStore = async (req, res, next) => {
         let store = null;
         
         // Method 1: Extract from subdomain
-        const host = req.get('host');
-        const subdomain = host.split('.')[0];
+        const subdomain = getStoreSlugFromHost(req);
         
         if (subdomain && subdomain !== 'www' && subdomain !== 'api') {
             store = await Store.findOne({ 
@@ -75,15 +109,36 @@ const extractStore = async (req, res, next) => {
         
         // If no store found and user is not platform admin, return error
         if (!store) {
-            return handleError(req, res, 'Store not found or inactive. Please specify a store or ensure you have access to a store.', 404);
+            return handleAuthError(
+                req,
+                res,
+                'Store not found or inactive. Please specify a store or ensure you have access to a store.',
+                404
+            );
         }
         
         req.store = store;
+        // Make store available to server-rendered views
+        res.locals.store = store;
+        res.locals.storeSlug = store?.slug;
         next();
     } catch (error) {
         console.error('Store extraction error:', error);
         return handleError(req, res, 'Internal server error', 500);
     }
+};
+
+/**
+ * Optional store extraction:
+ * - If the request includes a store hint (subdomain/header/query/path), resolve `req.store`.
+ * - Otherwise, continue without a store (keeps marketplace / platform routes working).
+ */
+const extractStoreOptional = async (req, res, next) => {
+    if (!hasExplicitStoreHint(req)) {
+        req.store = req.store || null;
+        return next();
+    }
+    return extractStore(req, res, next);
 };
 
 /**
@@ -204,6 +259,7 @@ const checkStoreLimits = async (req, res, next) => {
 
 module.exports = {
     extractStore,
+    extractStoreOptional,
     requireStoreAccess,
     addStoreFilter,
     ensureStoreDataAccess,
