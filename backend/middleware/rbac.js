@@ -22,7 +22,8 @@ const PERMISSIONS = {
   'store:read': ['platform_admin', 'store_owner', 'store_admin'],
   'store:update': ['platform_admin', 'store_owner'],
   'store:delete': ['platform_admin', 'store_owner'],
-  'store:settings': ['platform_admin', 'store_owner'],
+  // Note: store admins can update settings/theme in current service logic.
+  'store:settings': ['platform_admin', 'store_owner', 'store_admin'],
   
   // User Management
   'user:create_admin': ['platform_admin', 'store_owner'],

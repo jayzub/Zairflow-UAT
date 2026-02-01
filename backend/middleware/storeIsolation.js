@@ -255,6 +255,8 @@ const checkStoreLimits = async (req, res, next) => {
         // Check if any limits are exceeded
         if (currentLimits.products !== -1 && store.analytics.totalProducts >= currentLimits.products) {
             return res.status(403).json({ 
+                success: false,
+                message: 'Product limit exceeded for current plan',
                 error: 'Product limit exceeded for current plan',
                 limit: currentLimits.products,
                 current: store.analytics.totalProducts

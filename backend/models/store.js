@@ -17,6 +17,10 @@ const storeSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    website: {
+        type: String,
+        default: ''
+    },
     logo: {
         url: { type: String },
         public_id: { type: String }

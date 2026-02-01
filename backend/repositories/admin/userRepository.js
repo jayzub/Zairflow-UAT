@@ -102,6 +102,38 @@ async function updateUserById(userId, updateData) {
   return User.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-passwordHash');
 }
 
+async function addOwnedStoreToUser(userId, storeId) {
+  return User.findByIdAndUpdate(
+    toObjectId(userId),
+    { $addToSet: { ownedStores: toObjectId(storeId) } },
+    { new: true }
+  );
+}
+
+async function removeOwnedStoreFromUser(userId, storeId) {
+  return User.findByIdAndUpdate(
+    toObjectId(userId),
+    { $pull: { ownedStores: toObjectId(storeId) } },
+    { new: true }
+  );
+}
+
+async function addAdminStoreToUser(userId, storeId) {
+  return User.findByIdAndUpdate(
+    toObjectId(userId),
+    { $addToSet: { adminStores: toObjectId(storeId) } },
+    { new: true }
+  );
+}
+
+async function removeAdminStoreFromUser(userId, storeId) {
+  return User.findByIdAndUpdate(
+    toObjectId(userId),
+    { $pull: { adminStores: toObjectId(storeId) } },
+    { new: true }
+  );
+}
+
 async function deleteUserById(userId) {
   return User.findByIdAndDelete(userId);
 }
@@ -123,5 +155,9 @@ module.exports = {
   findUserById,
   updateUserById,
   deleteUserById,
+  addOwnedStoreToUser,
+  removeOwnedStoreFromUser,
+  addAdminStoreToUser,
+  removeAdminStoreFromUser,
 };
 

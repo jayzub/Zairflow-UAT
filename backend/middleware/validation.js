@@ -249,7 +249,9 @@ function validateRequest(req, res, next) {
     if (!errors.isEmpty()) {
         return res.status(400).json({
             success: false,
+            // Backwards compatible: keep `error`, add standard `message`
             error: 'Validation failed',
+            message: 'Validation failed',
             details: errors.array().map(error => ({
                 field: error.path,
                 message: error.msg,

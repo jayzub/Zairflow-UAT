@@ -3,6 +3,224 @@
  */
 
 const storePaths = {
+  // NOTE: Admin store endpoints are mounted at `/admin/*`.
+  '/admin/stores': {
+    post: {
+      tags: ['Stores'],
+      summary: 'Create a new store (Admin)',
+      description: 'Create a new store for the authenticated user (user becomes the store owner).',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/StoreCreateRequest' }
+          }
+        }
+      },
+      responses: {
+        201: { description: 'Store created successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' }
+      }
+    }
+  },
+
+  '/admin/stores/my-stores': {
+    get: {
+      tags: ['Stores'],
+      summary: "Get user's stores (Admin)",
+      description: 'Retrieve stores that the authenticated admin owns or administers (platform admins may see all).',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: { description: "User's stores retrieved successfully" },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' }
+      }
+    }
+  },
+
+  '/admin/stores/{id}': {
+    get: {
+      tags: ['Stores'],
+      summary: 'Get store details (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      responses: {
+        200: { description: 'Store details retrieved successfully' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    },
+    put: {
+      tags: ['Stores'],
+      summary: 'Update store (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/StoreUpdateRequest' } } }
+      },
+      responses: {
+        200: { description: 'Store updated successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    },
+    delete: {
+      tags: ['Stores'],
+      summary: 'Delete store (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      responses: {
+        200: { description: 'Store deleted successfully' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    }
+  },
+
+  '/admin/stores/{id}/analytics': {
+    get: {
+      tags: ['Stores'],
+      summary: 'Get store analytics (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      responses: {
+        200: { description: 'Store analytics retrieved successfully' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    }
+  },
+
+  '/admin/stores/{id}/settings': {
+    get: {
+      tags: ['Stores'],
+      summary: 'Get store settings (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      responses: {
+        200: { description: 'Store settings retrieved successfully' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    },
+    put: {
+      tags: ['Stores'],
+      summary: 'Update store settings (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object' } } }
+      },
+      responses: {
+        200: { description: 'Settings updated successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    }
+  },
+
+  '/admin/stores/{id}/theme': {
+    get: {
+      tags: ['Stores'],
+      summary: 'Get store theme (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      responses: {
+        200: { description: 'Store theme retrieved successfully' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    },
+    put: {
+      tags: ['Stores'],
+      summary: 'Update store theme (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object' } } }
+      },
+      responses: {
+        200: { description: 'Theme updated successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    }
+  },
+
+  '/admin/stores/{id}/admins': {
+    post: {
+      tags: ['Stores'],
+      summary: 'Add admin to store (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/StoreAdminRequest' } } }
+      },
+      responses: {
+        200: { description: 'Admin added successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store or user not found' }
+      }
+    },
+    delete: {
+      tags: ['Stores'],
+      summary: 'Remove admin from store (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'path', name: 'id', required: true, schema: { type: 'string', pattern: '^[0-9a-fA-F]{24}$' } }
+      ],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { $ref: '#/components/schemas/StoreAdminRemoveRequest' } } }
+      },
+      responses: {
+        200: { description: 'Admin removed successfully' },
+        400: { description: 'Bad request - validation error' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Store not found' }
+      }
+    }
+  },
+
   '/stores/discover': {
     get: {
       tags: ['Stores'],

@@ -26,6 +26,10 @@ const storeSchemas = {
         example: 'A great store for awesome products',
         maxLength: 500
       },
+      website: {
+        type: 'string',
+        example: 'https://mystore.com'
+      },
       logo: {
         type: 'object',
         properties: {
@@ -299,6 +303,10 @@ const storeSchemas = {
           secondaryColor: { type: 'string', example: '#6c757d' },
           fontFamily: { type: 'string', example: 'Arial, sans-serif' }
         }
+      },
+      website: {
+        type: 'string',
+        example: 'https://mystore.com'
       }
     }
   },
@@ -353,6 +361,10 @@ const storeSchemas = {
           secondaryColor: { type: 'string' },
           fontFamily: { type: 'string' }
         }
+      },
+      website: {
+        type: 'string',
+        example: 'https://mystore.com'
       }
     }
   },
