@@ -30,6 +30,8 @@ router.get('/create-store', requireAuth, requirePermission('store:create'), crea
 router.post('/stores', requireAuth, requirePermission('store:create'), createStore);
 // Get user's stores (this should be before /:id routes to avoid conflicts)
 router.get('/stores/my-stores', requireAuth, getUserStores);
+// Backwards-compatible alias (older admin pages call /admin/my-stores)
+router.get('/my-stores', requireAuth, getUserStores);
 // List stores page
 router.get('/stores/list', requireAuth, listStoresPage);
 router.get('/stores/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getStoreDetails);

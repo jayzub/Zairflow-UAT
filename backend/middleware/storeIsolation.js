@@ -1,6 +1,18 @@
 const Store = require('../models/store');
 const { handleAuthError, handleError } = require('../utils/responseHandler');
 
+function idsEqual(a, b) {
+    if (!a || !b) return false;
+    const aId = a._id ? a._id : a;
+    const bId = b._id ? b._id : b;
+    return String(aId) === String(bId);
+}
+
+function arrayContainsId(arr, id) {
+    if (!Array.isArray(arr) || !id) return false;
+    return arr.some((x) => idsEqual(x, id));
+}
+
 function getHostWithoutPort(req) {
     const host = (req.get('host') || '').trim();
     // "nike.localhost:3001" -> "nike.localhost"
@@ -161,19 +173,19 @@ const requireStoreAccess = (accessLevel = 'admin') => {
             }
             
             // Check if user is store owner
-            if (req.store.owner._id.toString() === req.user._id.toString()) {
+            if (idsEqual(req.store.owner, req.user._id)) {
                 return next();
             }
             
             // Check if user is store admin
-            if (accessLevel === 'admin' && req.store.admins.includes(req.user._id)) {
+            if (accessLevel === 'admin' && arrayContainsId(req.store.admins, req.user._id)) {
                 return next();
             }
             
             // Check if user has any role in this store
             if (accessLevel === 'any' && 
-                (req.user.ownedStores.includes(req.store._id) || 
-                 req.user.adminStores.includes(req.store._id))) {
+                (arrayContainsId(req.user.ownedStores, req.store._id) || 
+                 arrayContainsId(req.user.adminStores, req.store._id))) {
                 return next();
             }
             

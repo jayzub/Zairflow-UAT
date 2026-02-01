@@ -243,7 +243,7 @@ block append scripts
         
         try {
           // First, get the user's stores to find the store ID
-          const storeResponse = await fetch('/admin/my-stores', {
+          const storeResponse = await fetch('/admin/stores/my-stores', {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
             }
@@ -265,7 +265,8 @@ block append scripts
               'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
             },
             body: JSON.stringify({
-              name: `${firstName} ${lastName}`,
+              firstName: firstName,
+              lastName: lastName,
               email: email,
               password: password,
               phone: phone,

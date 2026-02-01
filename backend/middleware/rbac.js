@@ -10,7 +10,9 @@ const { handleAuthError } = require('../utils/responseHandler');
 const ROLE_HIERARCHY = {
   'platform_admin': 3,
   'store_owner': 2,
-  'store_admin': 1
+  'store_admin': 1,
+  // Backwards-compatible alias used by some admin creation flows
+  'admin': 1
 };
 
 // Permission definitions
@@ -68,18 +70,21 @@ const PERMISSIONS = {
  * Check if user has permission for a specific action
  */
 const hasPermission = (userRole, permission) => {
+  // Backwards-compatible role mapping
+  const effectiveRole = userRole === 'admin' ? 'store_admin' : userRole;
   const allowedRoles = PERMISSIONS[permission];
   if (!allowedRoles) {
     return false; // Permission not defined
   }
-  return allowedRoles.includes(userRole);
+  return allowedRoles.includes(effectiveRole);
 };
 
 /**
  * Check if user has minimum role level
  */
 const hasMinimumRole = (userRole, minimumRole) => {
-  const userLevel = ROLE_HIERARCHY[userRole] || 0;
+  const effectiveRole = userRole === 'admin' ? 'store_admin' : userRole;
+  const userLevel = ROLE_HIERARCHY[effectiveRole] || 0;
   const requiredLevel = ROLE_HIERARCHY[minimumRole] || 0;
   return userLevel >= requiredLevel;
 };

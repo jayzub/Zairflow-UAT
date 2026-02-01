@@ -396,7 +396,7 @@ block append scripts
       // Check if user already has stores (if so, redirect to dashboard)
       async function checkUserStores() {
         try {
-          const response = await fetch('/admin/my-stores', {
+          const response = await fetch('/admin/stores/my-stores', {
             headers: {
               'Authorization': `Bearer ${token}`
             }

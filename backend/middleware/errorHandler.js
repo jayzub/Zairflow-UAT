@@ -7,8 +7,22 @@ function errorHandler(err, req, res, next) {
       console.error(err.stack);
     }
   
-    // If it's an API request (e.g., /api/*), send JSON
-    const isApiRequest = req.originalUrl.startsWith('/api');
+    // If it's an API-like request, send JSON (includes admin JSON endpoints).
+    const adminJsonPrefixes = [
+      '/admin/login',
+      '/admin/register',
+      '/admin/me',
+      '/admin/change-password',
+      '/admin/admins',
+      '/admin/users',
+      '/admin/create-store-admin'
+    ];
+
+    const acceptsJson = (req.headers.accept || '').includes('application/json');
+    const isApiRequest =
+      req.originalUrl.startsWith('/api') ||
+      acceptsJson ||
+      adminJsonPrefixes.some((p) => req.originalUrl.startsWith(p));
   
     if (isApiRequest) {
       if (err.name === 'UnauthorizedError') {

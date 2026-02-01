@@ -3,7 +3,8 @@
  */
 
 const userPaths = {
-  '/users/login': {
+  // NOTE: Admin routes are mounted at `/admin/*` in the app.
+  '/admin/login': {
     post: {
       tags: ['Authentication'],
       summary: 'Admin user login',
@@ -57,7 +58,7 @@ const userPaths = {
     }
   },
 
-  '/users/register': {
+  '/admin/register': {
     post: {
       tags: ['Authentication'],
       summary: 'Register a new admin user',
@@ -132,7 +133,7 @@ const userPaths = {
 
 
 
-  '/users/me': {
+  '/admin/me': {
     get: {
       tags: ['Users'],
       summary: 'Get current user profile',
@@ -233,11 +234,11 @@ const userPaths = {
     }
   },
 
-  '/users': {
+  '/admin/users': {
     get: {
       tags: ['Users'],
       summary: 'Get all users (Admin only)',
-      description: 'Retrieve a list of all users in the system',
+      description: 'Retrieve a list of users for the current store context (platform admins may see all)',
       security: [{ bearerAuth: [] }],
       responses: {
         200: {
@@ -286,7 +287,7 @@ const userPaths = {
     }
   },
 
-  '/users/{id}': {
+  '/admin/users/{id}': {
     get: {
       tags: ['Users'],
       summary: 'Get user by ID (Admin only)',
@@ -488,11 +489,11 @@ const userPaths = {
     }
   },
 
-  '/users/get/count': {
+  '/admin/users/count': {
     get: {
       tags: ['Users'],
       summary: 'Get total user count (Admin only)',
-      description: 'Get the total number of users in the system',
+      description: 'Get the total number of users for the current store context (platform admins may see all)',
       security: [{ bearerAuth: [] }],
       responses: {
         200: {
@@ -534,7 +535,7 @@ const userPaths = {
     }
   },
 
-  '/users/change-password': {
+  '/admin/change-password': {
     post: {
       tags: ['Users'],
       summary: 'Change user password',
@@ -615,7 +616,7 @@ const userPaths = {
     }
   },
 
-  '/users/create-store-admin': {
+  '/admin/create-store-admin': {
     post: {
       tags: ['Users'],
       summary: 'Create a new store admin (Store Owner only)',

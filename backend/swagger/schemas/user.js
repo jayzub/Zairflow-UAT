@@ -10,6 +10,14 @@ const userSchemas = {
         type: 'string',
         example: '507f1f77bcf86cd799439011'
       },
+      firstName: {
+        type: 'string',
+        example: 'John'
+      },
+      lastName: {
+        type: 'string',
+        example: 'Doe'
+      },
       name: {
         type: 'string',
         example: 'John Doe'
@@ -32,7 +40,7 @@ const userSchemas = {
       },
       role: {
         type: 'string',
-        enum: ['store_owner', 'store_admin', 'platform_admin'],
+        enum: ['store_owner', 'store_admin', 'platform_admin', 'admin'],
         example: 'store_owner'
       },
       ownedStores: {
@@ -143,7 +151,7 @@ const userSchemas = {
 
   UserRegister: {
     type: 'object',
-    required: ['name', 'email', 'password', 'phone'],
+    required: ['name', 'email', 'password'],
     properties: {
       name: {
         type: 'string',
@@ -169,7 +177,7 @@ const userSchemas = {
       },
       role: {
         type: 'string',
-        enum: ['store_owner', 'store_admin', 'platform_admin'],
+        enum: ['store_owner', 'store_admin', 'platform_admin', 'admin'],
         example: 'store_owner'
       },
       position: {
@@ -186,10 +194,9 @@ const userSchemas = {
   UserUpdate: {
     type: 'object',
     properties: {
-      name: {
-        type: 'string',
-        example: 'John Doe'
-      },
+      firstName: { type: 'string', example: 'John' },
+      lastName: { type: 'string', example: 'Doe' },
+      name: { type: 'string', example: 'John Doe' },
       email: {
         type: 'string',
         format: 'email',
@@ -201,7 +208,7 @@ const userSchemas = {
       },
       role: {
         type: 'string',
-        enum: ['store_owner', 'store_admin', 'platform_admin']
+        enum: ['store_owner', 'store_admin', 'platform_admin', 'admin']
       },
       position: {
         type: 'string',
@@ -276,12 +283,10 @@ const userSchemas = {
 
   CreateStoreAdmin: {
     type: 'object',
-    required: ['name', 'email', 'password', 'phone'],
+    required: ['firstName', 'lastName', 'email', 'password'],
     properties: {
-      name: {
-        type: 'string',
-        example: 'Jane Smith'
-      },
+      firstName: { type: 'string', example: 'Jane' },
+      lastName: { type: 'string', example: 'Smith' },
       email: {
         type: 'string',
         format: 'email',

@@ -3,6 +3,10 @@ const router = express.Router();
 
 // Import all admin route modules
 // const authRoutes = require('./auth');
+const authPagesRoutes = require('./authPages');
+const authApiRoutes = require('./authApi');
+const meApiRoutes = require('./meApi');
+const pagesRoutes = require('./pages');
 const dashboardRoutes = require('./dashboard');
 const productsRoutes = require('./products');
 const categoriesRoutes = require('./categories');
@@ -16,6 +20,10 @@ const customProductTypesRoutes = require('./customProductTypes');
 
 // Mount all admin route modules
 // router.use('/', authRoutes);
+router.use('/', authPagesRoutes);
+router.use('/', authApiRoutes);
+router.use('/', meApiRoutes);
+router.use('/', pagesRoutes);
 router.use('/', dashboardRoutes);
 router.use('/', productsRoutes);
 router.use('/', categoriesRoutes);
