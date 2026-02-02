@@ -39,12 +39,18 @@ function getStoreSlugFromHost(req) {
     return null;
 }
 
+function isReservedSubdomain(slug) {
+    if (!slug) return false;
+    return ['www', 'api'].includes(String(slug).toLowerCase());
+}
+
 function hasExplicitStoreHint(req) {
+    const hostSlug = getStoreSlugFromHost(req);
     return Boolean(
         req.headers['x-store-slug'] ||
         req.query?.storeSlug ||
         req.params?.storeSlug ||
-        getStoreSlugFromHost(req)
+        (hostSlug && !isReservedSubdomain(hostSlug))
     );
 }
 

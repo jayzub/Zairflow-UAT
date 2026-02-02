@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
 const { requireCustomerAuth } = require('../middleware/jwt');
+const { extractStoreOptional } = require('../middleware/storeIsolation');
+
+// Resolve store context when explicitly provided (subdomain/header/query/path).
+// This enables per-store customer memberships while keeping marketplace/platform routes working.
+router.use(extractStoreOptional);
 
 /**
  * @swagger

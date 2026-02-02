@@ -9,31 +9,27 @@ async function getCustomerDetails({ storeId, customerId }) {
 }
 
 async function createCustomer({ storeId, body }) {
-  const { firstName, lastName, email, phone, address } = body || {};
-
-  const customer = await customerRepository.create({
+  const { customerId, firstName, lastName, email, phone } = body || {};
+  return customerRepository.create({
+    customerId,
     firstName,
     lastName,
     email,
     phone,
-    address,
     store: storeId,
   });
-
-  return customer;
 }
 
 async function updateCustomer({ storeId, customerId, body }) {
   const customer = await customerRepository.findOneForStoreById(storeId, customerId);
   if (!customer) return { ok: false, reason: 'not_found' };
 
-  const { firstName, lastName, email, phone, address } = body || {};
+  const { firstName, lastName, email, phone } = body || {};
   const updated = await customerRepository.updateOneForStoreById(storeId, customerId, {
     firstName,
     lastName,
     email,
     phone,
-    address,
   });
 
   return { ok: true, customer: updated };

@@ -1,9 +1,19 @@
 const Customer = require('../models/customer');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
+const CustomerStoreMembership = require('../models/customerStoreMembership');
 const { asyncHandler } = require('../middleware/asyncHandler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+async function upsertMembership({ customerId, storeId }) {
+    if (!customerId || !storeId) return null;
+    return CustomerStoreMembership.findOneAndUpdate(
+        { customer: customerId, store: storeId },
+        { $setOnInsert: { customer: customerId, store: storeId, joinedAt: new Date(), status: 'active' } },
+        { upsert: true, new: true }
+    );
+}
 
 /**
  * Register a new customer
@@ -11,10 +21,49 @@ const jwt = require('jsonwebtoken');
 const registerCustomer = asyncHandler(async (req, res) => {
     const { name, email, password, phone, dateOfBirth, gender } = req.body;
     const emailInput = (email || '').trim();
+    const storeId = req.store?._id || req.body?.storeId || null;
 
     // Check if customer already exists
     const existingCustomer = await Customer.findOne({ email: new RegExp(`^${emailInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
     if (existingCustomer) {
+        // If a store context is present, treat "register" as "join this store" for an existing global customer.
+        // We verify password to prevent unauthorized store-joins.
+        if (storeId) {
+            const isValidPassword = await bcrypt.compare(String(password || ''), existingCustomer.passwordHash);
+            if (!isValidPassword) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Invalid email or password'
+                });
+            }
+
+            await upsertMembership({ customerId: existingCustomer._id, storeId });
+
+            const token = jwt.sign(
+                {
+                    id: existingCustomer._id,
+                    email: existingCustomer.email,
+                    type: 'customer'
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    customer: {
+                        id: existingCustomer._id,
+                        name: existingCustomer.name,
+                        email: existingCustomer.email,
+                        phone: existingCustomer.phone
+                    },
+                    token
+                },
+                message: 'Customer joined store successfully'
+            });
+        }
+
         return res.status(400).json({
             success: false,
             error: 'Customer with this email already exists'
@@ -36,6 +85,11 @@ const registerCustomer = asyncHandler(async (req, res) => {
     });
 
     await customer.save();
+
+    // If we have store context, create a store membership for this customer
+    if (storeId) {
+        await upsertMembership({ customerId: customer._id, storeId });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
@@ -69,6 +123,7 @@ const registerCustomer = asyncHandler(async (req, res) => {
 const loginCustomer = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const emailInput = (email || '').trim();
+    const storeId = req.store?._id || req.body?.storeId || null;
 
     // Find customer
     const customer = await Customer.findOne({ email: new RegExp(`^${emailInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
@@ -110,6 +165,11 @@ const loginCustomer = asyncHandler(async (req, res) => {
     }
 
     await customer.save();
+
+    // If logging in with store context, ensure membership exists (auto-join on first login).
+    if (storeId) {
+        await upsertMembership({ customerId: customer._id, storeId });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
