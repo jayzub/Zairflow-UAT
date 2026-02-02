@@ -1,45 +1,46 @@
 const { asyncHandler } = require('../../middleware/asyncHandler');
-const Order = require('../../models/order');
+const adminOrdersService = require('../../services/admin/adminOrdersService');
+const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
 
 // Admin: Get all orders for a store
 exports.getAllOrders = asyncHandler(async (req, res) => {
     try {
-        const orders = await Order.find({ store: req.store._id })
-            .populate('customer', 'firstName lastName email')
-            .populate('products.product', 'name price image')
-            .sort({ createdAt: -1 });
-        
-        res.render('admin/orders', { 
-            orders,
-            pageTitle: 'Orders'
-        });
+        const orders = await adminOrdersService.listOrdersForStore(req.store._id);
+
+        const data = { orders, pageTitle: 'Orders' };
+        return respondWithViewOrJson(req, res, 'admin/orders', data);
     } catch (error) {
         console.error('Error fetching orders:', error);
-        res.status(500).render('admin/error', { error: 'Failed to load orders' });
+        if (req.accepts('html')) {
+            return res.status(500).render('admin/error', { error: 'Failed to load orders' });
+        }
+        return res.status(500).json({ success: false, message: 'Failed to load orders', error: error.message });
     }
 });
 
 // Admin: Get order details
 exports.getOrderDetails = asyncHandler(async (req, res) => {
     try {
-        const order = await Order.findOne({ 
-            _id: req.params.id, 
-            store: req.store._id 
-        })
-        .populate('customer', 'firstName lastName email phone address')
-        .populate('products.product', 'name price image description');
+        const order = await adminOrdersService.getOrderDetails({
+            storeId: req.store._id,
+            orderId: req.params.id
+        });
         
         if (!order) {
-            return res.status(404).render('admin/error', { error: 'Order not found' });
+            if (req.accepts('html')) {
+                return res.status(404).render('admin/error', { error: 'Order not found' });
+            }
+            return res.status(404).json({ success: false, message: 'Order not found' });
         }
         
-        res.render('admin/order-details', { 
-            order,
-            pageTitle: 'Order Details'
-        });
+        const data = { order, pageTitle: 'Order Details' };
+        return respondWithViewOrJson(req, res, 'admin/order-details', data);
     } catch (error) {
         console.error('Error loading order details:', error);
-        res.status(500).render('admin/error', { error: 'Failed to load order details' });
+        if (req.accepts('html')) {
+            return res.status(500).render('admin/error', { error: 'Failed to load order details' });
+        }
+        return res.status(500).json({ success: false, message: 'Failed to load order details', error: error.message });
     }
 });
 
@@ -48,26 +49,21 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        
-        const order = await Order.findOne({ 
-            _id: id, 
-            store: req.store._id 
+
+        const updated = await adminOrdersService.updateOrderStatus({
+            storeId: req.store._id,
+            orderId: id,
+            status
         });
-        
-        if (!order) {
+
+        if (!updated.ok && updated.reason === 'not_found') {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        const updatedOrder = await Order.findByIdAndUpdate(
-            id,
-            { status },
-            { new: true, runValidators: true }
-        );
-
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Order status updated successfully',
-            data: updatedOrder
+            data: updated.order
         });
     } catch (error) {
         console.error('Error updating order status:', error);
@@ -84,39 +80,29 @@ exports.processRefund = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
         const { refundAmount, reason } = req.body;
-        
-        const order = await Order.findOne({ 
-            _id: id, 
-            store: req.store._id 
+
+        const result = await adminOrdersService.processRefund({
+            storeId: req.store._id,
+            orderId: id,
+            refundAmount,
+            reason
         });
-        
-        if (!order) {
+
+        if (!result.ok && result.reason === 'not_found') {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        if (refundAmount > order.totalAmount) {
+        if (!result.ok && result.reason === 'exceeds_total') {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Refund amount cannot exceed order total' 
             });
         }
 
-        // Update order with refund information
-        const updatedOrder = await Order.findByIdAndUpdate(
-            id,
-            {
-                refundAmount,
-                refundReason: reason,
-                refundDate: new Date(),
-                status: 'refunded'
-            },
-            { new: true, runValidators: true }
-        );
-
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Refund processed successfully',
-            data: updatedOrder
+            data: result.order
         });
     } catch (error) {
         console.error('Error processing refund:', error);

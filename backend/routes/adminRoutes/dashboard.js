@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../../middleware/jwt');
+const { requirePermission } = require('../../middleware/rbac');
 const { extractStore, requireStoreAccess } = require('../../middleware/storeIsolation');
 const { checkUserStores } = require('../../middleware/admin/checkUserStores');
 const { getDashboardStats } = require('../../controllers/adminControllers/dashboard');
@@ -16,6 +17,6 @@ router.get('/dashboard', requireAuth, checkUserStores, extractStore, requireStor
 });
 
 // Admin dashboard API endpoint for statistics
-router.get('/dashboard/stats', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getDashboardStats);
+router.get('/dashboard/stats', requireAuth, requirePermission('analytics:read'), checkUserStores, extractStore, requireStoreAccess('any'), getDashboardStats);
 
 module.exports = router; 

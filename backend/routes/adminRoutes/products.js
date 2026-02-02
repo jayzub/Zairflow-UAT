@@ -3,8 +3,16 @@ const router = express.Router();
 const multer = require('multer');
 const { storage } = require('../../config/multerConfig');
 const { requireAuth } = require('../../middleware/jwt');
+const { requirePermission } = require('../../middleware/rbac');
 const { extractStore, requireStoreAccess, addStoreFilter } = require('../../middleware/storeIsolation');
 const { checkUserStores } = require('../../middleware/admin/checkUserStores');
+const {
+    validateProductIdParam,
+    validateFeaturedCountParam,
+    validateCreateProduct,
+    validateUpdateProduct,
+    validateProductsListQuery
+} = require('../../validators/admin/productsValidators');
 
 // Import product controller functions
 const {
@@ -41,17 +49,17 @@ const processUploadedFiles = (req, res, next) => {
 };
 
 // Admin product management pages and API endpoints (with store isolation)
-router.get('/products', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), addStoreFilter, getAllProducts);
-router.get('/products/add', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), addProductPage);
+router.get('/products', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), addStoreFilter, validateProductsListQuery, getAllProducts);
+router.get('/products/add', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), addProductPage);
 // Use upload.any() to accept files from any field, then filter in processUploadedFiles
-router.post('/products', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), upload.any(), processUploadedFiles, createProduct);
-router.get('/products/edit/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), editProductPage);
-router.put('/products/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), upload.array('images', 5), updateProduct);
-router.delete('/products/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), removeProduct);
-router.delete('/products/delete/:id', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), deleteProduct);
+router.post('/products', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), upload.any(), processUploadedFiles, validateCreateProduct, createProduct);
+router.get('/products/edit/:id', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, editProductPage);
+router.put('/products/:id', requireAuth, requirePermission('product:update'), checkUserStores, extractStore, requireStoreAccess('any'), upload.array('images', 5), validateUpdateProduct, updateProduct);
+router.delete('/products/:id', requireAuth, requirePermission('product:delete'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, removeProduct);
+router.delete('/products/delete/:id', requireAuth, requirePermission('product:delete'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, deleteProduct);
 
 // Admin product API endpoints
-router.get('/products/count', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getProductCount);
-router.get('/products/featured/:count', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), getFeaturedProducts);
+router.get('/products/count', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), getProductCount);
+router.get('/products/featured/:count', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), validateFeaturedCountParam, getFeaturedProducts);
 
 module.exports = router; 

@@ -7,15 +7,16 @@ mixin LinkLooper(config)
     p.nav-link.mb-0.fw-bold=config.title
   each page in config.vars
     - var pageName = page.label ? page.label : page.name
-    - var isApiRoute = page.path && (page.path.startsWith('api/') || page.path.startsWith('admin/'))
+    - var isExternal = page.path && (page.path.startsWith('http://') || page.path.startsWith('https://') || page.path.startsWith('//'))
+    - var isApiRoute = page.path && !isExternal && (page.path.startsWith('api/') || page.path.startsWith('admin/'))
     if config.dropdownItem
-      a.dropdown-item.fw-semibold(href=page.name !== 'modal' ? (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`) : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
+      a.dropdown-item.fw-semibold(href=page.name !== 'modal' ? (isExternal ? page.path : (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`)) : `${CWD}${page.path}` target=page.newtab ? "_blank" : undefined data-bs-toggle=page.name ==="modal" ? 'modal' : false)
         +cleanText(pageName)
         if page.badge
           span.badge.rounded-pill.ms-2(class=`badge-subtle-${page.badge.type}`)=page.badge.text
 
     else
-      a.nav-link.fw-semibold(href=page.name !== 'modal' ? (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`) : `${CWD}${page.path}` data-bs-toggle=page.name ==="modal" ? 'modal' : false)
+      a.nav-link.fw-semibold(href=page.name !== 'modal' ? (isExternal ? page.path : (isApiRoute ? `${CWD}${page.path}` : `${CWD}${page.path}.html`)) : `${CWD}${page.path}` target=page.newtab ? "_blank" : undefined data-bs-toggle=page.name ==="modal" ? 'modal' : false)
         +cleanText(pageName)
         if page.badge
           span.badge.rounded-pill.ms-2(class=`badge-subtle-${page.badge.type}`)=page.badge.text

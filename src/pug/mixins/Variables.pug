@@ -1,6 +1,7 @@
 append variables
   - const apiUrl = 'api';
   - const adminUrl = 'admin';
+  - const storeHomepageUrl = (typeof storeSlug !== 'undefined' && storeSlug) ? `//${storeSlug}.localhost:3001/home` : '/home';
   - var title = 'Griffin';
   - var theme = `${name}-${version}`;
   - var bootstrapVersion = '5.3';
@@ -154,9 +155,10 @@ append variables
             open: true,
             pages: [
               {
-                name: 'storefront',
-                path: '/home',
-                pathName: 'e-commerce-fe-home',
+                name: 'store-homepage',
+                path: storeHomepageUrl,
+                pathName: 'e-commerce-fe-store-homepage',
+                newtab: true,
               },
               //- {
               //-   name: 'product-details',
@@ -167,7 +169,7 @@ append variables
               name: 'products-marketplace',
               path: `${apiUrl}/products/marketplace`,
               pathName: 'e-commerce-fe-product-marketplace',
-              target: '_blank',
+              newtab: true,
               },
               //- {
               //-   name: 'cart',

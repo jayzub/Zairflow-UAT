@@ -2,11 +2,12 @@ const { asyncHandler } = require('../../middleware/asyncHandler');
 
 const adminAuthService = require('../../services/admin/adminAuthService');
 const adminUsersService = require('../../services/admin/adminUsersService');
+const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
 
 // Admin: Render create admin page
 exports.createAdminPage = asyncHandler(async (req, res) => {
   try {
-    res.render('admin/create-admin', {
+    return respondWithViewOrJson(req, res, 'admin/create-admin', {
       pageTitle: 'Create Admin',
     });
   } catch (error) {

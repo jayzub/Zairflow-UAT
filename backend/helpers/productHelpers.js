@@ -435,10 +435,9 @@ exports.resolveStoreId = (req, body) => {
             }
         }
         if (!storeId && body.storeId) {
-            if (req.user && (
-                req.user.ownedStores.includes(body.storeId) ||
-                req.user.adminStores.includes(body.storeId)
-            )) {
+            const owned = (req.user?.ownedStores || []).map(String);
+            const admin = (req.user?.adminStores || []).map(String);
+            if (owned.includes(String(body.storeId)) || admin.includes(String(body.storeId))) {
                 storeId = body.storeId;
             }
         }
@@ -494,17 +493,20 @@ exports.initProductFields = (product) => {
 };
 
 // Helper to fetch product with related data for editing
-exports.fetchProductWithRelated = async (id) => {
+exports.fetchProductWithRelated = async (id, storeId = null) => {
     const BaseProduct = require('../models/products/baseProduct');
     const Category = require('../models/category');
     const Vendor = require('../models/vendor');
-    const product = await BaseProduct.findById(id)
+    const productQuery = storeId ? { _id: id, store: storeId } : { _id: id };
+    const product = await BaseProduct.findOne(productQuery)
         .populate('category')
         .populate('vendor')
         .lean();
+    const categoryFilter = storeId ? { store: storeId } : {};
+    const vendorFilter = storeId ? { store: storeId } : {};
     const [categories, vendors] = await Promise.all([
-        Category.find().select('name _id'),
-        Vendor.find().select('name _id')
+        Category.find(categoryFilter).select('name _id'),
+        Vendor.find(vendorFilter).select('name _id')
     ]);
     return { product, categories, vendors };
 };

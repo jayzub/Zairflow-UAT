@@ -38,11 +38,23 @@ const PERMISSIONS = {
   'product:update': ['platform_admin', 'store_owner', 'store_admin'],
   'product:delete': ['platform_admin', 'store_owner', 'store_admin'],
   
+  // Product Type Management (Custom Product Types)
+  'product_type:create': ['platform_admin', 'store_owner', 'store_admin'],
+  'product_type:read': ['platform_admin', 'store_owner', 'store_admin'],
+  'product_type:update': ['platform_admin', 'store_owner', 'store_admin'],
+  'product_type:delete': ['platform_admin', 'store_owner', 'store_admin'],
+
   // Category Management
   'category:create': ['platform_admin', 'store_owner', 'store_admin'],
   'category:read': ['platform_admin', 'store_owner', 'store_admin'],
   'category:update': ['platform_admin', 'store_owner', 'store_admin'],
   'category:delete': ['platform_admin', 'store_owner', 'store_admin'],
+
+  // Vendor Management
+  'vendor:create': ['platform_admin', 'store_owner', 'store_admin'],
+  'vendor:read': ['platform_admin', 'store_owner', 'store_admin'],
+  'vendor:update': ['platform_admin', 'store_owner', 'store_admin'],
+  'vendor:delete': ['platform_admin', 'store_owner', 'store_admin'],
   
   // Order Management
   'order:create': ['platform_admin', 'store_owner', 'store_admin'],

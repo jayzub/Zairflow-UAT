@@ -1,8 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../../middleware/jwt');
+const { requirePermission } = require('../../middleware/rbac');
 const { checkUserStores } = require('../../middleware/admin/checkUserStores');
 const { extractStore, requireStoreAccess } = require('../../middleware/storeIsolation');
+const {
+    validateCustomProductTypeIdParam,
+    validateCreateCustomProductType,
+    validateUpdateCustomProductType
+} = require('../../validators/admin/customProductTypesValidators');
 const {
     customProductTypesPage,
     getCustomProductTypes,
@@ -13,7 +19,7 @@ const {
 } = require('../../controllers/adminControllers/customProductTypes');
 
 // Handle both page and API requests for the root route
-router.get('/', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), async (req, res, next) => {
+router.get('/', requireAuth, requirePermission('product_type:read'), checkUserStores, extractStore, requireStoreAccess('any'), async (req, res, next) => {
     // Check if this is an API request
     const isApiRequest = req.xhr || 
         req.headers['x-requested-with'] === 'XMLHttpRequest' ||
@@ -30,6 +36,7 @@ router.get('/', requireAuth, checkUserStores, extractStore, requireStoreAccess('
 
 // All other API routes require authentication and store access
 router.use(requireAuth);
+router.use(requirePermission('product_type:read'));
 router.use(checkUserStores);
 router.use(extractStore);
 router.use(requireStoreAccess('any'));
@@ -38,16 +45,16 @@ router.use(requireStoreAccess('any'));
 router.get('/api', getCustomProductTypes);
 
 // Get a single custom product type
-router.get('/:id', getCustomProductType);
+router.get('/:id', validateCustomProductTypeIdParam, getCustomProductType);
 
 // Create a new custom product type
-router.post('/', createCustomProductType);
+router.post('/', requirePermission('product_type:create'), validateCreateCustomProductType, createCustomProductType);
 
 // Update a custom product type
-router.put('/:id', updateCustomProductType);
+router.put('/:id', requirePermission('product_type:update'), validateUpdateCustomProductType, updateCustomProductType);
 
 // Delete a custom product type (soft delete)
-router.delete('/:id', deleteCustomProductType);
+router.delete('/:id', requirePermission('product_type:delete'), validateCustomProductTypeIdParam, deleteCustomProductType);
 
 module.exports = router;
 

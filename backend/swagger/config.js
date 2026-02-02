@@ -7,9 +7,21 @@ const userSchemas = require('./schemas/user');
 const commonSchemas = require('./schemas/common');
 const storeSchemas = require('./schemas/store');
 const categorySchemas = require('./schemas/category');
+const customProductTypeSchemas = require('./schemas/customProductType');
+const vendorSchemas = require('./schemas/vendor');
+const orderSchemas = require('./schemas/order');
+const customerSchemas = require('./schemas/customer');
+const dashboardSchemas = require('./schemas/dashboard');
 const userPaths = require('./paths/users');
 const storePaths = require('./paths/stores');
 const categoryPaths = require('./paths/categories');
+const productPaths = require('./paths/products');
+const customProductTypePaths = require('./paths/customProductTypes');
+const vendorPaths = require('./paths/vendors');
+const orderPaths = require('./paths/orders');
+const customerPaths = require('./paths/customers');
+const dashboardPaths = require('./paths/dashboard');
+const productTypesPaths = require('./paths/productTypes');
 
 const options = {
   definition: {
@@ -64,6 +76,21 @@ const options = {
         
         // Category schemas
         ...categorySchemas,
+
+        // Custom product type schemas
+        ...customProductTypeSchemas,
+
+        // Vendor schemas
+        ...vendorSchemas,
+
+        // Order schemas
+        ...orderSchemas,
+
+        // Customer schemas
+        ...customerSchemas,
+
+        // Dashboard schemas
+        ...dashboardSchemas,
         
         // Additional schemas can be added here
         
@@ -143,7 +170,14 @@ const options = {
     paths: {
       ...userPaths,
       ...storePaths,
-      ...categoryPaths
+      ...categoryPaths,
+      ...productPaths,
+      ...customProductTypePaths,
+      ...vendorPaths,
+      ...orderPaths,
+      ...customerPaths,
+      ...dashboardPaths,
+      ...productTypesPaths
       // Add other path files here
     },
     tags: [
@@ -178,6 +212,30 @@ const options = {
       {
         name: 'Categories - Admin',
         description: 'Category administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Products - Admin',
+        description: 'Product administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Product Types - Admin',
+        description: 'Custom product type administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Vendors - Admin',
+        description: 'Vendor administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Orders - Admin',
+        description: 'Order administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Customers - Admin',
+        description: 'Customer administration endpoints (requires authentication)'
+      },
+      {
+        name: 'Dashboard - Admin',
+        description: 'Admin dashboard endpoints (requires authentication)'
       }
     ]
   },

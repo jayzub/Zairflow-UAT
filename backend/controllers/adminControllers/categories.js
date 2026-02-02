@@ -1,15 +1,11 @@
 const { asyncHandler } = require('../../middleware/asyncHandler');
-const Category = require('../../models/category');
-const mongoose = require('mongoose');
 const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
+const adminCategoriesService = require('../../services/admin/adminCategoriesService');
 
 // Admin: Get all categories for a store
 exports.getAllCategories = asyncHandler(async (req, res) => {
     try {
-        const categories = await Category.find({ store: req.store._id })
-            .populate('parent', 'name')
-            .populate('children', 'name')
-            .sort({ displayOrder: 1, name: 1 });
+        const categories = await adminCategoriesService.listCategoriesForStore(req.store._id);
         
         const data = { 
             categories,
@@ -36,9 +32,7 @@ exports.getAllCategories = asyncHandler(async (req, res) => {
 exports.addCategoryPage = asyncHandler(async (req, res) => {
     try {
         // Fetch existing categories for parent selection
-        const categories = await Category.find({ store: req.store._id })
-            .select('name _id')
-            .sort({ name: 1 });
+        const categories = await adminCategoriesService.listCategoriesForParentSelection(req.store._id);
         
         res.render('admin/categories/add-category', { 
             categories,
@@ -53,9 +47,9 @@ exports.addCategoryPage = asyncHandler(async (req, res) => {
 // Admin: Render edit category page
 exports.editCategoryPage = asyncHandler(async (req, res) => {
     try {
-        const category = await Category.findOne({ 
-            _id: req.params.id, 
-            store: req.store._id 
+        const category = await adminCategoriesService.getCategoryForEdit({
+            storeId: req.store._id,
+            categoryId: req.params.id,
         });
         
         if (!category) {
@@ -63,9 +57,7 @@ exports.editCategoryPage = asyncHandler(async (req, res) => {
         }
         
         // Fetch all categories for parent selection
-        const categories = await Category.find({ store: req.store._id })
-            .select('name _id')
-            .sort({ name: 1 });
+        const categories = await adminCategoriesService.listCategoriesForParentSelection(req.store._id);
         
         res.render('admin/categories/edit-category', { 
             category,
@@ -81,123 +73,20 @@ exports.editCategoryPage = asyncHandler(async (req, res) => {
 // Admin: Create a new category
 exports.createCategory = asyncHandler(async (req, res) => {
     try {
-        // Debug: Log the request body
-        console.log('Request body:', req.body);
-        console.log('Request headers:', req.headers);
-        
-        const { name, description, parent, displayOrder, isActive, slug: providedSlug } = req.body;
-        
-        // Validate required fields
-        if (!name || typeof name !== 'string' || name.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                message: 'Category name is required and must be a non-empty string',
-                receivedData: { name, description, parent, displayOrder, isActive, slug: providedSlug }
-            });
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Request body:', req.body);
+            console.log('Request headers:', req.headers);
         }
-        
-        // Generate slug from name if not provided
-        const generateSlug = (name) => {
-            if (!name || typeof name !== 'string') {
-                throw new Error('Name parameter is required and must be a string');
-            }
-            return name
-                .toLowerCase()
-                .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
-                .replace(/\s+/g, '-') // Replace spaces with hyphens
-                .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-                .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-        };
-        
-        let slug = providedSlug || generateSlug(name);
-        let counter = 1;
-        let originalSlug = slug;
-        
-        // Ensure slug uniqueness within the store
-        while (await Category.exists({ store: req.store._id, slug })) {
-            slug = `${originalSlug}-${counter}`;
-            counter++;
-        }
-        
-        // Check if category with same name already exists in this store
-        const existingCategory = await Category.findOne({
-            store: req.store._id,
-            name: name.trim()
-        });
-        
-        if (existingCategory) {
-            return res.status(400).json({
-                success: false,
-                message: `A category with the name "${name.trim()}" already exists in your store`
-            });
-        }
-        
-        // Handle allowedProductTypes array
-        let allowedProductTypes = [];
-        if (req.body.allowedProductTypes) {
-            if (Array.isArray(req.body.allowedProductTypes)) {
-                allowedProductTypes = req.body.allowedProductTypes;
-            } else if (typeof req.body.allowedProductTypes === 'string') {
-                // Handle case where it might be sent as JSON string
-                try {
-                    allowedProductTypes = JSON.parse(req.body.allowedProductTypes);
-                } catch (e) {
-                    allowedProductTypes = [req.body.allowedProductTypes];
-                }
-            }
-        }
-        
-        const categoryData = {
-            name,
-            slug,
-            description,
-            parent: parent || null,
-            displayOrder: displayOrder || 0,
-            isActive: isActive !== 'false',
-            allowedProductTypes: allowedProductTypes.length > 0 ? allowedProductTypes : undefined,
-            store: req.store._id
-        };
 
-        const category = new Category(categoryData);
-        await category.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Category created successfully',
-            data: category
+        const result = await adminCategoriesService.createCategory({
+            storeId: req.store._id,
+            body: req.body,
         });
+
+        return res.status(result.status).json(result.payload);
     } catch (error) {
         console.error('Error creating category:', error);
-        console.error('Error details:', {
-            code: error.code,
-            keyPattern: error.keyPattern,
-            keyValue: error.keyValue
-        });
-        
-        // Handle duplicate key error (unique index violation)
-        if (error.code === 11000) {
-            // Check if it's a name duplicate
-            if (error.keyPattern && (error.keyPattern.name || error.keyValue?.name)) {
-                return res.status(400).json({
-                    success: false,
-                    message: `A category with the name "${error.keyValue?.name || name}" already exists in your store`
-                });
-            }
-            // Check if it's a slug duplicate
-            if (error.keyPattern && (error.keyPattern.slug || error.keyValue?.slug)) {
-                return res.status(400).json({
-                    success: false,
-                    message: `A category with the slug "${error.keyValue?.slug || slug}" already exists in your store`
-                });
-            }
-            // Generic duplicate error
-            return res.status(400).json({
-                success: false,
-                message: 'A category with these details already exists in your store'
-            });
-        }
-        
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Error creating category',
             error: error.message
@@ -209,35 +98,20 @@ exports.createCategory = asyncHandler(async (req, res) => {
 exports.updateCategory = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, parent, displayOrder, isActive } = req.body;
-        
-        const category = await Category.findOne({ 
-            _id: id, 
-            store: req.store._id 
+        const updated = await adminCategoriesService.updateCategory({
+            storeId: req.store._id,
+            categoryId: id,
+            body: req.body,
         });
-        
-        if (!category) {
+
+        if (!updated.ok && updated.reason === 'not_found') {
             return res.status(404).json({ success: false, message: 'Category not found' });
         }
-
-        const updateData = {
-            name,
-            description,
-            parent: parent || null,
-            displayOrder: displayOrder || 0,
-            isActive: isActive !== 'false'
-        };
-
-        const updatedCategory = await Category.findByIdAndUpdate(
-            id,
-            updateData,
-            { new: true, runValidators: true }
-        );
 
         res.status(200).json({
             success: true,
             message: 'Category updated successfully',
-            data: updatedCategory
+            data: updated.category
         });
     } catch (error) {
         console.error('Error updating category:', error);
@@ -253,26 +127,21 @@ exports.updateCategory = asyncHandler(async (req, res) => {
 exports.deleteCategory = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        
-        const category = await Category.findOne({ 
-            _id: id, 
-            store: req.store._id 
+        const deleted = await adminCategoriesService.deleteCategory({
+            storeId: req.store._id,
+            categoryId: id,
         });
-        
-        if (!category) {
+
+        if (!deleted.ok && deleted.reason === 'not_found') {
             return res.status(404).json({ success: false, message: 'Category not found' });
         }
 
-        // Check if category has children
-        const hasChildren = await Category.exists({ parent: id });
-        if (hasChildren) {
+        if (!deleted.ok && deleted.reason === 'has_children') {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot delete category with subcategories. Please move or delete subcategories first.' 
             });
         }
-
-        await Category.findByIdAndDelete(id);
 
         res.status(200).json({
             success: true,
@@ -291,29 +160,7 @@ exports.deleteCategory = asyncHandler(async (req, res) => {
 // Admin: Get category statistics
 exports.getCategoryStats = asyncHandler(async (req, res) => {
     try {
-        const storeId = req.store._id;
-        
-        const stats = await Category.aggregate([
-            { $match: { store: mongoose.Types.ObjectId(storeId) } },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: '_id',
-                    foreignField: 'category',
-                    as: 'products'
-                }
-            },
-            {
-                $project: {
-                    name: 1,
-                    slug: 1,
-                    productCount: { $size: '$products' },
-                    isActive: 1,
-                    displayOrder: 1
-                }
-            },
-            { $sort: { displayOrder: 1, name: 1 } }
-        ]);
+        const stats = await adminCategoriesService.getCategoryStats(req.store._id);
         
         res.status(200).json({
             success: true,

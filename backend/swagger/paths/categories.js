@@ -301,7 +301,7 @@ const categoryPaths = {
   },
 
   // Admin routes (require authentication and store access)
-  '/categories/admin': {
+  '/admin/categories': {
     get: {
       tags: ['Categories - Admin'],
       summary: 'Get all categories (Admin)',
@@ -450,7 +450,7 @@ const categoryPaths = {
     }
   },
 
-  '/categories/admin/{id}': {
+  '/admin/categories/{id}': {
     get: {
       tags: ['Categories - Admin'],
       summary: 'Get category by ID (Admin)',
@@ -729,7 +729,7 @@ const categoryPaths = {
     }
   },
 
-  '/categories/admin/stats': {
+  '/admin/categories/stats': {
     get: {
       tags: ['Categories - Admin'],
       summary: 'Get category statistics',
