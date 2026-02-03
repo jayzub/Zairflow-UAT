@@ -1,4 +1,4 @@
-mixin Product(product)
+mixin Product(product, options)
   .position-relative.text-decoration-none.product-card.h-100
     .d-flex.flex-column.justify-content-between.h-100
       div
@@ -20,7 +20,7 @@ mixin Product(product)
           if product.verified
             span.badge.text-bg-success.fs-10.product-verified-badge Verified
               span.fas.fa-check.ms-1
-        - var productLink = product._id ? `/api/products/${product._id}` : `${CWD}${paths['e-commerce-fe-product-details']}`
+        - var productLink = (options && options.useMarketplaceLink && product._id) ? `/api/marketplace/products/${product._id}` : (product._id ? `/api/products/${product._id}` : `${CWD}${paths['e-commerce-fe-product-details']}`)
         a.stretched-link(href=productLink)
           h6.mb-2.lh-sm.line-clamp-3.product-name=product.name
         if product.star

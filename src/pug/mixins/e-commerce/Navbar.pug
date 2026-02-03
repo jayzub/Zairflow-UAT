@@ -120,29 +120,19 @@ mixin Navbar
       ul.navbar-nav.justify-content-end.align-items-center
         li.nav-item(data-nav-item)
           -
-            var homeHref = (typeof isCustomerStorefront !== 'undefined' && isCustomerStorefront)
-              ? '/home'
-              : `${CWD}${paths['e-commerce-fe-home']}`;
+            var homeHref = (typeof storeHomepageUrl !== 'undefined' && storeHomepageUrl)
+              ? storeHomepageUrl
+              : '/home';
           a.nav-link.ps-0(class=activeNavItem === 'home' ? 'active' : '' href=homeHref) Home
+        if typeof storeSlug === 'undefined' || !storeSlug
+          li.nav-item(data-nav-item)
+            a.nav-link(class=activeNavItem === 'store' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-favourite-stores']}`) My Favourite Stores
         li.nav-item(data-nav-item)
-          a.nav-link(class=activeNavItem === 'store' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-favourite-stores']}`) My Favourite Stores
-        li.nav-item(data-nav-item)
-          a.nav-link(class=activeNavItem === 'products' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-product-filter']}`) Products
-        li.nav-item(data-nav-item)
-          a.nav-link(class=activeNavItem === 'wishlist' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-wishlist']}`) Wishlist
-        li.nav-item(data-nav-item)
-          a.nav-link(class=activeNavItem === 'shipping-info' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-shipping-info']}`) Shipping Info
-        li.nav-item(data-nav-item)
-          a.nav-link(href=`${CWD}${paths['e-commerce-add-product']}`) Be a vendor
-        li.nav-item(data-nav-item)
-          a.nav-link(class=activeNavItem === 'order-tracking' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-order-tracking']}`) Track order
-        li.nav-item(data-nav-item)
-          a.nav-link.pe-0(class=activeNavItem === 'checkout' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-checkout']}`) Checkout
-        li.nav-item(data-nav-item data-more-item).dropdown
-          a.nav-link.dropdown-toggle.dropdown-caret-none.fw-bold.pe-0(href="javascript: void(0)" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-boundary="window" data-bs-reference="parent") 
-            | More
-            span.fas.fa-angle-down.ms-2
-          .dropdown-menu.dropdown-menu-end.category-list(aria-labelledby="navbarDropdown" data-category-list)
+          -
+            var productsHref = (typeof storeSlug !== 'undefined' && storeSlug)
+              ? `//${storeSlug}.localhost:3001/api/products`
+              : `${CWD}${paths['e-commerce-fe-product-filter']}`;
+          a.nav-link(class=activeNavItem === 'products' ? 'active' : '' href=productsHref) Products
 
 
 

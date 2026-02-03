@@ -2,6 +2,9 @@ include Search
 include NotificationDropdown
 include ToggleThemeBtn
 
+//- Nav role (admin vs customer) is set in layout (e.g. LayoutEcommerce sets navRole = 'customer').
+//- ProfileDropdown and nav sitemap (sitemapAdmin / sitemapCustomer in Variables.pug) branch on navRole.
+
 mixin LinkLooper(config)
   if config.title
     p.nav-link.mb-0.fw-bold=config.title
@@ -24,7 +27,7 @@ mixin LinkLooper(config)
 
 mixin NewTopNav(vars)
   ul.navbar-nav(data-top-nav-dropdowns)
-    each item,index in vars.combo? sitemap.slice(0,5) : sitemap
+    each item,index in vars.combo? navSitemap.slice(0,5) : navSitemap
       li.nav-item.dropdown
         if item.label
           a.nav-link.dropdown-toggle.lh-1(href='#' role='button' data-bs-toggle='dropdown' aria-haspopup='true' aria-expanded='false' id=`${item.label}s`)
@@ -351,57 +354,73 @@ mixin NavbarLogoSlim(toggleID)
       | phoenix 
       span.text-body-highlight.d-none.d-sm-inline slim
 
-mixin ProfileDropdown 
+mixin ProfileDropdown
   .dropdown-menu.dropdown-menu-end.navbar-dropdown-caret.py-0.dropdown-profile.shadow.border(aria-labelledby='navbarDropdownUser')&attributes(attributes)
     .card.position-relative.border-0
       .card-body.p-0
         .text-center.pt-4.pb-3
           +Avatar({img: 'team/72x72/57.webp', size: 'xl', status: '', round: 'circle'})
-          h6.mt-2.text-body-emphasis Jerry Seinfield
-        .mb-3.mx-3
-          input#statusUpdateInput.form-control.form-control-sm(type='text' placeholder='Update your status')
+          - var displayName = (typeof navUser !== 'undefined' && navUser && navUser.name) ? navUser.name : (navRole === 'customer' ? 'Guest' : 'Admin')
+          h6.mt-2.text-body-emphasis= displayName
+        //- Admin-only: status update field
+        if navRole === 'admin'
+          .mb-3.mx-3
+            input#statusUpdateInput.form-control.form-control-sm(type='text' placeholder='Update your status')
       .overflow-auto.scrollbar(style="height: 10rem;")
         ul.nav.d-flex.flex-column.mb-2.pb-1
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="user")
-              span Profile
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")
-              span.me-2.text-body.align-bottom(data-feather="pie-chart")
-              | Dashboard
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="lock")
-              | Posts &amp; Activity
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="settings")
-              | Settings &amp; Privacy 
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="help-circle")
-              | Help Center
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="globe")
-              | Language
+          //- Admin nav links
+          if navRole === 'admin'
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="user")
+                span Profile
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="pie-chart")
+                | Dashboard
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="lock")
+                | Activity
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="settings")
+                | Settings
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="help-circle")
+                | Help Center
+          //- Customer nav links
+          if navRole === 'customer'
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="user")
+                span Profile
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="lock")
+                | Orders & Activity
 
-      .card-footer.p-0.border-top.border-translucent    
+      .card-footer.p-0.border-top.border-translucent
         ul.nav.d-flex.flex-column.my-3
-          li.nav-item
-            a.nav-link.px-3.d-block(href="#!")  
-              span.me-2.text-body.align-bottom(data-feather="user-plus")
-              | Add another account
+          if typeof navUser !== 'undefined' && navUser
+            li.nav-item
+              a.nav-link.px-3.d-block(href="#!")
+                span.me-2.text-body.align-bottom(data-feather="user-plus")
+                | Add another account
 
         hr
-        .px-3 
-          //- a.btn.btn-link.text-body.order-1.order-lg-0.ps-4.me-lg-2(href=`/customers/sign-in`) Sign in
-          //- a.btn.btn-phoenix-primary.order-0(href=`/customers/sign-up`)
-          //-   span.fw-bold Sign up
-          a.btn.btn-phoenix-secondary.d-flex.flex-center.w-100#signOutBtn(href="#!") 
-            span.me-2(data-feather="log-out") 
-            | Sign out
+        .px-3
+          if typeof navUser !== 'undefined' && navUser
+            a.btn.btn-phoenix-secondary.d-flex.flex-center.w-100#signOutBtn(href="#!" data-nav-role=(typeof navRole !== 'undefined' ? navRole : 'admin'))
+              span.me-2(data-feather="log-out")
+              | Sign out
+          else
+            - var signInUrl = navRole === 'customer' ? '/customers/sign-in' : '/admin/auth/sign-in'
+            - var signUpUrl = navRole === 'customer' ? '/customers/sign-up' : '/admin/auth/sign-up'
+            .d-flex.gap-2.align-items-center.justify-content-between
+              a.btn.btn-link.text-body.px-0(href=signInUrl) Sign in
+              a.btn.btn-phoenix-primary.fw-bold(href=signUpUrl) Sign up
 
         .my-2.text-center.fw-bold.fs-10.text-body-quaternary
           a.text-body-quaternary.me-1(href="#!") Privacy policy
@@ -448,7 +467,7 @@ mixin NineDotsDropdown
 
 mixin navbarTopMenus(vars)
   ul.navbar-nav.navbar-nav-top(data-dropdown-on-hover)
-    each item,index in sitemap
+    each item,index in navSitemap
       li.nav-item.dropdown
         if item.label
           - var label = item.label 

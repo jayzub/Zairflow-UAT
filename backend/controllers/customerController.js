@@ -6,6 +6,16 @@ const { asyncHandler } = require('../middleware/asyncHandler');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const CUSTOMER_TOKEN_COOKIE_OPTIONS = { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax', path: '/' };
+
+function setCustomerTokenCookie(res, token) {
+    res.cookie('customerToken', token, CUSTOMER_TOKEN_COOKIE_OPTIONS);
+}
+
+function clearCustomerTokenCookie(res) {
+    res.clearCookie('customerToken', { path: '/', httpOnly: true, sameSite: 'lax' });
+}
+
 async function upsertMembership({ customerId, storeId }) {
     if (!customerId || !storeId) return null;
     return CustomerStoreMembership.findOneAndUpdate(
@@ -49,6 +59,7 @@ const registerCustomer = asyncHandler(async (req, res) => {
                 { expiresIn: '7d' }
             );
 
+            setCustomerTokenCookie(res, token);
             return res.status(200).json({
                 success: true,
                 data: {
@@ -102,6 +113,7 @@ const registerCustomer = asyncHandler(async (req, res) => {
         { expiresIn: '7d' }
     );
 
+    setCustomerTokenCookie(res, token);
     res.status(201).json({
         success: true,
         data: {
@@ -182,6 +194,7 @@ const loginCustomer = asyncHandler(async (req, res) => {
         { expiresIn: '7d' }
     );
 
+    setCustomerTokenCookie(res, token);
     res.json({
         success: true,
         data: {
@@ -197,6 +210,39 @@ const loginCustomer = asyncHandler(async (req, res) => {
         message: 'Login successful'
     });
 });
+
+/**
+ * Sync customer session cookie from Bearer token (e.g. from localStorage).
+ * Call this when the frontend has customerToken in localStorage so server-rendered pages get the cookie.
+ */
+const syncCustomerSession = asyncHandler(async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(204).end();
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.type !== 'customer' || !decoded.id) {
+            return res.status(204).end();
+        }
+        const customer = await Customer.findById(decoded.id);
+        if (!customer || !customer.isActive) {
+            return res.status(204).end();
+        }
+        setCustomerTokenCookie(res, token);
+        return res.status(204).end();
+    } catch {
+        return res.status(204).end();
+    }
+});
+
+/**
+ * Log out customer: clear the customerToken cookie so server-rendered pages no longer see a session.
+ */
+const logoutCustomer = (req, res) => {
+    clearCustomerTokenCookie(res);
+    res.status(204).end();
+};
 
 /**
  * Get customer profile
@@ -529,6 +575,8 @@ const updateCustomerMetrics = asyncHandler(async (req, res) => {
 module.exports = {
     registerCustomer,
     loginCustomer,
+    logoutCustomer,
+    syncCustomerSession,
     getCustomerProfile,
     updateCustomerProfile,
     addAddress,

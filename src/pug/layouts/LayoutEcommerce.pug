@@ -5,9 +5,20 @@ include ../mixins/e-commerce/Navbar
 include ../mixins/e-commerce/homepage/Footer
 
 append variables
+  - var navRole = 'customer';
   - var attrsBody = {  };
   - var breakPoint = 'lg';
   - var attrsFooter = { class: 'position-relative'}
+
+//- Sync customerToken from localStorage to cookie so next full page load shows customer name in navbar
+append layoutScripts
+  script.
+    (function() {
+      var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
+      if (token) {
+        fetch('/api/customers/session', { method: 'GET', headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' }).catch(function() {});
+      }
+    })();
 
 block mainContent
   +Section(null,'container-small').py-0

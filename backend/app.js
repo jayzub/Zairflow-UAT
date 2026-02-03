@@ -65,6 +65,20 @@ app.options('*', cors({
 app.use((req, res, next) => {
   res.locals.flatSitemap = flatSitemap;
   res.locals.API_URL = process.env.API_URL;
+  // Inject nav display name for navbar (admin = req.user, customer = req.customer)
+  const originalRender = res.render;
+  res.render = function (view, options, fn) {
+    const opts = typeof options === 'object' && options !== null ? { ...options } : {};
+    if (req.user) {
+      const name = req.user.name || [req.user.firstName, req.user.lastName].filter(Boolean).join(' ').trim() || req.user.email || '';
+      opts.navUser = { name: name || 'Admin' };
+    } else if (req.customer) {
+      opts.navUser = { name: req.customer.name || req.customer.email || 'Customer' };
+    } else {
+      opts.navUser = null;
+    }
+    return originalRender.call(this, view, opts, fn);
+  };
   next();
 });
 
@@ -76,6 +90,7 @@ const orderRoute = require('./routes/orders');
 const storeRoutes = require('./routes/stores');
 const platformRoutes = require('./routes/platform');
 const customerRoutes = require('./routes/customers');
+const marketplaceRoutes = require('./routes/marketplace');
 const customerAuthPagesRoutes = require('./routes/customerAuthPages');
 const customerPagesRoutes = require('./routes/customerPages');
 const adminRoutes = require('./routes/adminRoutes');
@@ -126,6 +141,7 @@ app.use('/', customerAuthPagesRoutes);
 
 // API Routes
 app.use(`${API_URL}/products`, productRoutes);
+app.use(`${API_URL}/marketplace`, marketplaceRoutes);
 app.use(`${API_URL}/categories`, categoriesRoute);
 // app.use(`${API_URL}/users`, userRoute);
 app.use(`${API_URL}/orders`, orderRoute);

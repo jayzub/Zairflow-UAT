@@ -72,8 +72,10 @@ append variables
       1100: '#15181b',
       'black': '#000'
     } 
+  //- Admin vs customer: set navRole in layout (LayoutEcommerce sets 'customer'). Menu mixins use navSitemap.
+  - var navRole = 'admin';
   -
-    var sitemap = [
+    var sitemapAdmin = [
       {
         label: 'dashboard',
         labelDisabled: true,
@@ -167,7 +169,7 @@ append variables
               //- },
               {
               name: 'products-marketplace',
-              path: `${apiUrl}/products/marketplace`,
+              path: `${apiUrl}/marketplace/products`,
               pathName: 'e-commerce-fe-product-marketplace',
               newtab: true,
               },
@@ -216,5 +218,8 @@ append variables
         ],
       },
     ];
-
+  -
+    var sitemapCustomer = []; // Customer nav is in e-commerce/Navbar.pug; extend here if a sitemap-driven customer nav is added.
+  - var navSitemap = (navRole === 'customer') ? sitemapCustomer : sitemapAdmin;
+  - var sitemap = sitemapAdmin; // Keep for paths and backward compatibility
   - var paths = flatSitemap(sitemap);

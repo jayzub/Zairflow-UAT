@@ -311,7 +311,7 @@ append scripts
 
 				// Build the card HTML to match the Product mixin (including stretched-link)
 				const imageSrc = product.image && product.image.startsWith('http') ? product.image : (product.image ? `/assets/img/products/${product.image}` : '/assets/img/products/1.png');
-				const productLink = product._id ? `/api/products/${product._id}` : '#';
+				const productLink = product._id ? `/api/marketplace/products/${product._id}` : '#';
 				const storeBadge = product.store ? `<div class="store-badge">${product.store.name}</div>` : '';
 				const cardHTML = `
 					<div class="position-relative text-decoration-none product-card h-100">
@@ -611,7 +611,7 @@ block ecomContent
 						each product in products
 							.col-12.col-sm-6.col-md-4.col-xxl-2
 								.product-card-container.h-100
-									+Product(product)
+									+Product(product, { useMarketplaceLink: true })
 					else
 						.col-12
 							.text-center.py-8

@@ -90,6 +90,23 @@ const requireCustomerAuth = async (req, res, next) => {
     }
 };
 
+// Optional customer auth: if a valid customer token is present, set req.customer (for navbar, etc.); otherwise continue without error
+const optionalCustomerAuth = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.customerToken || req.cookies?.token;
+        if (!token) return next();
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.type !== 'customer' || !decoded.id) return next();
+
+        const customer = await Customer.findById(decoded.id);
+        if (customer && customer.isActive) req.customer = customer;
+        next();
+    } catch {
+        next();
+    }
+};
+
 // Legacy middleware for backward compatibility
 function authJwt() {
     return (req, res, next) => {
@@ -120,5 +137,6 @@ module.exports = {
     authJwt,
     requireAuth,
     requireCustomerAuth,
+    optionalCustomerAuth,
     verifyToken
 };
