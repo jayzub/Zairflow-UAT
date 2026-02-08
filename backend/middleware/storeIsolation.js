@@ -19,6 +19,26 @@ function getHostWithoutPort(req) {
     return host.split(':')[0];
 }
 
+// Deployment/platform hostnames where the first segment is the app name, not a store slug.
+// On these hosts we must not treat the first segment as store slug (e.g. yourapp.onrender.com).
+const PLATFORM_DOMAINS = [
+    'onrender.com',
+    'herokuapp.com',
+    'vercel.app',
+    'netlify.app',
+    'railway.app',
+    'fly.dev',
+    'azurewebsites.net',
+    'cloud.run',
+    'run.app'
+];
+
+function isPlatformHost(hostNoPort) {
+    if (!hostNoPort) return false;
+    const lower = hostNoPort.toLowerCase();
+    return PLATFORM_DOMAINS.some((d) => lower === d || lower.endsWith('.' + d));
+}
+
 function getStoreSlugFromHost(req) {
     const hostNoPort = getHostWithoutPort(req);
     if (!hostNoPort) return null;
@@ -28,6 +48,11 @@ function getStoreSlugFromHost(req) {
     // For local dev: "<storeslug>.localhost"
     if (parts.length === 2 && parts[1].toLowerCase() === 'localhost') {
         return parts[0].toLowerCase();
+    }
+
+    // Deployment URLs (e.g. yourapp.onrender.com): first segment is app name, not store slug.
+    if (parts.length >= 3 && isPlatformHost(hostNoPort)) {
+        return null;
     }
 
     // For real domains: "<storeslug>.<domain>.<tld>" (or deeper)
