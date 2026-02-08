@@ -102,6 +102,7 @@ append scripts
 
 append variables
   - var pageTitle = 'Edit Vendor'
+  - var vendor = typeof vendor !== 'undefined' ? vendor : { _id: '', name: '', email: '', phone: '', address: '', description: '', isActive: true };
 
 block content
   form.mb-9#vendorForm(action=`/admin/vendors/${vendor._id}` method="POST" data-vendor-id=vendor._id)
