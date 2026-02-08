@@ -15,9 +15,9 @@ mixin CustomerRatingsTableRow(data,index)
       +DashboardDropdown
 
 
-mixin ProfileReviewTable
+mixin ProfileReviewTable(customerRatingsTableData)
   -
-    var customerRatingsTableData = [
+    var defaultRatingsData = [
       {
         product:'Fitbit Sense Advanced Smartwatch with Tools for Heart Health, Stress Management & Skin Temperature Trends, Carbon/Graphite, One Size (S & L Bands)',
         rating: 4,
@@ -96,6 +96,7 @@ mixin ProfileReviewTable
         time:'Nov 07, 9:00 PM'
       }
     ]
+    customerRatingsTableData = (typeof customerRatingsTableData !== 'undefined' && Array.isArray(customerRatingsTableData)) ? customerRatingsTableData : defaultRatingsData
   #profileRatingTable.border-y(data-list!={
     valueNames: ["product", "rating", "review", "status", "date"],
     page: 6,

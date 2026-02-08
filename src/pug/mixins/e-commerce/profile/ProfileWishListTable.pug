@@ -19,9 +19,9 @@ mixin ProfileWishlistTableRow(data,index)
 
 
 
-mixin ProfileWishListTable
+mixin ProfileWishListTable(profileWishlistTableData)
   -
-    var profileWishlistTableData = [
+    var defaultWishlistData = [
       {
         product:'Fitbit Sense Advanced Smartwatch with Tools for Heart Health, Stress Management & Skin Temperature Trends, Carbon/Graphite, One Size (S & L Bands)',
         productImage:'/products/1.png',
@@ -95,6 +95,7 @@ mixin ProfileWishListTable
         total: '$99'
       },
     ]
+    profileWishlistTableData = (typeof profileWishlistTableData !== 'undefined' && Array.isArray(profileWishlistTableData)) ? profileWishlistTableData : defaultWishlistData
 
   #productWishlistTable.border-y.border-translucent(data-list!={
     valueNames: ["products", "color", "size", "price", "quantity", "total"],

@@ -13,9 +13,9 @@ mixin ProfileStoresTableRow(data,index)
     td.total.align-middle.fw-bold.text-body-highlight.text-end
       +DashboardDropdown
 
-mixin ProfileStoresTable
+mixin ProfileStoresTable(profileStoresTableData)
   -
-    var profileWishlistTableData = [
+    var defaultStoresData = [
       {
         product:'Dell Technologies',
         productImage:'/brand2/dell.png',
@@ -72,6 +72,7 @@ mixin ProfileStoresTable
         total: '$65'
       },
     ]
+    profileStoresTableData = (typeof profileStoresTableData !== 'undefined' && Array.isArray(profileStoresTableData)) ? profileStoresTableData : defaultStoresData
 
   #profileStoreTable.border-y.border-translucent.mb-6(data-list!={
     valueNames: ["products", "color", "size", "price", "quantity", "total"],
@@ -90,7 +91,7 @@ mixin ProfileStoresTable
             th.sort.align-middle.text-end(scope='col' data-sort="price" style='width:15%; min-width:150px;') LAST ORDER
             th.sort.align-middle.text-end.pe-0(scope='col' style='width:30%; min-width:150px;') 
         tbody.list#profile-stores-table-body
-          each row,index in profileWishlistTableData
+          each row,index in profileStoresTableData
             +ProfileStoresTableRow(row,index)
     .row.align-items-center.justify-content-between.py-2.pe-0.fs-9
       .col-auto.d-flex
@@ -133,9 +134,9 @@ mixin StoreItem(item)
     .hover-actions.top-0.end-0.mt-2.me-3
       +HoverDropdown
 
-mixin FavouriteStores
-  - 
-    var storeItems = [
+mixin FavouriteStores(storeItems)
+  -
+    var defaultStoreItems = [
       {
         name: 'Dell Technologies',
         rating: 4,
@@ -209,6 +210,7 @@ mixin FavouriteStores
         image: 'brand2/xiaomi.png'
       }
     ]
+    storeItems = (typeof storeItems !== 'undefined' && Array.isArray(storeItems)) ? storeItems : defaultStoreItems
   .d-flex.flex-between-center.mb-5
     div
       h3.text-body-emphasis.mb-2 My Favourite Stores

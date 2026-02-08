@@ -31,6 +31,9 @@ router.delete('/wishlist/:productId/:storeId', requireCustomerAuth, customerCont
 
 router.get('/recently-viewed', requireCustomerAuth, customerController.getRecentlyViewed);
 
+router.get('/orders', requireCustomerAuth, customerController.getCustomerOrders);
+router.get('/reviews', requireCustomerAuth, customerController.getCustomerReviews);
+
 router.post('/metrics', requireCustomerAuth, customerController.updateCustomerMetrics);
 
 // Cart (store cart = one per store; marketplace cart = one per customer)

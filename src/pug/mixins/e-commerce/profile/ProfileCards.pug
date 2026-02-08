@@ -1,4 +1,10 @@
-mixin ProfileCard
+mixin ProfileCard(customerName, customerAvatar, joinedDate, totalSpent, lastOrderDate, totalOrders)
+  - customerName = customerName || 'Customer'
+  - customerAvatar = customerAvatar || `${CWD}assets/img/team/15.webp`
+  - joinedDate = joinedDate || '—'
+  - totalSpent = totalSpent != null ? '$' + Number(totalSpent).toFixed(0) : '$0'
+  - lastOrderDate = lastOrderDate || '—'
+  - totalOrders = totalOrders != null ? totalOrders : 0
   .card&attributes(attributes)
     .card-body
       .border-bottom.border-dashed.pb-4
@@ -6,10 +12,10 @@ mixin ProfileCard
           .col-12.col-sm-auto
             input#avatarFile.d-none(type="file")
             label.cursor-pointer.avatar.avatar-5xl(for="avatarFile")
-              img.rounded-circle(src=`${CWD}assets/img/team/15.webp`, alt="")
+              img.rounded-circle(src=customerAvatar, alt="")
           .col-12.col-sm-auto.flex-1
-            h3 Ansolo Lazinatov
-            p.text-body-secondary Joined 3 months ago
+            h3= customerName
+            p.text-body-secondary= 'Joined ' + joinedDate
             div
               a.me-2(href='#!')
                 span.fab.fa-linkedin-in.text-body-quaternary.text-opacity-75.text-primary-hover
@@ -22,15 +28,18 @@ mixin ProfileCard
       .d-flex.flex-between-center.pt-4
         div
           h6.mb-2.text-body-secondary Total Spent
-          h4.fs-7.text-body-highlight.mb-0 $894
+          h4.fs-7.text-body-highlight.mb-0= totalSpent
         .text-end
           h6.mb-2.text-body-secondary Last Order
-          h4.fs-7.text-body-highlight.mb-0 1 week ago
+          h4.fs-7.text-body-highlight.mb-0= lastOrderDate
         .text-end
           h6.mb-2.text-body-secondary Total Orders
-          h4.fs-7.text-body-highlight.mb-0 97 
+          h4.fs-7.text-body-highlight.mb-0= totalOrders 
 
-mixin AddressCard
+mixin AddressCard(addressLine, customerEmail, customerPhone)
+  - addressLine = addressLine || 'No address set'
+  - customerEmail = customerEmail || ''
+  - customerPhone = customerPhone || ''
   .card&attributes(attributes)
     .card-body
       .border-bottom.border-dashed
@@ -43,18 +52,22 @@ mixin AddressCard
           .col-auto
             h5.text-body-highlight Address
           .col-auto
-            p.text-body-secondary Vancouver, British Columbia
-              br
-              | Canada
+            p.text-body-secondary= addressLine
       //- .card-footer.border-0
       .border-top.border-dashed.pt-4
         .row.flex-between-center.mb-2
           .col-auto
             h5.text-body-highlight.mb-0 Email
           .col-auto
-            a.lh-1(href="mailto:shatinon@jeemail.com") shatinon@jeemail.com
+            if customerEmail
+              a.lh-1(href="mailto:" + customerEmail)= customerEmail
+            else
+              span.text-body-tertiary —
         .row.flex-between-center
           .col-auto
             h5.text-body-highlight.mb-0 Phone
           .col-auto
-            a(href="tel:+1234567890") +1234567890
+            if customerPhone
+              a(href="tel:" + customerPhone)= customerPhone
+            else
+              span.text-body-tertiary —

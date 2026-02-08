@@ -64,8 +64,8 @@ const requireAuth = async (req, res, next) => {
 // Middleware to require customer authentication
 const requireCustomerAuth = async (req, res, next) => {
     try {
-        // Check header first, then cookies
-        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.token;
+        // Check header first, then cookies (customerToken set on login; token for API)
+        const token = req.headers.authorization?.split(' ')[1] || req.cookies?.customerToken || req.cookies?.token;
         
         if (!token) {
             return handleAuthError(req, res, 'Access token required');

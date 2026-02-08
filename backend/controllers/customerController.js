@@ -1,5 +1,7 @@
 const Customer = require('../models/customer');
+const Order = require('../models/order');
 const Product = require('../models/products/baseProduct');
+const Review = require('../models/review');
 const Store = require('../models/store');
 const CustomerStoreMembership = require('../models/customerStoreMembership');
 const { asyncHandler } = require('../middleware/asyncHandler');
@@ -521,6 +523,58 @@ const getRecentlyViewed = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get customer orders (for profile page / API)
+ */
+const getCustomerOrders = asyncHandler(async (req, res) => {
+    const orders = await Order.find({ customer: req.customer._id })
+        .sort({ dateOrdered: -1 })
+        .limit(100)
+        .populate('store', 'name slug')
+        .lean();
+
+    const data = (orders || []).map((o) => ({
+        id: o._id,
+        orderNumber: o.orderNumber,
+        store: o.store,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        paymentMethod: o.paymentMethod,
+        totalPrice: o.totalPrice,
+        dateOrdered: o.dateOrdered,
+    }));
+
+    res.json({
+        success: true,
+        data,
+    });
+});
+
+/**
+ * Get customer reviews (for profile page / API)
+ */
+const getCustomerReviews = asyncHandler(async (req, res) => {
+    const reviews = await Review.find({ customer: req.customer._id })
+        .sort({ dateCreated: -1 })
+        .limit(100)
+        .populate('product', 'name slug')
+        .lean();
+
+    const data = (reviews || []).map((r) => ({
+        id: r._id,
+        product: r.product,
+        rating: r.rating,
+        title: r.title,
+        comment: r.comment,
+        dateCreated: r.dateCreated,
+    }));
+
+    res.json({
+        success: true,
+        data,
+    });
+});
+
+/**
  * Update customer metrics after order
  */
 const updateCustomerMetrics = asyncHandler(async (req, res) => {
@@ -586,5 +640,7 @@ module.exports = {
     removeFromWishlist,
     getWishlist,
     getRecentlyViewed,
+    getCustomerOrders,
+    getCustomerReviews,
     updateCustomerMetrics
 }; 

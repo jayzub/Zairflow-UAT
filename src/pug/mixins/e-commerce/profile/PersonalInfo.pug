@@ -1,18 +1,19 @@
-mixin PersonalInfo
+mixin PersonalInfo(customer)
+  - customer = customer || {}
   .row.gx-3.gy-4.mb-5
     .col-12.col-lg-6
       label.form-label.text-body-highlight.fs-8.ps-0.text-capitalize.lh-sm(for="fullName" ) Full name
-      input#fullName.form-control(type='text' placeholder="Full name")
+      input#fullName.form-control(type='text' placeholder="Full name" value=customer.name || '')
     .col-12.col-lg-6
       label.form-label.text-body-highlight.fs-8.ps-0.text-capitalize.lh-sm(for="gender") Gender
       select#gender.form-select
-        option(value='male') Male
-        option(value='female') Female
-        option(value='non-binary') Non-binary
-        option(value='not-to-say') Prefer not to say
+        option(value='male' selected=customer.gender === 'male') Male
+        option(value='female' selected=customer.gender === 'female') Female
+        option(value='non-binary' selected=customer.gender === 'non-binary') Non-binary
+        option(value='not-to-say' selected=!customer.gender || customer.gender === 'prefer_not_to_say') Prefer not to say
     .col-12.col-lg-6
       label.form-label.text-body-highlight.fs-8.ps-0.text-capitalize.lh-sm(for="email") Email
-      input#email.form-control(type='text' placeholder="Email")
+      input#email.form-control(type='text' placeholder="Email" value=customer.email || '')
     .col-12.col-lg-6
       .row.g-2.gy-lg-0
         label.form-label.text-body-highlight.fs-8.ps-1.text-capitalize.lh-sm.mb-1 Date of birth
@@ -32,7 +33,7 @@ mixin PersonalInfo
               option(value=n)=n++
     .col-12.col-lg-6
       label.form-label.text-body-highlight.fw-bold.fs-8.ps-0.text-capitalize.lh-sm(for="phone") Phone
-      input#phone.form-control(type='text' placeholder="+1234567890")
+      input#phone.form-control(type='text' placeholder="+1234567890" value=customer.phone || '')
     .col-12.col-lg-6
       label.form-label.text-body-highlight.fw-bold.fs-8.ps-0.text-capitalize.lh-sm(for="alternative_phone") Alternative phone
       input#alternative_phone.form-control(type='text' placeholder="+1234567890")

@@ -1,7 +1,7 @@
 const express = require('express');
 const customerPagesController = require('../controllers/customerPagesController');
 const { extractStore, extractStoreOptional } = require('../middleware/storeIsolation');
-const { optionalCustomerAuth } = require('../middleware/jwt');
+const { optionalCustomerAuth, requireCustomerAuth } = require('../middleware/jwt');
 
 const router = express.Router();
 
@@ -10,6 +10,9 @@ router.use(optionalCustomerAuth);
 
 // Customer-facing homepage (server-rendered Pug)
 router.get('/home', extractStore, customerPagesController.renderCustomerHomepage);
+
+// Customer profile page (requires login; store optional for breadcrumb/context)
+router.get('/profile', requireCustomerAuth, extractStoreOptional, customerPagesController.renderCustomerProfile);
 
 // Cart page (scope from query: scopeType, storeId when scopeType=store; works with or without store)
 router.get('/cart', extractStoreOptional, (req, res) => {

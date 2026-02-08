@@ -10,14 +10,14 @@ mixin OrderTableRow(data,index)
       //-   img.ms-1(src=`${CWD}assets/img/icons/${data.payment_status.icon}.svg`, alt="")
     td.delivery.align-middle.white-space-nowrap.text-body.py-2=data.delivery_type
     td.total.align-middle.text-body-tertiary.text-end.py-2=data.date
-    td.date.align-middle.fw-semibold.text-end.py-2(class=(data.active ? 'text-body-highlight' : 'text-body-tertiary text-opacity-85'))=`$${data.total}`
+    td.date.align-middle.fw-semibold.text-end.py-2(class=(data.active ? 'text-body-highlight' : 'text-body-tertiary text-opacity-85'))= (typeof data.total === 'number' ? '$' + data.total : data.total)
     td.align-middle.text-end.white-space-nowrap.pe-0.action.py-2
       +DashboardDropdown
 
 
-mixin ProfileOrderTable
+mixin ProfileOrderTable(orderTableData)
   -
-    var orderTableData = [
+    var defaultOrderTableData = [
       {
         order: 2453,
         active:true,
@@ -127,6 +127,7 @@ mixin ProfileOrderTable
         date: 'Oct 19, 1:20 PM',
       },
     ]
+    orderTableData = (typeof orderTableData !== 'undefined' && Array.isArray(orderTableData)) ? orderTableData : defaultOrderTableData
   #profileOrdersTable.border-top.border-bottom.border-translucent(data-list!={
     valueNames: ["order", "status", "delivery", "date", "total"],
     page: 6,
