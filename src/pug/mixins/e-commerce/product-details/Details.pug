@@ -45,7 +45,12 @@ mixin Details
         button.btn.btn-lg.btn-outline-warning.rounded-pill.w-100.me-3.px-2.px-sm-4.fs-9.fs-sm-8
           span.me-2.far.fa-heart
           | Add to wishlist
-        button.btn.btn-lg.btn-warning.rounded-pill.w-100.fs-9.fs-sm-8
+        button.btn.btn-lg.btn-warning.rounded-pill.w-100.fs-9.fs-sm-8#addToCartBtn(
+          type='button'
+          data-product-id=(product && product._id ? product._id : '')
+          data-store-id=(typeof cartStoreId !== 'undefined' && cartStoreId ? cartStoreId : '')
+          data-scope-type=(typeof cartScopeType !== 'undefined' && cartScopeType ? cartScopeType : 'marketplace')
+        )
           span.fas.fa-shopping-cart.me-2
           | Add to cart
     .col-12.col-lg-6
@@ -488,6 +493,52 @@ append scripts
           
           // Update price with current selections
           updatePrice(currentColor, currentSize);
+        });
+      }
+
+      // Add to cart
+      const addToCartBtn = document.getElementById('addToCartBtn');
+      if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', function() {
+          var productId = this.getAttribute('data-product-id');
+          var storeId = this.getAttribute('data-store-id') || null;
+          var scopeType = this.getAttribute('data-scope-type') || 'marketplace';
+          if (!productId) return;
+          var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
+          if (!token) {
+            window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+          }
+          var qtyEl = document.querySelector('[data-product-details] [data-quantity] input');
+          var quantity = qtyEl ? Math.max(1, parseInt(qtyEl.value, 10) || 1) : 1;
+          var colorEl = document.querySelector('[data-product-color-variants] [data-variant].active');
+          var sizeEl = document.querySelector('[data-product-size-select]');
+          var options = {};
+          if (colorEl) options.color = colorEl.getAttribute('data-variant') || '';
+          if (sizeEl && sizeEl.value) options.size = sizeEl.value;
+          var body = { scopeType: scopeType, productId: productId, quantity: quantity };
+          if (scopeType === 'store' && storeId) body.storeId = storeId;
+          if (options.color || options.size) body.options = options;
+          addToCartBtn.disabled = true;
+          addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '0.5');
+          fetch('/api/customers/cart/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+          }).then(function(r) {
+            if (r.ok) return r.json();
+            return r.json().then(function(err) { throw new Error(err.error || err.message || 'Failed to add to cart'); });
+          }).then(function() {
+            addToCartBtn.disabled = false;
+            addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '');
+            if (typeof window.toast !== 'undefined') window.toast('Added to cart');
+            else alert('Added to cart');
+          }).catch(function(e) {
+            addToCartBtn.disabled = false;
+            addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '');
+            alert(e.message || 'Could not add to cart');
+          });
         });
       }
     });

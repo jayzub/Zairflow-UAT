@@ -442,6 +442,122 @@ const customerPaths = {
       },
     },
   },
+
+  // ----- Cart (store cart per store; marketplace cart separate) -----
+  '/api/customers/cart': {
+    get: {
+      tags: ['Customers - Cart'],
+      summary: 'Get cart (store or marketplace)',
+      description: 'Get cart by scope. Use scopeType=store&storeId=... for a store cart, scopeType=marketplace for marketplace cart. Creates empty cart if none exists.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'query', name: 'scopeType', required: true, schema: { type: 'string', enum: ['store', 'marketplace'] }, description: 'store = single-store cart; marketplace = cross-store cart' },
+        { in: 'query', name: 'storeId', required: false, schema: { type: 'string' }, description: 'Required when scopeType=store' },
+      ],
+      responses: {
+        200: { description: 'Cart with populated items', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object', description: 'Cart with items[]' } } } } } },
+        400: { description: 'Missing scopeType or storeId', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+    delete: {
+      tags: ['Customers - Cart'],
+      summary: 'Clear cart',
+      description: 'Remove all items from the cart. Same query params as GET cart.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { in: 'query', name: 'scopeType', required: true, schema: { type: 'string', enum: ['store', 'marketplace'] } },
+        { in: 'query', name: 'storeId', required: false, schema: { type: 'string' }, description: 'Required when scopeType=store' },
+      ],
+      responses: {
+        200: { description: 'Cart cleared', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' }, message: { type: 'string' } } } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+  },
+
+  '/api/customers/carts': {
+    get: {
+      tags: ['Customers - Cart'],
+      summary: 'List all carts',
+      description: 'Returns a summary of all carts (store carts + marketplace cart) for nav badge / dropdown.',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: { description: 'Array of cart summaries (scopeType, store, itemCount)', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'array', items: { type: 'object' } } } } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+  },
+
+  '/api/customers/cart/items': {
+    post: {
+      tags: ['Customers - Cart'],
+      summary: 'Add item to cart',
+      description: 'Add product to store cart or marketplace cart. For store cart, product must belong to that store.',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['scopeType', 'productId'],
+              properties: {
+                scopeType: { type: 'string', enum: ['store', 'marketplace'], description: 'Which cart to add to' },
+                storeId: { type: 'string', description: 'Required when scopeType=store' },
+                productId: { type: 'string', example: '507f1f77bcf86cd799439011' },
+                quantity: { type: 'integer', minimum: 1, default: 1 },
+                options: { type: 'object', properties: { color: { type: 'string' }, size: { type: 'string' } } },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        201: { description: 'Item added to cart', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' }, message: { type: 'string' } } } } } },
+        400: { description: 'Invalid body or product not in store', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        404: { description: 'Product not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+  },
+
+  '/api/customers/cart/items/{itemId}': {
+    patch: {
+      tags: ['Customers - Cart'],
+      summary: 'Update cart item quantity',
+      security: [{ bearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'itemId', required: true, schema: { type: 'string' }, description: 'Cart item _id from GET cart' }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['quantity'],
+              properties: { quantity: { type: 'integer', minimum: 1 } },
+            },
+          },
+        },
+      },
+      responses: {
+        200: { description: 'Cart item updated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        404: { description: 'Cart or item not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+    delete: {
+      tags: ['Customers - Cart'],
+      summary: 'Remove item from cart',
+      security: [{ bearerAuth: [] }],
+      parameters: [{ in: 'path', name: 'itemId', required: true, schema: { type: 'string' }, description: 'Cart item _id from GET cart' }],
+      responses: {
+        200: { description: 'Item removed from cart', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' }, data: { type: 'object' } } } } } },
+        401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        404: { description: 'Cart or item not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+      },
+    },
+  },
 };
 
 module.exports = customerPaths;

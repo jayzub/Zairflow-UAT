@@ -380,6 +380,8 @@ exports.getProductById = asyncHandler(async (req, res) => {
     const data = {
         pageTitle: productObj.name,
         breadcrumbs,
+        cartScopeType: req.store ? 'store' : 'marketplace',
+        cartStoreId: productObj.store ? String(productObj.store) : null,
         product: {
             ...productObj,
             formattedPrice,

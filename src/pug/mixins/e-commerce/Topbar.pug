@@ -1,3 +1,5 @@
+include cart/CartDropdown
+
 mixin Topbar
   .ecommerce-topbar
     nav.navbar.navbar-expand-lg.navbar-light.px-0
@@ -13,10 +15,11 @@ mixin Topbar
           ul.navbar-nav.navbar-nav-icons.flex-row.me-n2
             li.nav-item.d-flex.align-items-center
               +ToggleThemeBtn.px-2
-            li.nav-item
-              a.nav-link.px-2.icon-indicator.icon-indicator-primary(href=`${CWD}${paths['e-commerce-fe-cart']}` role='button')
+            li.nav-item.dropdown
+              a#navbarTopDropdownCart.nav-link.px-2.icon-indicator.icon-indicator-primary(href='#' role='button' data-bs-toggle='dropdown' data-bs-auto-close='outside' aria-haspopup='true' aria-expanded='false')
                 span.text-body-tertiary(data-feather='shopping-cart' style="height:20px;width:20px;")
-                span.icon-indicator-number 3
+                span.icon-indicator-number#cartBadgeCount 0
+              +CartDropdown.mt-2
             li.nav-item.dropdown
               a#navbarTopDropdownNotification.nav-link.px-2.icon-indicator.icon-indicator-sm.icon-indicator-danger(href='#' role='button' data-bs-toggle='dropdown' data-bs-auto-close="outside" aria-haspopup='true' aria-expanded='false')
                 span.text-body-tertiary(data-feather='bell' style="height:20px;width:20px;")

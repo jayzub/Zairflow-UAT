@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
+const cartController = require('../controllers/cartController');
 const { requireCustomerAuth } = require('../middleware/jwt');
 const { extractStoreOptional } = require('../middleware/storeIsolation');
 
@@ -31,5 +32,14 @@ router.delete('/wishlist/:productId/:storeId', requireCustomerAuth, customerCont
 router.get('/recently-viewed', requireCustomerAuth, customerController.getRecentlyViewed);
 
 router.post('/metrics', requireCustomerAuth, customerController.updateCustomerMetrics);
+
+// Cart (store cart = one per store; marketplace cart = one per customer)
+router.get('/cart', requireCustomerAuth, cartController.getCart);
+router.get('/cart/items', requireCustomerAuth, cartController.getCartItems);
+router.get('/carts', requireCustomerAuth, cartController.listCarts);
+router.post('/cart/items', requireCustomerAuth, cartController.addCartItem);
+router.patch('/cart/items/:itemId', requireCustomerAuth, cartController.updateCartItem);
+router.delete('/cart/items/:itemId', requireCustomerAuth, cartController.removeCartItem);
+router.delete('/cart', requireCustomerAuth, cartController.clearCart);
 
 module.exports = router;

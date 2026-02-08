@@ -1,6 +1,6 @@
 const express = require('express');
 const customerPagesController = require('../controllers/customerPagesController');
-const { extractStore } = require('../middleware/storeIsolation');
+const { extractStore, extractStoreOptional } = require('../middleware/storeIsolation');
 const { optionalCustomerAuth } = require('../middleware/jwt');
 
 const router = express.Router();
@@ -10,6 +10,18 @@ router.use(optionalCustomerAuth);
 
 // Customer-facing homepage (server-rendered Pug)
 router.get('/home', extractStore, customerPagesController.renderCustomerHomepage);
+
+// Cart page (scope from query: scopeType, storeId when scopeType=store; works with or without store)
+router.get('/cart', extractStoreOptional, (req, res) => {
+  const scopeType = req.query.scopeType || (req.store ? 'store' : 'marketplace');
+  const storeId = req.query.storeId || (req.store && req.store._id ? String(req.store._id) : '');
+  res.render('landing/cart', {
+    cartScopeType: scopeType,
+    cartStoreId: storeId,
+    store: req.store || null,
+    isCustomerStorefront: true,
+  });
+});
 
 // Backwards-compat redirects
 router.get('/customers', extractStore, (req, res) => res.redirect(302, '/home'));

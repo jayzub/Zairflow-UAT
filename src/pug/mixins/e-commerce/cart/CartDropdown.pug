@@ -1,0 +1,19 @@
+mixin CartDropdown
+  .dropdown-menu.dropdown-menu-end#navbarCartDropdown.cart-dropdown-menu.py-0.shadow.border.navbar-dropdown-caret(aria-labelledby='navbarTopDropdownCart' style='min-width: 20rem;')&attributes(attributes)
+    .card.position-relative.border-0
+      .card-header.p-2.border-bottom.border-translucent
+        h5.text-body-emphasis.mb-0 Cart
+      .card-body.p-0
+        #cartDropdownItems.scrollbar-overlay(style='max-height: 20rem;')
+          .text-center.text-body-tertiary.py-5.px-3
+            span.cart-dropdown-loading Loading…
+        #cartDropdownEmpty.text-center.text-body-tertiary.py-5.px-3(style='display: none;')
+          | Your cart is empty
+        #cartDropdownSignIn.text-center.text-body-tertiary.py-5.px-3(style='display: none;')
+          | Please
+          a.ms-1(href='/customers/sign-in?redirect=' + encodeURIComponent('/cart')) sign in
+          |  to view your cart
+      .card-footer.p-2.border-top.border-translucent.bg-body
+        a#cartDropdownGoToCart.btn.btn-primary.w-100(href='/cart')
+          | Go to cart
+          span.fas.fa-chevron-right.ms-1.fs-10

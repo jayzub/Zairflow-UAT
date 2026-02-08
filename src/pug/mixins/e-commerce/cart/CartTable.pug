@@ -19,9 +19,9 @@ mixin CartTableRow(data,index)
         span.fas.fa-trash
 
 
-mixin CartTable
+mixin CartTable(cartTableData)
   -
-    var cartTableData = [
+    var rows = cartTableData || [
       {
         product:'Fitbit Sense Advanced Smartwatch with Tools for Heart Health, Stress Management & Skin Temperature Trends, Carbon/Graphite, One Size (S & L Bands)',
         productImage:'/products/1.png',
@@ -49,7 +49,7 @@ mixin CartTable
         quantity: 2,
         total: '$130'
       }
-    ]
+    ];
 
   #cartTable(data-list!={
     valueNames: ["products", "color", "size", "price", "quantity", "total"],
@@ -68,9 +68,9 @@ mixin CartTable
             th.sort.align-middle.text-end(scope='col' style='width:250px;') TOTAL
             th.sort.text-end.align-middle.pe-0(scope='col')
         tbody.list#cart-table-body
-          each row,index in cartTableData
+          each row,index in rows
             +CartTableRow(row,index)
-          tr.cart-table-row.btn-reveal-trigger
+          tr.cart-table-row.btn-reveal-trigger#cart-items-subtotal-row(style=(rows.length === 0 ? 'display: none;' : ''))
             td.text-body-emphasis.fw-semibold.ps-0.fs-8(colspan=6) Items subtotal :
-            td.text-body-emphasis.fw-bold.text-end.fs-8 $691
+            td.text-body-emphasis.fw-bold.text-end.fs-8#cart-items-subtotal $0
             td
