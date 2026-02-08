@@ -41,7 +41,11 @@ function flatSitemap(siteMap) {
   ).filter(item => item.name !== '#!');
 
   [...siteMapWithOutPages, ...flatSiteMap].forEach(item => {
-    paths[item.pathName] = `${item.path}.html`;
+    // Don't append .html to full URLs (http/https) or paths with query strings (e.g. store homepage)
+    const pathStr = String(item.path);
+    const isFullUrl = pathStr.startsWith('http://') || pathStr.startsWith('https://');
+    const hasQuery = pathStr.includes('?');
+    paths[item.pathName] = isFullUrl || hasQuery ? pathStr : `${item.path}.html`;
   });
 
   return paths;

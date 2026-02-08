@@ -41,7 +41,7 @@ function isPlatformHost(hostNoPort) {
 
 /**
  * Build store-scoped URLs for views (home, products).
- * On platform domains (Render, Heroku, etc.) use same-origin + query; on subdomain hosts use full subdomain URL.
+ * Uses full subdomain URL everywhere: perfume-store.localhost:3001/home, perfume-store.griffin-platform.onrender.com/home, etc.
  */
 function buildStoreUrls(req, store) {
     if (!store || !store.slug) return {};
@@ -49,10 +49,27 @@ function buildStoreUrls(req, store) {
     const hostNoPort = host.split(':')[0];
     const protocol = req.protocol || 'https';
 
-    if (isPlatformHost(hostNoPort)) {
+    // Always use subdomain URL for localhost (e.g. perfume-store.localhost:3001/home)
+    const isLocalhost = hostNoPort.toLowerCase().includes('localhost');
+    if (isLocalhost) {
+        const parts = hostNoPort.split('.').filter(Boolean);
+        const port = host.includes(':') ? host.split(':')[1] : '';
+        const parentHost = parts.length >= 2
+            ? parts.slice(1).join('.') + (port ? ':' + port : '')
+            : host;
+        const base = `${protocol}://${store.slug}.${parentHost}`;
         return {
-            storeHomepageUrl: `/home?storeSlug=${store.slug}`,
-            storeProductsUrl: `/api/products?storeSlug=${store.slug}`
+            storeHomepageUrl: `${base}/home`,
+            storeProductsUrl: `${base}/api/products`
+        };
+    }
+
+    // Platform domains (Render, Heroku, etc.): use subdomain URL (e.g. perfume-store.griffin-platform.onrender.com/home)
+    if (isPlatformHost(hostNoPort)) {
+        const base = `${protocol}://${store.slug}.${host}`;
+        return {
+            storeHomepageUrl: `${base}/home`,
+            storeProductsUrl: `${base}/api/products`
         };
     }
 
