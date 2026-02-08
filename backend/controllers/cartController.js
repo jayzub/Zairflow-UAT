@@ -208,16 +208,22 @@ const addCartItem = asyncHandler(async (req, res) => {
     const unitPrice = resolveUnitPrice(product, options || {});
     const unitOriginalPrice = resolveUnitOriginalPrice(product, options || {});
 
+    function optionsMatch(a, b) {
+        const colorA = (a && a.color != null && a.color !== '') ? String(a.color).trim() : '';
+        const colorB = (b && b.color != null && b.color !== '') ? String(b.color).trim() : '';
+        const sizeA = (a && a.size != null && a.size !== '') ? String(a.size).trim() : '';
+        const sizeB = (b && b.size != null && b.size !== '') ? String(b.size).trim() : '';
+        return colorA === colorB && sizeA === sizeB;
+    }
+
     const existingIndex = cart.items.findIndex(
         (item) =>
             item.product.toString() === productId &&
-            item.store.toString() === productStoreId
+            item.store.toString() === productStoreId &&
+            optionsMatch(item.options, options || {})
     );
     if (existingIndex >= 0) {
         cart.items[existingIndex].quantity += qty;
-        if (options && (options.color || options.size)) {
-            cart.items[existingIndex].options = { ...cart.items[existingIndex].options, ...options };
-        }
         cart.items[existingIndex].unitPrice = unitPrice != null ? unitPrice : cart.items[existingIndex].unitPrice;
         cart.items[existingIndex].unitOriginalPrice = unitOriginalPrice != null ? unitOriginalPrice : cart.items[existingIndex].unitOriginalPrice;
     } else {

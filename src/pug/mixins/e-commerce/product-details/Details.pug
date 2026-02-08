@@ -532,6 +532,7 @@ append scripts
           }).then(function() {
             addToCartBtn.disabled = false;
             addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '');
+            if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
             if (typeof window.toast !== 'undefined') window.toast('Added to cart');
             else alert('Added to cart');
           }).catch(function(e) {
