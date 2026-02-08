@@ -129,8 +129,8 @@ mixin Navbar
             a.nav-link(class=activeNavItem === 'store' ? 'active' : '' href=`${CWD}${paths['e-commerce-fe-favourite-stores']}`) My Favourite Stores
         li.nav-item(data-nav-item)
           -
-            var productsHref = (typeof storeSlug !== 'undefined' && storeSlug)
-              ? `//${storeSlug}.localhost:3001/api/products`
+            var productsHref = (typeof storeProductsUrlFromServer !== 'undefined' && storeProductsUrlFromServer)
+              ? storeProductsUrlFromServer
               : `${CWD}${paths['e-commerce-fe-product-filter']}`;
           a.nav-link(class=activeNavItem === 'products' ? 'active' : '' href=productsHref) Products
 

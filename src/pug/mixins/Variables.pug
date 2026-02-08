@@ -1,7 +1,7 @@
 append variables
   - const apiUrl = 'api';
   - const adminUrl = 'admin';
-  - const storeHomepageUrl = (typeof storeSlug !== 'undefined' && storeSlug) ? `//${storeSlug}.localhost:3001/home` : '/home';
+  - const storeHomepageUrl = (typeof storeHomepageUrlFromServer !== 'undefined' && storeHomepageUrlFromServer) ? storeHomepageUrlFromServer : '/home';
   - var title = 'Griffin';
   - var theme = `${name}-${version}`;
   - var bootstrapVersion = '5.3';

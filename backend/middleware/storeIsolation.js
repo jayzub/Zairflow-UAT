@@ -39,6 +39,35 @@ function isPlatformHost(hostNoPort) {
     return PLATFORM_DOMAINS.some((d) => lower === d || lower.endsWith('.' + d));
 }
 
+/**
+ * Build store-scoped URLs for views (home, products).
+ * On platform domains (Render, Heroku, etc.) use same-origin + query; on subdomain hosts use full subdomain URL.
+ */
+function buildStoreUrls(req, store) {
+    if (!store || !store.slug) return {};
+    const host = (req.get('host') || '').trim();
+    const hostNoPort = host.split(':')[0];
+    const protocol = req.protocol || 'https';
+
+    if (isPlatformHost(hostNoPort)) {
+        return {
+            storeHomepageUrl: `/home?storeSlug=${store.slug}`,
+            storeProductsUrl: `/api/products?storeSlug=${store.slug}`
+        };
+    }
+
+    const parts = hostNoPort.split('.').filter(Boolean);
+    const port = host.includes(':') ? host.split(':')[1] : '';
+    const parentHost = parts.length >= 2
+        ? parts.slice(1).join('.') + (port ? ':' + port : '')
+        : host;
+    const base = `${protocol}://${store.slug}.${parentHost}`;
+    return {
+        storeHomepageUrl: `${base}/home`,
+        storeProductsUrl: `${base}/api/products`
+    };
+}
+
 function getStoreSlugFromHost(req) {
     const hostNoPort = getHostWithoutPort(req);
     if (!hostNoPort) return null;
@@ -164,6 +193,9 @@ const extractStore = async (req, res, next) => {
         // Make store available to server-rendered views
         res.locals.store = store;
         res.locals.storeSlug = store?.slug;
+        const urls = buildStoreUrls(req, store);
+        if (urls.storeHomepageUrl) res.locals.storeHomepageUrlFromServer = urls.storeHomepageUrl;
+        if (urls.storeProductsUrl) res.locals.storeProductsUrlFromServer = urls.storeProductsUrl;
         next();
     } catch (error) {
         console.error('Store extraction error:', error);
