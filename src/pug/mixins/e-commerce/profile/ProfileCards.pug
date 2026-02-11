@@ -36,16 +36,24 @@ mixin ProfileCard(customerName, customerAvatar, joinedDate, totalSpent, lastOrde
           h6.mb-2.text-body-secondary Total Orders
           h4.fs-7.text-body-highlight.mb-0= totalOrders 
 
-mixin AddressCard(addressLine, customerEmail, customerPhone)
+mixin AddressCard(addressLine, customerEmail, customerPhone, defaultAddress)
   - addressLine = addressLine || 'No address set'
   - customerEmail = customerEmail || ''
   - customerPhone = customerPhone || ''
-  .card&attributes(attributes)
+  - defaultAddress = defaultAddress || null
+  - var defaultAddressJson = defaultAddress ? JSON.stringify(defaultAddress) : 'null'
+  .card(data-address-card data-default-address=defaultAddressJson)&attributes(attributes)
     .card-body
       .border-bottom.border-dashed
-        h4.mb-3 Default Address
-          button.btn.btn-link.p-0(type='button') 
-            span.fas.fa-edit.fs-9.ms-3.text-body-quaternary
+        .d-flex.align-items-center.justify-content-between.flex-wrap.gap-2
+          h4.mb-3.mb-0 Default Address
+          .d-flex.gap-2
+            if defaultAddress && defaultAddress._id
+              button.btn.btn-link.p-0(type='button' data-action='edit-address' aria-label='Edit address')
+                span.fas.fa-edit.fs-9.text-body-quaternary
+            button.btn.btn-link.p-0(type='button' data-action='add-address' aria-label='Add address')
+              span.fas.fa-plus.fs-9.text-body-quaternary.me-1
+              span.d-none.d-sm-inline Add address
 
       .pt-4.mb-7.mb-lg-4.mb-xl-7
         .row.justify-content-between
@@ -71,3 +79,48 @@ mixin AddressCard(addressLine, customerEmail, customerPhone)
               a(href="tel:" + customerPhone)= customerPhone
             else
               span.text-body-tertiary —
+
+    //- Address form modal (edit or add)
+    #addressFormModal.modal.fade(tabindex='-1' aria-labelledby='addressFormModalLabel' aria-hidden='true' data-address-form-modal)
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          .modal-header
+            h5#addressFormModalLabel.modal-title Edit address
+            button.btn.btn-close.p-1(type='button' data-bs-dismiss='modal' aria-label='Close')
+          .modal-body
+            form#addressForm(data-address-form)
+              input#addressFormId(type='hidden' name='addressId' value='')
+              .mb-3
+                label.form-label(for='addressFormStreet') Street
+                input#addressFormStreet.form-control(type='text' name='street' required placeholder='Street address')
+              .mb-3
+                label.form-label(for='addressFormApartment') Apartment / Suite
+                input#addressFormApartment.form-control(type='text' name='apartment' placeholder='Apt, suite, etc.')
+              .row.g-3.mb-3
+                .col-6
+                  label.form-label(for='addressFormCity') City
+                  input#addressFormCity.form-control(type='text' name='city' required placeholder='City')
+                .col-3
+                  label.form-label(for='addressFormState') State
+                  input#addressFormState.form-control(type='text' name='state' required placeholder='State')
+                .col-3
+                  label.form-label(for='addressFormZip') Zip
+                  input#addressFormZip.form-control(type='text' name='zipCode' required placeholder='Zip')
+              .mb-3
+                label.form-label(for='addressFormCountry') Country
+                input#addressFormCountry.form-control(type='text' name='country' required placeholder='Country' value='US')
+              .mb-3
+                label.form-label(for='addressFormPhone') Phone
+                input#addressFormPhone.form-control(type='tel' name='phone' placeholder='Phone')
+              .mb-3
+                label.form-label(for='addressFormType') Address type
+                select#addressFormType.form-select(name='type')
+                  option(value='both') Shipping &amp; Billing
+                  option(value='shipping') Shipping only
+                  option(value='billing') Billing only
+              .form-check.mb-3
+                input#addressFormIsDefault.form-check-input(type='checkbox' name='isDefault' value='1')
+                label.form-check-label(for='addressFormIsDefault') Set as default address
+          .modal-footer
+            button.btn.btn-phoenix-secondary(type='button' data-bs-dismiss='modal') Cancel
+            button.btn.btn-phoenix-primary(type='submit' form='addressForm') Save address

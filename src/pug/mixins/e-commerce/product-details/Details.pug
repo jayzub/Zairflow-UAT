@@ -50,9 +50,22 @@ mixin Details
           data-product-id=(product && product._id ? product._id : '')
           data-store-id=(typeof cartStoreId !== 'undefined' && cartStoreId ? cartStoreId : '')
           data-scope-type=(typeof cartScopeType !== 'undefined' && cartScopeType ? cartScopeType : 'marketplace')
+          disabled=(product && (product.countInStock || 0) === 0 && (!product.variants || product.variants.length === 0))
         )
           span.fas.fa-shopping-cart.me-2
           | Add to cart
+        .modal.fade#addToCartModal(tabindex='-1' aria-labelledby='addToCartModalLabel' aria-hidden='true')
+          .modal-dialog.modal-dialog-centered
+            .modal-content
+              .modal-header.border-0.pb-0
+                h5.modal-title#addToCartModalLabel Added to cart
+                button.btn-close(type='button' data-bs-dismiss='modal' aria-label='Close')
+              .modal-body.pt-0
+                p.text-body.mb-4 What would you like to do next?
+                .d-flex.flex-column.gap-2
+                  a#addToCartModalViewCart.btn.btn-primary.w-100(href='#!') View cart
+                  a#addToCartModalCheckout.btn.btn-phoenix-primary.w-100(href='#!') Checkout
+                  button#addToCartModalContinue.btn.btn-phoenix-secondary.w-100(type='button' data-bs-dismiss='modal') Continue shopping
     .col-12.col-lg-6
       .d-flex.flex-column.justify-content-between.h-100
         div
@@ -448,6 +461,9 @@ append scripts
           stockStatusElement.textContent = stockInfo.status;
           stockStatusElement.className = `text-${stockInfo.className} fw-semibold fs-7 mb-2`;
         }
+        // Disable Add to Cart when out of stock (Phase 2.1)
+        const addToCartBtnEl = document.getElementById('addToCartBtn');
+        if (addToCartBtnEl) addToCartBtnEl.disabled = (displayCountInStock === 0);
       }
       
       // Track current selections
@@ -533,8 +549,21 @@ append scripts
             addToCartBtn.disabled = false;
             addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '');
             if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
-            if (typeof window.toast !== 'undefined') window.toast('Added to cart');
-            else alert('Added to cart');
+            var cartUrl = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
+            var checkoutUrl = '/checkout?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
+            var viewCartEl = document.getElementById('addToCartModalViewCart');
+            var checkoutEl = document.getElementById('addToCartModalCheckout');
+            var modalEl = document.getElementById('addToCartModal');
+            if (viewCartEl) viewCartEl.href = cartUrl;
+            if (checkoutEl) checkoutEl.href = checkoutUrl;
+            if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+              var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+              modal.show();
+            } else if (typeof window.toast !== 'undefined') {
+              window.toast('Added to cart');
+            } else {
+              alert('Added to cart');
+            }
           }).catch(function(e) {
             addToCartBtn.disabled = false;
             addToCartBtn.querySelector('span') && (addToCartBtn.querySelector('span').style.opacity = '');

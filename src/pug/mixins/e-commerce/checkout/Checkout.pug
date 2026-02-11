@@ -1,67 +1,51 @@
-mixin ShippingDetails 
-	.d-flex.align-items-end
-		h3.mb-0.me-3 Shipping Details
-		button.btn.btn-link.p-0(type='button') Edit
-	table.table.table-borderless.mt-4
-		tbody
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="user" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Name
-				td.py-2.fw-bold.lh-sm :
-				td.py-2.px-3
-					h5.lh-sm.fw-normal.text-body-secondary Shatinon Mekalan
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="home" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Address
-				td.py-2.fw-bold.lh-sm :
-				td.py-2.px-3 
-					h5.lh-lg.fw-normal.text-body-secondary Apt: 6/B, 192 Edsel Road, Van Nuys <br>  California, USA 96580
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="phone" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Phone
-				td.py-2.fw-bold.lh-sm :		
-				td.py-2.px-3 
-					h5.lh-sm.fw-normal.text-body-secondary 818-414-4092
+mixin ShippingDetails
+	h3.mb-4 Shipping Address
+	.mb-3
+		label.form-label.fs-8.text-body-highlight(for='checkoutAddressSelect') Saved address
+		select#checkoutAddressSelect.form-select
+			option(value='') New address
+	.row.g-3.mt-2
+		.col-12
+			label.form-label.fs-8.text-body-highlight(for='inputShippingAddress1') Address line 1
+			input#inputShippingAddress1.form-control(type='text' placeholder='Street address' aria-label='Address line 1')
+		.col-12
+			label.form-label.fs-8.text-body-highlight(for='inputShippingAddress2') Address line 2
+			input#inputShippingAddress2.form-control(type='text' placeholder='Apt, suite, etc. (optional)' aria-label='Address line 2')
+		.col-md-6
+			label.form-label.fs-8.text-body-highlight(for='inputShippingCity') City
+			input#inputShippingCity.form-control(type='text' placeholder='City' aria-label='City')
+		.col-md-6
+			label.form-label.fs-8.text-body-highlight(for='inputShippingZip') Zip code
+			input#inputShippingZip.form-control(type='text' placeholder='Zip' aria-label='Zip code')
+		.col-md-6
+			label.form-label.fs-8.text-body-highlight(for='inputShippingCountry') Country
+			input#inputShippingCountry.form-control(type='text' placeholder='Country' value='US' aria-label='Country')
+		.col-md-6
+			label.form-label.fs-8.text-body-highlight(for='inputShippingPhone') Phone
+			input#inputShippingPhone.form-control(type='tel' placeholder='Phone' aria-label='Phone')
 
 mixin BillingInfo
-	h3 Billing Details
-	.form-check
+	h3.mb-4 Billing Details
+	.form-check.mb-3
 		input.form-check-input#sameAsShipping(type='checkbox' checked)
-		label.form-check-label.fs-8.fw-normal(for='sameAsShipping').
-			Same as shipping address
-
-	table.table.table-borderless.mt-4
-		tbody
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="user" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Name
-				td.py-2.fw-bold.lh-sm :
-				td.py-2.px-3
-					h5.lh-sm.fw-normal.text-body-secondary Shatinon Mekalan
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="home" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Address
-				td.py-2.fw-bold.lh-sm :
-				td.py-2.px-3 
-					h5.lh-lg.fw-normal.text-body-secondary Apt: 6/B, 192 Edsel Road, Van Nuys <br>  California, USA 96580
-			tr
-				td.py-2.ps-0
-					.d-flex
-						span.fs-3.me-2(data-feather="phone" style="height:16px; width:16px;") 
-						h5.lh-sm.me-4 Phone
-				td.py-2.fw-bold.lh-sm :
-				td.py-2.px-3 
-					h5.lh-sm.fw-normal.text-body-secondary 818-414-4092
+		label.form-check-label.fs-8.fw-normal(for='sameAsShipping') Same as shipping address
+	#checkout-billing-fields.d-none
+		.row.g-3
+			.col-12
+				label.form-label.fs-8.text-body-highlight(for='inputBillingAddress1') Billing address line 1
+				input#inputBillingAddress1.form-control(type='text' placeholder='Street address' aria-label='Billing address line 1')
+			.col-12
+				label.form-label.fs-8.text-body-highlight(for='inputBillingAddress2') Billing address line 2
+				input#inputBillingAddress2.form-control(type='text' placeholder='Apt, suite (optional)' aria-label='Billing address line 2')
+			.col-md-6
+				label.form-label.fs-8.text-body-highlight(for='inputBillingCity') City
+				input#inputBillingCity.form-control(type='text' placeholder='City' aria-label='Billing city')
+			.col-md-6
+				label.form-label.fs-8.text-body-highlight(for='inputBillingZip') Zip code
+				input#inputBillingZip.form-control(type='text' placeholder='Zip' aria-label='Billing zip')
+			.col-md-6
+				label.form-label.fs-8.text-body-highlight(for='inputBillingCountry') Country
+				input#inputBillingCountry.form-control(type='text' placeholder='Country' value='US' aria-label='Billing country')
 
 mixin ShippingRadio(data)
 	.col-12.col-md-6
@@ -80,104 +64,32 @@ mixin ShippingRadio(data)
 
 mixin DeliveryType(data)
 	h3.mb-5 Delivery Type
-	-
-		var shippings = [
-			{
-				shipping: 'Free Shipping',
-				id: 'free_shipping',
-				price: '$0.00',
-				date: 'Jun 21 – Jul 20',
-				time:'Get Free Shipped products in Time!'
-			},
-			{
-				shipping: 'Two days Shipping',
-				id: 'two_days_shipping',
-				price: '$20.00',
-				date: 'Jun 21 – Jul 20',
-				time:'Everything faster with minimum shipping fee.'
-			},
-			{
-				shipping: 'Standard Shipping',
-				id: 'standard_shipping',
-				price: '$10.00',
-				date: 'Jun 21 – Jul 20',
-				time:'Get timely delivery with economy shipping.'
-			},
-			{
-				shipping: 'One day Shipping',
-				id: 'one_day_shipping',
-				badge: 'Popular',
-				checked:true,
-				price: '$30.00',
-				date: 'Jun 21 – Jul 20',
-				time:'Highest priority shipping at the lowest cost.'
-			},
-		]
-	.row.gy-6
-		each shipping in shippings 
-			+ShippingRadio(shipping)
+	#checkout-shipping-methods
+		.text-body-tertiary.small.py-2 Loading shipping options...
 
 mixin PaymentMethod
 	h3.mb-5 Payment Method
-	.row.g-4.mb-7
+	.row.g-4.mb-4
 		.col-12
-			.row.gx-lg-11
-				.col-md-auto
-					.form-check
-						input.form-check-input#creditCard(type='radio' name='paymentMethod' checked)
-						label.form-check-label.fs-8.text-body.text-nowrap.d-flex.gap-2(for='creditCard')
-							| Credit card
-							img.h-100(src=`${CWD}assets/img/logos/visa.png`, alt="")
-							img.h-100(src=`${CWD}assets/img/logos/discover.png`, alt="")
-							img.h-100(src=`${CWD}assets/img/logos/mastercard.png`, alt="")
-							img.h-100(src=`${CWD}assets/img/logos/american_express.png`, alt="")
-				.col-12.col-md-auto
-					.form-check
-						input.form-check-input#paypal(type='radio' name='paymentMethod')
-						label.form-check-label.fs-8.text-body(for='paypal') Paypal	
-				.col-12.col-md-auto
-					.form-check
-						input.form-check-input#coupon(type='radio' name='paymentMethod')
-						label.form-check-label.fs-8.text-body(for='coupon') Coupon	
-		.col-md-6
-			label.form-label.fs-8.text-body-highlight.ps-0.text-transform-none(for='selectCard') Select card
-			select#selectCard.form-select.text-body-emphasis
-				option(selected='selected') Select a card
-				option(value='visa') Visa
-				option(value='discover') Discover
-				option(value='mastercard') Mastercard
-				option(value='american-express') American Express
-		.col-md-6
-			label.form-label.fs-8.text-body-highlight.ps-0.text-transform-none(for='inputCardNumber') Card number
-			input#inputCardNumber.form-control(type='number' placeholder="Enter card number" aria-label="Card number")
-		.col-12
-			label.form-label.fs-8.text-body-highlight.ps-0.text-transform-none(for='inputName') Full name
-			input#inputName.form-control(type='text' placeholder='Ansolo Lazinatov' aria-label="Full name")
-		.col-md-6
-			label.form-label.fs-8.text-body-highlight.ps-0.text-transform-none Expires on
-			.d-flex
-				select.form-select.text-body-emphasis.me-3
-					option(selected='selected') Month
-					option January
-					option February
-					option March
-				select.form-select.text-body-emphasis
-					option(selected='selected') Year
-					- var n = 1990
-						while n < 2023
-							option(value=n)=n++
-		.col-md-6
-			label.form-label.fs-8.text-body-highlight.ps-0.text-transform-none(for='inputCardCVC') CVC
-			input#inputCardCVC.form-control(type='number' placeholder="Enter a valid CVC" aria-label="CVC")
-		.col-12
-			.form-check
-				input#gridCheck.form-check-input(type='checkbox')
-				label.form-check-label.text-body-emphasis.fs-8(for='gridCheck') Save Card Details
+			.d-flex.flex-wrap.gap-3
+				.form-check
+					input.form-check-input#paymentCard(type='radio' name='checkoutPaymentMethod' value='card')
+					label.form-check-label.fs-8.text-body.d-flex.align-items-center.gap-2(for='paymentCard')
+						| Credit card
+						img.h-100(src=`${CWD}assets/img/logos/visa.png`, alt='' style='max-height: 1.25rem;')
+						img.h-100(src=`${CWD}assets/img/logos/mastercard.png`, alt='' style='max-height: 1.25rem;')
+				.form-check
+					input.form-check-input#paymentCod(type='radio' name='checkoutPaymentMethod' value='cod' checked)
+					label.form-check-label.fs-8.text-body(for='paymentCod') Cash on delivery
+	#checkout-card-element-wrap.d-none.mb-4
+		label.form-label.fs-8.text-body-highlight Card details
+		#checkout-card-element.form-control(style='padding: 0.75rem; min-height: 2.5rem;')
+		.small.text-body-tertiary.mt-1 Card payment is secured by Stripe. We do not store your card number.
 	.row.g-2.mb-5.mb-lg-0
 		.col-md-8.col-lg-9.d-grid
-			button.btn.btn-primary(type='submit') Pay $695.20
+			button.btn.btn-primary#checkoutPlaceOrderBtn(type='submit') Place order
 		.col-md-4.col-lg-3.d-grid
-			button.btn.btn-phoenix-secondary.text-nowrap(type='submit') Save Order and Exit
+			button.btn.btn-phoenix-secondary.text-nowrap(type='button' onclick='window.location.href="/cart"') Back to cart
 
 
 mixin ShippingInfo

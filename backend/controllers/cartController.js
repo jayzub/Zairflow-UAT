@@ -1,7 +1,13 @@
 const Cart = require('../models/cart');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
+const Promotion = require('../models/promotion');
 const { asyncHandler } = require('../middleware/asyncHandler');
+
+/** Default tax rate (0–100) when store has none defined. Set DEFAULT_TAX_RATE in env to override. Phase 3.3 */
+const DEFAULT_TAX_RATE = typeof process.env.DEFAULT_TAX_RATE !== 'undefined'
+    ? Math.max(0, Math.min(100, parseFloat(process.env.DEFAULT_TAX_RATE) || 0))
+    : 0;
 
 /**
  * Parse price from API/schema (Decimal128, string, number, or { $numberDecimal }).
@@ -43,6 +49,32 @@ function resolveUnitOriginalPrice(product, options = {}) {
         return vReg != null ? vReg : baseOriginal;
     }
     return baseOriginal;
+}
+
+/**
+ * Get available stock for product (or matching variant when options provided). Phase 2.4.
+ */
+function getAvailableStock(product, options = {}) {
+    if (!product) return 0;
+    const baseStock = typeof product.countInStock === 'number' ? Math.max(0, product.countInStock) : 0;
+    const variants = product.variants;
+    if (!variants || !Array.isArray(variants) || variants.length === 0) return baseStock;
+    const color = options.color ? String(options.color).trim() : '';
+    const size = options.size ? String(options.size).trim() : '';
+    let match = null;
+    if (color && size) {
+        match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
+    }
+    if (!match && color) {
+        match = variants.find(v => String(v.color || '').trim() === color);
+    }
+    if (!match && size) {
+        match = variants.find(v => String(v.size || '').trim() === size);
+    }
+    if (match && match.countInStock != null) {
+        return Math.max(0, parseInt(match.countInStock, 10) || 0);
+    }
+    return baseStock;
 }
 
 /**
@@ -106,10 +138,85 @@ function serializeCartForResponse(cart) {
 }
 
 /**
+ * Get tax rate for cart from store(s). Store cart = that store's settings.taxRate; marketplace = first item's store or default. Phase 3.3.
+ */
+async function getTaxRateForCart(cart) {
+    const storeId = cart.scopeType === 'store' && cart.store
+        ? (cart.store._id || cart.store).toString()
+        : (cart.items && cart.items[0] && cart.items[0].store)
+            ? (cart.items[0].store._id || cart.items[0].store).toString()
+            : null;
+    if (!storeId) return DEFAULT_TAX_RATE;
+    const store = await Store.findById(storeId).select('settings.taxRate').lean();
+    const rate = store && store.settings && (store.settings.taxRate != null)
+        ? Number(store.settings.taxRate)
+        : DEFAULT_TAX_RATE;
+    return Math.max(0, Math.min(100, rate));
+}
+
+/**
+ * Compute promo discount amount for a given subtotal. Phase 3.1/3.2.
+ */
+function computePromoDiscount(promo, subtotal) {
+    if (!promo || subtotal <= 0) return 0;
+    if (promo.minOrder != null && promo.minOrder > 0 && subtotal < promo.minOrder) return 0;
+    if (promo.type === 'percentage') {
+        const pct = Math.min(100, Math.max(0, Number(promo.value) || 0));
+        return Math.round((subtotal * pct / 100) * 100) / 100;
+    }
+    const fixed = Math.max(0, Number(promo.value) || 0);
+    return Math.min(fixed, subtotal);
+}
+
+/**
+ * Compute cart summary: subtotal, promoDiscount, estimatedTax, estimatedShipping, total. Phase 3.2/3.3.
+ */
+async function computeCartSummary(cart, serializedCart, taxRate) {
+    const items = serializedCart.items || [];
+    const subtotal = items.reduce((sum, item) => {
+        const price = item.unitPrice != null && item.unitPrice > 0 ? item.unitPrice : 0;
+        const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+        return sum + price * qty;
+    }, 0);
+    let promoDiscount = 0;
+    const code = (cart.appliedPromoCode || '').trim().toUpperCase();
+    if (code) {
+        const storeId = cart.scopeType === 'store' && cart.store ? (cart.store._id || cart.store) : null;
+        let promo = await Promotion.findOne({
+            code,
+            isActive: true,
+            $or: [{ store: null }, { store: storeId }]
+        }).lean();
+        const now = new Date();
+        if (promo) {
+            if (promo.validFrom && now < new Date(promo.validFrom)) promo = null;
+            else if (promo.validTo && now > new Date(promo.validTo)) promo = null;
+            else if (promo.usageLimit != null && promo.usedCount >= promo.usageLimit) promo = null;
+        }
+        if (promo) promoDiscount = computePromoDiscount(promo, subtotal);
+    }
+    const subtotalAfterPromo = Math.max(0, subtotal - promoDiscount);
+    const estimatedTax = Math.round(subtotalAfterPromo * (taxRate / 100) * 100) / 100;
+    const estimatedShipping = 0; // calculated at checkout
+    const total = Math.round((subtotalAfterPromo + estimatedTax + estimatedShipping) * 100) / 100;
+    return {
+        subtotal: Math.round(subtotal * 100) / 100,
+        promoDiscount,
+        estimatedTax,
+        estimatedShipping,
+        total
+    };
+}
+
+/**
  * Current request context: which cart is visible (store-1, store-2, or marketplace).
- * Store carts are only visible when req.store is that store; marketplace cart only when req.store is null.
+ * Uses query scopeType/storeId when present (cart page); else req.store; else marketplace. Phase 3.4.
  */
 function getCartContext(req) {
+    const q = req.query || {};
+    if (q.scopeType === 'store' && q.storeId) {
+        return { scopeType: 'store', storeId: String(q.storeId) };
+    }
     if (req.store && req.store._id) {
         return { scopeType: 'store', storeId: String(req.store._id) };
     }
@@ -140,7 +247,7 @@ async function getOrCreateCart(customerId, scopeType, storeId = null) {
 }
 
 /**
- * Get cart for the current context only (store from req.store, or marketplace).
+ * Get cart for the current context only (store from req.store, or marketplace). Includes Phase 3 summary: subtotal, promoDiscount, estimatedTax, estimatedShipping, total.
  */
 const getCart = asyncHandler(async (req, res) => {
     const customerId = req.customer._id;
@@ -154,9 +261,13 @@ const getCart = asyncHandler(async (req, res) => {
             { path: 'store', select: 'name slug', strictPopulate: false }
         ]);
 
+    const serialized = serializeCartForResponse(cart);
+    const taxRate = await getTaxRateForCart(cart);
+    const summary = await computeCartSummary(cart, serialized, taxRate);
+
     res.json({
         success: true,
-        data: serializeCartForResponse(cart)
+        data: { ...serialized, ...summary }
     });
 });
 
@@ -203,10 +314,8 @@ const addCartItem = asyncHandler(async (req, res) => {
     }
 
     const qty = Math.max(1, parseInt(quantity, 10) || 1);
+    const available = getAvailableStock(product, options || {});
     const cart = await getOrCreateCart(customerId, scopeType, storeId);
-
-    const unitPrice = resolveUnitPrice(product, options || {});
-    const unitOriginalPrice = resolveUnitOriginalPrice(product, options || {});
 
     function optionsMatch(a, b) {
         const colorA = (a && a.color != null && a.color !== '') ? String(a.color).trim() : '';
@@ -222,6 +331,18 @@ const addCartItem = asyncHandler(async (req, res) => {
             item.store.toString() === productStoreId &&
             optionsMatch(item.options, options || {})
     );
+    const currentInCart = existingIndex >= 0 ? cart.items[existingIndex].quantity : 0;
+    const totalRequested = currentInCart + qty;
+    if (totalRequested > available) {
+        return res.status(400).json({
+            success: false,
+            error: available === 0 ? 'This item is out of stock' : `Only ${available} available${currentInCart > 0 ? ` (${currentInCart} already in cart)` : ''}`
+        });
+    }
+
+    const unitPrice = resolveUnitPrice(product, options || {});
+    const unitOriginalPrice = resolveUnitOriginalPrice(product, options || {});
+
     if (existingIndex >= 0) {
         cart.items[existingIndex].quantity += qty;
         cart.items[existingIndex].unitPrice = unitPrice != null ? unitPrice : cart.items[existingIndex].unitPrice;
@@ -240,12 +361,17 @@ const addCartItem = asyncHandler(async (req, res) => {
 
     await cart.populate([
         { path: 'items.product', select: 'name price salePrice image slug variants' },
-        { path: 'items.store', select: 'name slug' }
+        { path: 'items.store', select: 'name slug' },
+        { path: 'store', select: 'name slug', strictPopulate: false }
     ]);
+
+    const serializedAdd = serializeCartForResponse(cart);
+    const taxRateAdd = await getTaxRateForCart(cart);
+    const summaryAdd = await computeCartSummary(cart, serializedAdd, taxRateAdd);
 
     res.status(201).json({
         success: true,
-        data: serializeCartForResponse(cart),
+        data: { ...serializedAdd, ...summaryAdd },
         message: 'Item added to cart'
     });
 });
@@ -295,12 +421,17 @@ const updateCartItem = asyncHandler(async (req, res) => {
 
     await cart.populate([
         { path: 'items.product', select: 'name price salePrice image slug variants' },
-        { path: 'items.store', select: 'name slug' }
+        { path: 'items.store', select: 'name slug' },
+        { path: 'store', select: 'name slug', strictPopulate: false }
     ]);
+
+    const serializedUpdate = serializeCartForResponse(cart);
+    const taxRateUpdate = await getTaxRateForCart(cart);
+    const summaryUpdate = await computeCartSummary(cart, serializedUpdate, taxRateUpdate);
 
     res.json({
         success: true,
-        data: serializeCartForResponse(cart),
+        data: { ...serializedUpdate, ...summaryUpdate },
         message: 'Cart item updated'
     });
 });
@@ -334,12 +465,17 @@ const removeCartItem = asyncHandler(async (req, res) => {
 
     await cart.populate([
         { path: 'items.product', select: 'name price salePrice image slug variants' },
-        { path: 'items.store', select: 'name slug' }
+        { path: 'items.store', select: 'name slug' },
+        { path: 'store', select: 'name slug', strictPopulate: false }
     ]);
+
+    const serializedRemove = serializeCartForResponse(cart);
+    const taxRateRemove = await getTaxRateForCart(cart);
+    const summaryRemove = await computeCartSummary(cart, serializedRemove, taxRateRemove);
 
     res.json({
         success: true,
-        data: serializeCartForResponse(cart),
+        data: { ...serializedRemove, ...summaryRemove },
         message: 'Item removed from cart'
     });
 });
@@ -367,9 +503,14 @@ const clearCart = asyncHandler(async (req, res) => {
     cart.items = [];
     await cart.save();
 
+    await cart.populate([{ path: 'store', select: 'name slug', strictPopulate: false }]);
+    const serializedClear = serializeCartForResponse(cart);
+    const taxRateClear = await getTaxRateForCart(cart);
+    const summaryClear = await computeCartSummary(cart, serializedClear, taxRateClear);
+
     res.json({
         success: true,
-        data: serializeCartForResponse(cart),
+        data: { ...serializedClear, ...summaryClear },
         message: 'Cart cleared'
     });
 });
@@ -439,6 +580,114 @@ const getCartItems = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Apply promo code to cart. Body: { code }. Phase 3.1.
+ */
+const applyPromo = asyncHandler(async (req, res) => {
+    const { code } = req.body;
+    const customerId = req.customer._id;
+    const ctx = getCartContext(req);
+
+    if (!code || !String(code).trim()) {
+        return res.status(400).json({
+            success: false,
+            error: 'Promo code is required'
+        });
+    }
+    const codeUpper = String(code).trim().toUpperCase();
+
+    const cart = await getOrCreateCart(customerId, ctx.scopeType, ctx.storeId);
+    await cart
+        .populate([
+            { path: 'items.product', select: 'name price salePrice image slug variants' },
+            { path: 'items.store', select: 'name slug' },
+            { path: 'store', select: 'name slug', strictPopulate: false }
+        ]);
+
+    const serialized = serializeCartForResponse(cart);
+    const subtotal = (serialized.items || []).reduce((sum, item) => {
+        const price = item.unitPrice != null && item.unitPrice > 0 ? item.unitPrice : 0;
+        const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+        return sum + price * qty;
+    }, 0);
+
+    const storeId = cart.scopeType === 'store' && cart.store ? (cart.store._id || cart.store) : null;
+    const promo = await Promotion.findOne({
+        code: codeUpper,
+        isActive: true,
+        $or: [{ store: null }, { store: storeId }]
+    });
+    if (!promo) {
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid or expired promo code'
+        });
+    }
+    const now = new Date();
+    if (promo.validFrom && now < new Date(promo.validFrom)) {
+        return res.status(400).json({ success: false, error: 'Promo code is not yet valid' });
+    }
+    if (promo.validTo && now > new Date(promo.validTo)) {
+        return res.status(400).json({ success: false, error: 'Promo code has expired' });
+    }
+    if (promo.usageLimit != null && promo.usedCount >= promo.usageLimit) {
+        return res.status(400).json({ success: false, error: 'Promo code usage limit reached' });
+    }
+    if (promo.minOrder != null && promo.minOrder > 0 && subtotal < promo.minOrder) {
+        return res.status(400).json({
+            success: false,
+            error: `Minimum order of $${promo.minOrder.toFixed(2)} required for this promo`
+        });
+    }
+
+    cart.appliedPromoCode = codeUpper;
+    await cart.save();
+
+    const taxRate = await getTaxRateForCart(cart);
+    const summary = await computeCartSummary(cart, serialized, taxRate);
+
+    res.json({
+        success: true,
+        data: { ...serialized, ...summary },
+        message: 'Promo code applied'
+    });
+});
+
+/**
+ * Remove applied promo code from cart. Phase 3.1.
+ */
+const removePromo = asyncHandler(async (req, res) => {
+    const customerId = req.customer._id;
+    const ctx = getCartContext(req);
+
+    const cart = await Cart.findOne({
+        customer: customerId,
+        scopeType: ctx.scopeType,
+        ...(ctx.scopeType === 'store' && ctx.storeId ? { store: ctx.storeId } : { store: null })
+    });
+    if (!cart) {
+        return res.status(404).json({ success: false, error: 'Cart not found' });
+    }
+    cart.appliedPromoCode = undefined;
+    await cart.save();
+
+    await cart
+        .populate([
+            { path: 'items.product', select: 'name price salePrice image slug variants' },
+            { path: 'items.store', select: 'name slug' },
+            { path: 'store', select: 'name slug', strictPopulate: false }
+        ]);
+    const serialized = serializeCartForResponse(cart);
+    const taxRate = await getTaxRateForCart(cart);
+    const summary = await computeCartSummary(cart, serialized, taxRate);
+
+    res.json({
+        success: true,
+        data: { ...serialized, ...summary },
+        message: 'Promo code removed'
+    });
+});
+
 module.exports = {
     getCart,
     addCartItem,
@@ -446,5 +695,7 @@ module.exports = {
     removeCartItem,
     clearCart,
     listCarts,
-    getCartItems
+    getCartItems,
+    applyPromo,
+    removePromo
 };

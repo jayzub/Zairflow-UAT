@@ -3,30 +3,30 @@ mixin CartSummaryCard
     .card-body
       .d-flex.flex-between-center.mb-3
         h3.card-title.mb-0 Summary
-        a.btn.btn-link.p-0(href="#!") Edit cart
-      select.form-select.mb-3(aria-label='delivery type')
-        option(value='cod') Cash on Delivery
-        option(value='card') Card
-        option(value='paypal') Paypal
+        a.btn.btn-link.p-0(href="/cart") Edit cart
       div
         .d-flex.justify-content-between
           p.text-body.fw-semibold Items subtotal :
           p.text-body-emphasis.fw-semibold#cart-summary-items-subtotal $0
         .d-flex.justify-content-between
-          p.text-body.fw-semibold Discount :
+          p.text-body.fw-semibold Sale discount :
+          p.text-danger.fw-semibold#cart-summary-sale-discount -$0
+        .d-flex.justify-content-between
+          p.text-body.fw-semibold Discount (promo) :
           p.text-danger.fw-semibold#cart-summary-discount -$0
         .d-flex.justify-content-between
-          p.text-body.fw-semibold Tax :
+          p.text-body.fw-semibold Estimated tax :
           p.text-body-emphasis.fw-semibold#cart-summary-tax $0
         .d-flex.justify-content-between
-          p.text-body.fw-semibold Subtotal :
-          p.text-body-emphasis.fw-semibold#cart-summary-subtotal $0
-        .d-flex.justify-content-between
-          p.text-body.fw-semibold Shipping Cost :
+          p.text-body.fw-semibold Estimated shipping :
           p.text-body-emphasis.fw-semibold#cart-summary-shipping $0
-      .input-group.mb-3
-        input.form-control(type='text', placeholder='Voucher')
-        button.btn.btn-phoenix-primary.px-5 Apply
+      #cartPromoSection.mb-3
+        #cartPromoInputGroup.input-group.mb-2
+          input.form-control#cartPromoInput(type='text', placeholder='Promo code', aria-label='Promo code')
+          button.btn.btn-phoenix-primary.px-4#cartPromoApply(type='button') Apply
+        #cartPromoApplied.d-none.align-items-center.justify-content-between
+          span.text-success.fw-semibold#cartPromoCodeDisplay
+          button.btn.btn-link.p-0.text-body-tertiary#cartPromoRemove(type='button') Remove
       .d-flex.justify-content-between.border-y.border-dashed.py-3.mb-4
         h4.mb-0 Total :
         h4.mb-0#cart-summary-total $0

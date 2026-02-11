@@ -99,6 +99,10 @@ const orderSchema = mongoose.Schema({
     },
     paymentMethod: {
         type: String
+    },
+    stripePaymentMethodId: {
+        type: String,
+        default: null
     }
 }, {
     timestamps: true

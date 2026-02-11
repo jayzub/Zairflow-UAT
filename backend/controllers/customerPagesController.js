@@ -230,8 +230,36 @@ const renderCustomerProfile = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Order confirmation page (after place order).
+ */
+const renderOrderConfirmation = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const customerId = req.customer._id;
+  const Order = require('../models/order');
+  const order = await Order.findById(orderId)
+    .populate({ path: 'orderItems', populate: { path: 'product', select: 'name slug' } })
+    .populate('store', 'name slug')
+    .lean();
+  if (!order) {
+    return res.redirect(302, '/profile?order=notfound');
+  }
+  if (String(order.customer) !== String(customerId)) {
+    return res.redirect(302, '/profile?order=forbidden');
+  }
+  const orderNumber = order.orderNumber || order._id.toString().slice(-8);
+  const totalPrice = order.totalPrice != null ? Number(order.totalPrice) : 0;
+  return res.render('landing/order-confirmation', {
+    order,
+    orderNumber,
+    totalPrice,
+    isCustomerStorefront: true,
+  });
+});
+
 module.exports = {
   renderCustomerHomepage,
   renderCustomerProfile,
+  renderOrderConfirmation,
 };
 

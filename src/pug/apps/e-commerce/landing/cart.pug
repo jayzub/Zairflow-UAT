@@ -43,6 +43,11 @@ append scripts
         if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
         return apiBase + '/cart?' + q;
       }
+      function cartApiUrl(path) {
+        var q = 'scopeType=' + encodeURIComponent(scopeType);
+        if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
+        return apiBase + path + '?' + q;
+      }
 
       function parsePrice(value) {
         if (value == null) return null;
@@ -131,7 +136,7 @@ append scripts
           var plusBtn = row.querySelector('[data-type="plus"]');
           function updateQty() {
             var newQty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-            fetch(apiBase + '/cart/items/' + item._id, {
+            fetch(cartApiUrl('/cart/items/' + item._id), {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
               credentials: 'same-origin',
@@ -150,7 +155,7 @@ append scripts
           if (qtyInput) qtyInput.addEventListener('change', function() { updateQty(); });
           var removeBtn = row.querySelector('.cart-remove-item');
           if (removeBtn) removeBtn.addEventListener('click', function() {
-            fetch(apiBase + '/cart/items/' + item._id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
+            fetch(cartApiUrl('/cart/items/' + item._id), { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
               .then(function(r) { if (r.ok) return r.json(); return r.json().then(function(e) { throw new Error(e.error); }); })
               .then(function(data) { if (data && data.data) renderCart(data.data); else loadCart(); })
               .catch(function(e) { alert(e.message || 'Could not remove item'); });
@@ -158,10 +163,37 @@ append scripts
         });
         if (subtotalEl) subtotalEl.textContent = '$' + formatPrice(subtotal);
         if (subtotalRow) subtotalRow.style.display = items.length ? '' : 'none';
+        var summarySaleDiscount = document.getElementById('cart-summary-sale-discount');
+        var summaryTax = document.getElementById('cart-summary-tax');
+        var summaryShipping = document.getElementById('cart-summary-shipping');
+        var promoDiscount = (cart.promoDiscount != null) ? Number(cart.promoDiscount) : 0;
+        var estimatedTax = (cart.estimatedTax != null) ? Number(cart.estimatedTax) : 0;
+        var estimatedShipping = (cart.estimatedShipping != null) ? Number(cart.estimatedShipping) : 0;
+        var cartTotal = (cart.total != null) ? Number(cart.total) : subtotal;
         if (summaryItemsSubtotal) summaryItemsSubtotal.textContent = '$' + formatPrice(itemsSubtotal);
-        if (summaryDiscount) summaryDiscount.textContent = discountTotal > 0 ? '-$' + formatPrice(discountTotal) : '$0.00';
-        if (summarySubtotal) summarySubtotal.textContent = '$' + formatPrice(subtotal);
-        if (summaryTotal) summaryTotal.textContent = '$' + formatPrice(subtotal);
+        if (summarySaleDiscount) summarySaleDiscount.textContent = discountTotal > 0 ? '-$' + formatPrice(discountTotal) : '$0.00';
+        if (summaryDiscount) summaryDiscount.textContent = promoDiscount > 0 ? '-$' + formatPrice(promoDiscount) : '$0.00';
+        if (summaryTax) summaryTax.textContent = '$' + formatPrice(estimatedTax);
+        if (summaryShipping) summaryShipping.textContent = '$' + formatPrice(estimatedShipping);
+        if (summaryTotal) summaryTotal.textContent = '$' + formatPrice(cartTotal);
+        var checkoutBtn = document.getElementById('cartCheckoutBtn');
+        if (checkoutBtn) {
+          checkoutBtn.href = '/checkout?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
+          checkoutBtn.style.display = items.length ? '' : 'none';
+          checkoutBtn.disabled = items.length === 0;
+        }
+        var promoInputGroup = document.getElementById('cartPromoInputGroup');
+        var promoApplied = document.getElementById('cartPromoApplied');
+        var promoCodeDisplay = document.getElementById('cartPromoCodeDisplay');
+        if (cart.appliedPromoCode) {
+          if (promoInputGroup) promoInputGroup.classList.add('d-none');
+          if (promoApplied) { promoApplied.classList.remove('d-none'); promoApplied.classList.add('d-flex'); }
+          if (promoCodeDisplay) promoCodeDisplay.textContent = 'Promo: ' + cart.appliedPromoCode;
+        } else {
+          if (promoInputGroup) promoInputGroup.classList.remove('d-none');
+          if (promoApplied) { promoApplied.classList.add('d-none'); promoApplied.classList.remove('d-flex'); }
+          if (promoCodeDisplay) promoCodeDisplay.textContent = '';
+        }
       }
 
       function loadCart() {
@@ -174,7 +206,12 @@ append scripts
         document.getElementById('cartContent').style.display = 'flex';
         fetch(cartUrl(), { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
           .then(function(r) {
-            if (r.status === 401) { token = null; loadCart(); return null; }
+            if (r.status === 401) {
+              token = null;
+              var redirectUrl = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
+              window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(redirectUrl);
+              return null;
+            }
             if (!r.ok) throw new Error('Could not load cart');
             return r.json();
           })
@@ -185,4 +222,45 @@ append scripts
       }
 
       loadCart();
+
+      var promoApplyBtn = document.getElementById('cartPromoApply');
+      var promoInput = document.getElementById('cartPromoInput');
+      var promoRemoveBtn = document.getElementById('cartPromoRemove');
+      if (promoApplyBtn && promoInput) {
+        promoApplyBtn.addEventListener('click', function() {
+          var code = (promoInput.value || '').trim();
+          if (!code) { alert('Enter a promo code'); return; }
+          promoApplyBtn.disabled = true;
+          var q = 'scopeType=' + encodeURIComponent(scopeType);
+          if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
+          fetch(apiBase + '/cart/promo?' + q, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            credentials: 'same-origin',
+            body: JSON.stringify({ code: code })
+          }).then(function(r) {
+            if (r.ok) return r.json();
+            return r.json().then(function(e) { throw new Error(e.error || 'Invalid promo'); });
+          }).then(function(json) {
+            if (json && json.data) renderCart(json.data);
+          }).catch(function(e) { alert(e.message || 'Could not apply promo'); })
+            .finally(function() { promoApplyBtn.disabled = false; });
+        });
+      }
+      if (promoRemoveBtn) {
+        promoRemoveBtn.addEventListener('click', function() {
+          var q = 'scopeType=' + encodeURIComponent(scopeType);
+          if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
+          fetch(apiBase + '/cart/promo?' + q, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token },
+            credentials: 'same-origin'
+          }).then(function(r) {
+            if (r.ok) return r.json();
+            return r.json().then(function(e) { throw new Error(e.error); });
+          }).then(function(json) {
+            if (json && json.data) renderCart(json.data);
+          }).catch(function(e) { alert(e.message || 'Could not remove promo'); });
+        });
+      }
     })();

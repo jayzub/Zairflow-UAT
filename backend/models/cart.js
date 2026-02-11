@@ -57,7 +57,8 @@ const cartSchema = new mongoose.Schema({
     items: {
         type: [cartItemSchema],
         default: []
-    }
+    },
+    appliedPromoCode: { type: String, trim: true, uppercase: true, default: null }
 }, {
     timestamps: true
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
 const cartController = require('../controllers/cartController');
+const checkoutController = require('../controllers/checkoutController');
 const { requireCustomerAuth } = require('../middleware/jwt');
 const { extractStoreOptional } = require('../middleware/storeIsolation');
 
@@ -32,6 +33,8 @@ router.delete('/wishlist/:productId/:storeId', requireCustomerAuth, customerCont
 router.get('/recently-viewed', requireCustomerAuth, customerController.getRecentlyViewed);
 
 router.get('/orders', requireCustomerAuth, customerController.getCustomerOrders);
+router.get('/checkout/shipping-methods', requireCustomerAuth, extractStoreOptional, checkoutController.getShippingMethods);
+router.post('/orders', requireCustomerAuth, extractStoreOptional, checkoutController.placeOrder);
 router.get('/reviews', requireCustomerAuth, customerController.getCustomerReviews);
 
 router.post('/metrics', requireCustomerAuth, customerController.updateCustomerMetrics);
@@ -44,5 +47,7 @@ router.post('/cart/items', requireCustomerAuth, cartController.addCartItem);
 router.patch('/cart/items/:itemId', requireCustomerAuth, cartController.updateCartItem);
 router.delete('/cart/items/:itemId', requireCustomerAuth, cartController.removeCartItem);
 router.delete('/cart', requireCustomerAuth, cartController.clearCart);
+router.post('/cart/promo', requireCustomerAuth, cartController.applyPromo);
+router.delete('/cart/promo', requireCustomerAuth, cartController.removePromo);
 
 module.exports = router;

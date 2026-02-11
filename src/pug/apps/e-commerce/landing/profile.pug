@@ -45,7 +45,7 @@ block ecomContent
       .col-12.col-lg-8
         +ProfileCard(customerName, customerAvatar, joinedDate, totalSpent, lastOrderDate, totalOrders).h-100
       .col-12.col-lg-4
-        +AddressCard(addressLine, customerEmail, customerPhone).h-100
+        +AddressCard(addressLine, customerEmail, customerPhone, defaultAddress).h-100
     div
       .scrollbar
         ul#myTab.nav.nav-underline.fs-9.flex-nowrap.mb-3.pb-1(role='tablist')
@@ -83,4 +83,109 @@ block ecomContent
           +FavouriteStores(storeItems)
         #tab-personal-info.tab-pane.fade(role='tabpanel' aria-labelledby='personal-info-tab')
           +PersonalInfo(customer)
+
+append scripts
+  script.
+    (function() {
+      var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
+      var modalEl = document.getElementById('addressFormModal');
+      var formEl = document.getElementById('addressForm');
+      var modalTitle = document.getElementById('addressFormModalLabel');
+      if (!modalEl || !formEl || !token) return;
+
+      var modal = typeof bootstrap !== 'undefined' && bootstrap.Modal ? new bootstrap.Modal(modalEl) : null;
+
+      function getFormData() {
+        return {
+          street: (formEl.querySelector('#addressFormStreet') || {}).value || '',
+          apartment: (formEl.querySelector('#addressFormApartment') || {}).value || '',
+          city: (formEl.querySelector('#addressFormCity') || {}).value || '',
+          state: (formEl.querySelector('#addressFormState') || {}).value || '',
+          zipCode: (formEl.querySelector('#addressFormZip') || {}).value || '',
+          country: (formEl.querySelector('#addressFormCountry') || {}).value || 'US',
+          phone: (formEl.querySelector('#addressFormPhone') || {}).value || '',
+          type: (formEl.querySelector('#addressFormType') || {}).value || 'both',
+          isDefault: (formEl.querySelector('#addressFormIsDefault') || {}).checked || false
+        };
+      }
+
+      function setFormData(addr) {
+        if (!addr) {
+          formEl.querySelector('#addressFormId').value = '';
+          formEl.querySelector('#addressFormStreet').value = '';
+          formEl.querySelector('#addressFormApartment').value = '';
+          formEl.querySelector('#addressFormCity').value = '';
+          formEl.querySelector('#addressFormState').value = '';
+          formEl.querySelector('#addressFormZip').value = '';
+          formEl.querySelector('#addressFormCountry').value = 'US';
+          formEl.querySelector('#addressFormPhone').value = '';
+          formEl.querySelector('#addressFormType').value = 'both';
+          formEl.querySelector('#addressFormIsDefault').checked = false;
+          return;
+        }
+        formEl.querySelector('#addressFormId').value = addr._id || '';
+        formEl.querySelector('#addressFormStreet').value = addr.street || '';
+        formEl.querySelector('#addressFormApartment').value = addr.apartment || '';
+        formEl.querySelector('#addressFormCity').value = addr.city || '';
+        formEl.querySelector('#addressFormState').value = addr.state || '';
+        formEl.querySelector('#addressFormZip').value = addr.zipCode || '';
+        formEl.querySelector('#addressFormCountry').value = addr.country || 'US';
+        formEl.querySelector('#addressFormPhone').value = addr.phone || '';
+        formEl.querySelector('#addressFormType').value = addr.type || 'both';
+        formEl.querySelector('#addressFormIsDefault').checked = !!addr.isDefault;
+      }
+
+      document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-action="edit-address"]');
+        if (btn) {
+          var card = btn.closest('[data-address-card]');
+          var json = card && card.getAttribute('data-default-address');
+          var addr = null;
+          try { addr = json && json !== 'null' ? JSON.parse(json) : null; } catch (err) {}
+          setFormData(addr);
+          if (modalTitle) modalTitle.textContent = 'Edit address';
+          if (modal) modal.show();
+          return;
+        }
+        btn = e.target.closest('[data-action="add-address"]');
+        if (btn) {
+          setFormData(null);
+          if (modalTitle) modalTitle.textContent = 'Add address';
+          if (modal) modal.show();
+        }
+      });
+
+      formEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var addressId = (formEl.querySelector('#addressFormId') || {}).value || '';
+        var payload = getFormData();
+        var url = '/api/customers/addresses';
+        var method = 'POST';
+        if (addressId) {
+          url += '/' + encodeURIComponent(addressId);
+          method = 'PUT';
+        }
+        var submitBtn = formEl.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
+        fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        })
+          .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+          .then(function(result) {
+            if (result.ok) {
+              if (modal) modal.hide();
+              window.location.reload();
+            } else {
+              alert(result.data && result.data.error ? result.data.error : 'Failed to save address');
+            }
+          })
+          .catch(function() { alert('Failed to save address'); })
+          .finally(function() {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save address'; }
+          });
+      });
+    })();
 

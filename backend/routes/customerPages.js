@@ -26,6 +26,23 @@ router.get('/cart', extractStoreOptional, (req, res) => {
   });
 });
 
+// Checkout page (requires login; scope from query or store context)
+router.get('/checkout', requireCustomerAuth, extractStoreOptional, (req, res) => {
+  const scopeType = req.query.scopeType || (req.store ? 'store' : 'marketplace');
+  const storeId = req.query.storeId || (req.store && req.store._id ? String(req.store._id) : '');
+  const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || '';
+  res.render('landing/checkout', {
+    cartScopeType: scopeType,
+    cartStoreId: storeId,
+    store: req.store || null,
+    isCustomerStorefront: true,
+    stripePublishableKey,
+  });
+});
+
+// Order confirmation page (after place order)
+router.get('/orders/confirmation/:orderId', requireCustomerAuth, customerPagesController.renderOrderConfirmation);
+
 // Backwards-compat redirects
 router.get('/customers', extractStore, (req, res) => res.redirect(302, '/home'));
 router.get('/customers/home', extractStore, (req, res) => res.redirect(302, '/home'));

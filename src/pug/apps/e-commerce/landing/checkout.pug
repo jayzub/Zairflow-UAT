@@ -9,21 +9,24 @@ append variables
   - var disableVerticalNavbarAppearance = true;
   - var disableHorizontalNavbarAppearance = true;
   - var activeNavItem = 'checkout';
+  - var cartScopeType = typeof cartScopeType !== 'undefined' ? cartScopeType : 'marketplace';
+  - var cartStoreId = typeof cartStoreId !== 'undefined' ? cartStoreId : '';
+  - var stripePublishableKey = typeof stripePublishableKey !== 'undefined' ? stripePublishableKey : '';
 
 
 block ecomContent
-  +Section(null,'container-small').pt-5.pb-9
+  +Section(null,'container-small').pt-5.pb-9(data-checkout-page data-cart-scope-type=cartScopeType data-cart-store-id=cartStoreId data-stripe-publishable-key=stripePublishableKey)
     nav.mb-3(aria-label='breadcrumb')
       ol.breadcrumb.mb-0
         li.breadcrumb-item
-          a(href='#!') Page 1
+          a(href=(typeof isCustomerStorefront !== 'undefined' && isCustomerStorefront) ? '/home' : '#!') Home
         li.breadcrumb-item
-          a(href='#!') Page 2
-        li.breadcrumb-item.active(aria-current='page') Default
+          a(href='/cart?scopeType=' + encodeURIComponent(cartScopeType) + (cartScopeType === 'store' && cartStoreId ? '&storeId=' + encodeURIComponent(cartStoreId) : '')) Cart
+        li.breadcrumb-item.active(aria-current='page') Check out
     h2.mb-5 Check out
-    .row.justify-content-between 
+    .row.justify-content-between
       .col-lg-7.col-xl-7
-        form
+        form#checkoutForm
           +ShippingDetails
           hr.my-6
           +BillingInfo
@@ -33,4 +36,405 @@ block ecomContent
           +PaymentMethod
 
       .col-lg-5.col-xl-4
-        +CheckoutSummaryCard
+        +CheckoutSummaryCard(cartScopeType, cartStoreId)
+
+append scripts
+  script.
+    (function() {
+      var page = document.querySelector('[data-checkout-page]');
+      if (!page) return;
+      var scopeType = page.getAttribute('data-cart-scope-type') || 'marketplace';
+      var storeId = page.getAttribute('data-cart-store-id') || '';
+      var stripePublishableKey = (page.getAttribute('data-stripe-publishable-key') || '').trim();
+      var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
+      var apiBase = '/api/customers';
+      var stripe = null;
+      var cardElement = null;
+
+      function cartUrl() {
+        var q = 'scopeType=' + encodeURIComponent(scopeType);
+        if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
+        return apiBase + '/cart?' + q;
+      }
+
+      function parsePrice(value) {
+        if (value == null) return null;
+        if (typeof value === 'number' && !isNaN(value)) return value;
+        if (typeof value === 'string') return parseFloat(value) || null;
+        if (typeof value === 'object' && value.$numberDecimal != null) return parseFloat(value.$numberDecimal) || null;
+        return null;
+      }
+
+      function formatPrice(p) {
+        var n = parsePrice(p);
+        return n != null && !isNaN(n) ? n.toFixed(2) : '0.00';
+      }
+
+      function itemPrice(item) {
+        if (item.unitPrice != null && typeof item.unitPrice === 'number' && item.unitPrice > 0) return item.unitPrice;
+        var product = item.product || {};
+        var reg = parsePrice(product.price);
+        var sale = parsePrice(product.salePrice);
+        if (sale != null && sale > 0 && (reg == null || sale < reg)) return sale;
+        return reg != null ? reg : 0;
+      }
+
+      var checkoutCartSubtotal = 0;
+      var checkoutPromoDiscount = 0;
+      var checkoutTax = 0;
+      var selectedShippingCost = 0;
+      var selectedShippingMethodId = 'free';
+
+      function updateCheckoutTotal() {
+        var shippingEl = document.getElementById('checkout-summary-shipping');
+        var totalEl = document.getElementById('checkout-summary-total');
+        if (shippingEl) shippingEl.textContent = '$' + formatPrice(selectedShippingCost);
+        var total = Math.max(0, checkoutCartSubtotal - checkoutPromoDiscount + checkoutTax + selectedShippingCost);
+        if (totalEl) totalEl.textContent = '$' + formatPrice(total);
+      }
+
+      function renderCheckoutSummary(cart) {
+        var itemsContainer = document.getElementById('checkout-summary-items');
+        var itemsSubtotalEl = document.getElementById('checkout-summary-items-subtotal');
+        var saleDiscountEl = document.getElementById('checkout-summary-sale-discount');
+        var discountEl = document.getElementById('checkout-summary-discount');
+        var taxEl = document.getElementById('checkout-summary-tax');
+        var subtotalEl = document.getElementById('checkout-summary-subtotal');
+        var shippingEl = document.getElementById('checkout-summary-shipping');
+        var totalEl = document.getElementById('checkout-summary-total');
+        var items = (cart && cart.items) || [];
+        var itemsSubtotal = 0;
+        var discountTotal = 0;
+        var subtotal = 0;
+
+        if (!itemsContainer) return;
+
+        if (items.length === 0) {
+          checkoutCartSubtotal = 0;
+          checkoutPromoDiscount = 0;
+          checkoutTax = 0;
+          itemsContainer.innerHTML = '<p class="text-body-tertiary small py-3 mb-0">Your cart is empty.</p>';
+          if (itemsSubtotalEl) itemsSubtotalEl.textContent = '$0.00';
+          if (saleDiscountEl) saleDiscountEl.textContent = '$0.00';
+          if (discountEl) discountEl.textContent = '$0.00';
+          if (taxEl) taxEl.textContent = '$0.00';
+          if (subtotalEl) subtotalEl.textContent = '$0.00';
+          if (shippingEl) shippingEl.textContent = '$0.00';
+          if (totalEl) totalEl.textContent = '$0.00';
+          return;
+        }
+
+        items.forEach(function(item) {
+          var price = itemPrice(item);
+          var originalPrice = (item.unitOriginalPrice != null && item.unitOriginalPrice >= 0) ? item.unitOriginalPrice : (item.product && parsePrice(item.product.price) != null ? parsePrice(item.product.price) : price);
+          var qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+          var lineTotal = price * qty;
+          var lineOriginal = originalPrice * qty;
+          itemsSubtotal += lineOriginal;
+          discountTotal += Math.max(0, (originalPrice - price) * qty);
+          subtotal += lineTotal;
+        });
+        checkoutCartSubtotal = subtotal;
+        checkoutPromoDiscount = (cart.promoDiscount != null) ? Number(cart.promoDiscount) : 0;
+        checkoutTax = (cart.estimatedTax != null) ? Number(cart.estimatedTax) : 0;
+
+        var html = '';
+        items.forEach(function(item) {
+          var product = item.product || {};
+          var name = product.name || 'Product';
+          var imgUrl = (product.image && product.image.url) ? product.image.url : '';
+          var price = itemPrice(item);
+          var qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+          var lineTotal = price * qty;
+          html += '<div class="row align-items-center mb-2 g-3">';
+          html += '<div class="col-8 col-md-7 col-lg-8"><div class="d-flex align-items-center">';
+          html += '<span class="border border-translucent rounded-1 overflow-hidden me-2 flex-shrink-0" style="width:40px;height:40px;">';
+          if (imgUrl) html += '<img src="' + imgUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">';
+          html += '</span><h6 class="fw-semibold text-body-highlight lh-base mb-0 line-clamp-2">' + name + '</h6></div></div>';
+          html += '<div class="col-2 col-md-3 col-lg-2"><h6 class="fs-10 mb-0">x' + qty + '</h6></div>';
+          html += '<div class="col-2 ps-0"><h5 class="mb-0 fw-semibold text-end">$' + formatPrice(lineTotal) + '</h5></div>';
+          html += '</div>';
+        });
+        itemsContainer.innerHTML = html;
+
+        if (itemsSubtotalEl) itemsSubtotalEl.textContent = '$' + formatPrice(itemsSubtotal);
+        if (saleDiscountEl) saleDiscountEl.textContent = discountTotal > 0 ? '-$' + formatPrice(discountTotal) : '$0.00';
+        if (discountEl) discountEl.textContent = checkoutPromoDiscount > 0 ? '-$' + formatPrice(checkoutPromoDiscount) : '$0.00';
+        if (taxEl) taxEl.textContent = '$' + formatPrice(checkoutTax);
+        if (subtotalEl) subtotalEl.textContent = '$' + formatPrice(checkoutCartSubtotal - checkoutPromoDiscount);
+        updateCheckoutTotal();
+      }
+
+      function loadCheckoutCart() {
+        if (!token) {
+          window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          return;
+        }
+        fetch(cartUrl(), { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
+          .then(function(r) {
+            if (r.status === 401) {
+              window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+              return null;
+            }
+            if (!r.ok) throw new Error('Could not load cart');
+            return r.json();
+          })
+          .then(function(json) {
+            if (json && json.data) renderCheckoutSummary(json.data);
+          })
+          .catch(function(e) {
+            var itemsContainer = document.getElementById('checkout-summary-items');
+            if (itemsContainer) itemsContainer.innerHTML = '<p class="text-danger small py-3 mb-0">Could not load cart.</p>';
+          });
+      }
+
+      function loadProfile() {
+        if (!token) return;
+        fetch(apiBase + '/profile', { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(json) {
+            if (!json || !json.data) return;
+            var customer = json.data;
+            var addresses = customer.addresses || [];
+            var selectEl = document.getElementById('checkoutAddressSelect');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">New address</option>';
+            addresses.forEach(function(addr, idx) {
+              var label = [addr.street, addr.city, addr.zipCode].filter(Boolean).join(', ') || 'Address ' + (idx + 1);
+              selectEl.innerHTML += '<option value="' + idx + '" data-idx="' + idx + '">' + label + '</option>';
+            });
+            if (addresses.length > 0) {
+              var defaultIdx = addresses.findIndex(function(a) { return a.isDefault; });
+              if (defaultIdx < 0) defaultIdx = 0;
+              selectEl.value = String(defaultIdx);
+              fillAddressForm(addresses[defaultIdx]);
+            }
+            selectEl.addEventListener('change', function() {
+              var val = this.value;
+              if (val === '') { clearAddressForm(); return; }
+              var idx = parseInt(val, 10);
+              if (addresses[idx]) fillAddressForm(addresses[idx]);
+            });
+          })
+          .catch(function() {});
+      }
+
+      function fillAddressForm(addr) {
+        var line1 = [addr.street, addr.apartment].filter(Boolean).join(', ');
+        var el1 = document.getElementById('inputShippingAddress1');
+        var el2 = document.getElementById('inputShippingAddress2');
+        var city = document.getElementById('inputShippingCity');
+        var zip = document.getElementById('inputShippingZip');
+        var country = document.getElementById('inputShippingCountry');
+        var phone = document.getElementById('inputShippingPhone');
+        if (el1) el1.value = line1 || '';
+        if (el2) el2.value = '';
+        if (city) city.value = addr.city || '';
+        if (zip) zip.value = addr.zipCode || '';
+        if (country) country.value = addr.country || 'US';
+        if (phone) phone.value = addr.phone || '';
+      }
+
+      function clearAddressForm() {
+        ['inputShippingAddress1', 'inputShippingAddress2', 'inputShippingCity', 'inputShippingZip', 'inputShippingCountry', 'inputShippingPhone'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.value = id === 'inputShippingCountry' ? 'US' : '';
+        });
+      }
+
+      function loadShippingMethods() {
+        var container = document.getElementById('checkout-shipping-methods');
+        if (!container) return;
+        var q = 'scopeType=' + encodeURIComponent(scopeType);
+        if (scopeType === 'store' && storeId) q += '&storeId=' + encodeURIComponent(storeId);
+        fetch(apiBase + '/checkout/shipping-methods?' + q, { headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(json) {
+            if (!json || !json.data || !json.data.methods) {
+              container.innerHTML = '<p class="text-body-tertiary small">No shipping options.</p>';
+              return;
+            }
+            var methods = json.data.methods;
+            var html = '<div class="row gy-4">';
+            methods.forEach(function(m, i) {
+              var checked = m.id === 'free' ? ' checked' : '';
+              html += '<div class="col-12"><div class="d-flex flex-wrap align-items-center mb-2">';
+              html += '<div class="form-check mb-0"><input class="form-check-input checkout-shipping-radio" type="radio" name="checkoutShippingMethod" id="ship_' + m.id + '" value="' + m.id + '" data-price="' + (m.price || 0) + '"' + checked + '>';
+              html += '<label class="form-check-label fs-8 text-body" for="ship_' + m.id + '">' + (m.name || m.id) + '</label></div>';
+              html += '<span class="d-inline-block text-body-emphasis fw-bold ms-2">$' + formatPrice(m.price || 0) + '</span></div>';
+              html += '<div class="ps-4"><h6 class="text-body-tertiary mb-0 fs-9">Est. delivery: ' + (m.estimatedDays || '') + '</h6></div></div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            container.querySelectorAll('.checkout-shipping-radio').forEach(function(radio) {
+              radio.addEventListener('change', function() {
+                selectedShippingCost = parseFloat(this.getAttribute('data-price')) || 0;
+                selectedShippingMethodId = this.value;
+                updateCheckoutTotal();
+              });
+            });
+            var firstFree = methods.find(function(m) { return m.id === 'free'; });
+            selectedShippingCost = firstFree ? (firstFree.price || 0) : (methods[0] ? (methods[0].price || 0) : 0);
+            selectedShippingMethodId = firstFree ? 'free' : (methods[0] ? methods[0].id : 'free');
+            updateCheckoutTotal();
+          })
+          .catch(function() {
+            container.innerHTML = '<p class="text-danger small">Could not load shipping options.</p>';
+          });
+      }
+
+      function initBillingToggle() {
+        var sameAsShipping = document.getElementById('sameAsShipping');
+        var billingFields = document.getElementById('checkout-billing-fields');
+        if (sameAsShipping && billingFields) {
+          sameAsShipping.addEventListener('change', function() {
+            billingFields.classList.toggle('d-none', sameAsShipping.checked);
+          });
+          billingFields.classList.toggle('d-none', sameAsShipping.checked);
+        }
+      }
+
+      function initPaymentMethodToggle() {
+        var paymentCard = document.getElementById('paymentCard');
+        var paymentCod = document.getElementById('paymentCod');
+        var cardWrap = document.getElementById('checkout-card-element-wrap');
+        if (!cardWrap) return;
+        function updateCardVisibility() {
+          var useCard = paymentCard && paymentCard.checked && stripePublishableKey;
+          cardWrap.classList.toggle('d-none', !useCard);
+          if (useCard && stripePublishableKey && !cardElement) initStripeCard();
+        }
+        if (paymentCard) paymentCard.addEventListener('change', updateCardVisibility);
+        if (paymentCod) paymentCod.addEventListener('change', updateCardVisibility);
+        updateCardVisibility();
+      }
+
+      function initStripeCard() {
+        if (!stripePublishableKey || cardElement) return;
+        if (typeof Stripe === 'undefined') {
+          var s = document.createElement('script');
+          s.src = 'https://js.stripe.com/v3/';
+          s.async = true;
+          s.onload = function() { mountStripeCard(); };
+          document.head.appendChild(s);
+        } else {
+          mountStripeCard();
+        }
+      }
+
+      function mountStripeCard() {
+        if (stripe && cardElement) return;
+        try {
+          stripe = Stripe(stripePublishableKey);
+          var elements = stripe.elements();
+          var style = { base: { fontSize: '16px', color: '#1a1a1a' } };
+          cardElement = elements.create('card', { style: style });
+          var container = document.getElementById('checkout-card-element');
+          if (container && container.children.length === 0) cardElement.mount('#checkout-card-element');
+        } catch (e) {
+          console.error('Stripe init error', e);
+        }
+      }
+
+      loadCheckoutCart();
+      loadProfile();
+      loadShippingMethods();
+      initBillingToggle();
+      initPaymentMethodToggle();
+
+      var form = document.getElementById('checkoutForm');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (!token) {
+            window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+          }
+          var btn = document.getElementById('checkoutPlaceOrderBtn');
+          var paymentIsCard = document.getElementById('paymentCard') && document.getElementById('paymentCard').checked;
+          var body = { scopeType: scopeType, shippingMethodId: selectedShippingMethodId, shippingCost: selectedShippingCost };
+          if (scopeType === 'store' && storeId) body.storeId = storeId;
+          var a1 = document.getElementById('inputShippingAddress1');
+          var a2 = document.getElementById('inputShippingAddress2');
+          var city = document.getElementById('inputShippingCity');
+          var zip = document.getElementById('inputShippingZip');
+          var country = document.getElementById('inputShippingCountry');
+          var phone = document.getElementById('inputShippingPhone');
+          if (a1 && a1.value.trim()) body.shippingAddress1 = a1.value.trim();
+          if (a2 && a2.value.trim()) body.shippingAddress2 = a2.value.trim();
+          if (city && city.value.trim()) body.city = city.value.trim();
+          if (zip && zip.value.trim()) body.zip = zip.value.trim();
+          if (country && country.value.trim()) body.country = country.value.trim();
+          if (phone && phone.value.trim()) body.phone = phone.value.trim();
+          var sameAsShipping = document.getElementById('sameAsShipping');
+          if (sameAsShipping && !sameAsShipping.checked) {
+            var b1 = document.getElementById('inputBillingAddress1');
+            var b2 = document.getElementById('inputBillingAddress2');
+            var bc = document.getElementById('inputBillingCity');
+            var bz = document.getElementById('inputBillingZip');
+            var bco = document.getElementById('inputBillingCountry');
+            body.billingAddress = {};
+            if (b1 && b1.value.trim()) body.billingAddress.line1 = b1.value.trim();
+            if (b2 && b2.value.trim()) body.billingAddress.line2 = b2.value.trim();
+            if (bc && bc.value.trim()) body.billingAddress.city = bc.value.trim();
+            if (bz && bz.value.trim()) body.billingAddress.zip = bz.value.trim();
+            if (bco && bco.value.trim()) body.billingAddress.country = bco.value.trim();
+          }
+          function placeOrderWithBody() {
+            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Placing order...'; }
+            fetch(apiBase + '/orders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              credentials: 'same-origin',
+              body: JSON.stringify(body)
+            }).then(function(r) {
+              return r.json().then(function(data) {
+                if (r.ok) return data;
+                if (r.status === 401) {
+                  window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                  return null;
+                }
+                if (r.status === 409) {
+                  var msg = (data && data.error) || 'Your cart has changed. Please review and try again.';
+                  if (data && data.code === 'OUT_OF_STOCK') msg = 'Some items are no longer available. Please update your cart.';
+                  if (data && data.code === 'PRICE_CHANGED') msg = 'Some prices have changed. Please review your cart.';
+                  throw new Error(msg);
+                }
+                throw new Error((data && data.error) || data.message || 'Failed to place order');
+              });
+            }).then(function(data) {
+              if (!data) return;
+              if (data.data && data.data.confirmationUrl) {
+                window.location.href = data.data.confirmationUrl;
+              } else {
+                window.location.href = '/profile';
+              }
+            }).catch(function(err) {
+              if (btn) { btn.disabled = false; btn.innerHTML = 'Place order'; }
+              var message = err.message || 'Could not place order. Please try again.';
+              alert(message);
+              if (message.indexOf('cart') !== -1 || message.indexOf('Cart') !== -1) {
+                var cartUrl = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
+                window.location.href = cartUrl;
+              }
+            });
+          }
+          if (paymentIsCard && stripePublishableKey && stripe && cardElement) {
+            stripe.createPaymentMethod({ type: 'card', card: cardElement }).then(function(result) {
+              if (result.error) {
+                alert(result.error.message || 'Card error');
+                return;
+              }
+              body.paymentMethodId = result.paymentMethod.id;
+              body.paymentMethod = 'card';
+              placeOrderWithBody();
+            }).catch(function(err) {
+              alert(err.message || 'Payment failed');
+            });
+          } else {
+            body.paymentMethod = 'cod';
+            placeOrderWithBody();
+          }
+        });
+      }
+    })();
