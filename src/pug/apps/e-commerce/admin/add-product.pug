@@ -929,10 +929,28 @@ append scripts
         // Basic validation
         const productType = this.querySelector('[name="productType"]').value;
         const name = this.querySelector('[name="name"]').value;
-        const price = this.querySelector('[name="price"]').value;
+        const productPrice = (this.querySelector('[name="price"]')?.value || '').trim();
+        const productCountInStock = (this.querySelector('[name="countInStock"]')?.value || '').trim();
+        const variantItems = this.querySelectorAll('.variant-item');
+        const hasVariantWithPrice = Array.from(variantItems).some(item => {
+          const priceInput = item.querySelector('input[name*="[price]"]');
+          return priceInput && priceInput.value && parseFloat(priceInput.value) > 0;
+        });
+        const hasVariantWithStock = Array.from(variantItems).some(item => {
+          const stockInput = item.querySelector('input[name*="[countInStock]"]');
+          return stockInput && stockInput.value !== '';
+        });
 
-        if (!productType || !name || !price) {
-          alert('Please fill in all required fields (Product Type, Name, and Price)');
+        if (!productType || !name) {
+          alert('Please fill in Product Type and Name.');
+          return;
+        }
+        if (!productPrice && !hasVariantWithPrice) {
+          alert('Please set either a product Price or add at least one variant with a price.');
+          return;
+        }
+        if (productCountInStock === '' && !hasVariantWithStock) {
+          alert('Please set either a product Stock quantity or add at least one variant with stock quantity.');
           return;
         }
 
@@ -984,12 +1002,18 @@ append scripts
           }
           cleanedFormData.append('description', description);
 
-          cleanedFormData.append('price', formData.get('price'));
+          // Use product price if set; when using variants-only pricing, send 0 so backend has a valid value
+          const productPriceVal = formData.get('price');
+          cleanedFormData.append('price', (productPriceVal && productPriceVal.toString().trim() !== '') ? productPriceVal : '0');
           cleanedFormData.append('productType', formData.get('productType'));
           cleanedFormData.append('status', formData.get('status'));
 
+          // Use product countInStock if set; when using variants-only stock, send 0
+          const productCountInStockVal = formData.get('countInStock');
+          cleanedFormData.append('countInStock', (productCountInStockVal !== null && productCountInStockVal.toString().trim() !== '') ? productCountInStockVal.toString().trim() : '0');
+
           // Add optional fields if they have values
-          const optionalFields = ['salePrice', 'countInStock', 'vendor', 'brand'];
+          const optionalFields = ['salePrice', 'vendor', 'brand'];
           optionalFields.forEach(field => {
             const value = formData.get(field);
             if (value && value.trim() !== '') {
@@ -1058,7 +1082,7 @@ append scripts
             handleArrayField(fieldName, cleanedFormData);
           });
 
-          // Handle variants array (different structure than simple arrays)
+          // Handle variants array - always include price and salePrice so backend gets current values
           const variantItems = document.querySelectorAll('.variant-item');
           if (variantItems.length > 0) {
             const variants = Array.from(variantItems).map(item => {
@@ -1074,8 +1098,8 @@ append scripts
               if (sizeInput && sizeInput.value) variant.size = sizeInput.value;
               if (colorInput && colorInput.value) variant.color = colorInput.value;
               if (colorHexInput && colorHexInput.value) variant.colorHex = colorHexInput.value;
-              if (priceInput && priceInput.value) variant.price = parseFloat(priceInput.value) || 0;
-              if (salePriceInput && salePriceInput.value) variant.salePrice = parseFloat(salePriceInput.value) || 0;
+              variant.price = (priceInput && priceInput.value !== '') ? (parseFloat(priceInput.value) || 0) : 0;
+              variant.salePrice = (salePriceInput && salePriceInput.value !== '') ? (parseFloat(salePriceInput.value) || 0) : 0;
               if (countInStockInput && countInStockInput.value !== '') {
                 variant.countInStock = parseInt(countInStockInput.value) || 0;
               }

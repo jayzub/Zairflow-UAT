@@ -20,7 +20,7 @@ block ecomContent
     h2.mb-6 Cart
     #cartSignInRequired.alert.alert-info(style='display: none;')
       | Please
-      a.ms-1(href='/customers/sign-in?redirect=' + encodeURIComponent('/cart')) sign in
+      a.ms-1#cartSignInLink(href='/customers/sign-in') sign in
       |  to view your cart.
     #cartContent.row.g-5(style='display: none;')
       .col-12.col-lg-8
@@ -208,8 +208,7 @@ append scripts
           .then(function(r) {
             if (r.status === 401) {
               token = null;
-              var redirectUrl = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
-              window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(redirectUrl);
+              window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.href);
               return null;
             }
             if (!r.ok) throw new Error('Could not load cart');

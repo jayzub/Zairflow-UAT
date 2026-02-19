@@ -16,11 +16,17 @@ mixin ProductDescription(options = {})
     h4.mb-3 Stock Information
     .row.g-3
       .col-12.col-sm-6
-        input.form-control(type='number' name="countInStock" placeholder='Count in stock' min="0" required value=product.countInStock)
+        label.form-label.text-body-tertiary.small(for='productCountInStock') Stock quantity
+        input.form-control#productCountInStock(type='number' name="countInStock" placeholder='Count in stock' min="0" value=product.countInStock)
+        small.form-text.text-muted When using variants, set stock on each variant; product stock is optional (fallback).
       .col-12.col-sm-6
-        input.form-control(type='number' name="price" placeholder='Price' min="0" step="0.01" required value=product.price)
+        label.form-label.text-body-tertiary.small(for='productPrice') Price
+        input.form-control#productPrice(type='number' name="price" placeholder='Price' min="0" step="0.01" value=product.price)
+        small.form-text.text-muted When using variants, set price on each variant; product price is optional (fallback for listing).
       .col-12.col-sm-6
-        input.form-control(type='number' name="salePrice" placeholder='Sale price (optional)' min="0" step="0.01" value=product.salePrice)
+        label.form-label.text-body-tertiary.small(for='productSalePrice') Sale price (optional)
+        input.form-control#productSalePrice(type='number' name="salePrice" placeholder='Sale price' min="0" step="0.01" value=product.salePrice)
+        small.form-text.text-muted With variants, use sale price on each variant instead.
   
   .mb-6
     h4.mb-3 Product Description

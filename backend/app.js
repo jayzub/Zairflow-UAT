@@ -50,7 +50,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 app.use(morgan('tiny'));
 app.use(mongoSanitize());
-app.use(methodOverride('_method'));
+// Support _method in query (for multipart POST) or body (for urlencoded)
+app.use(methodOverride(function (req) {
+  return req.query._method || (req.body && req.body._method);
+}));
 
 app.use(cors({
   origin: 'http://localhost:3000',

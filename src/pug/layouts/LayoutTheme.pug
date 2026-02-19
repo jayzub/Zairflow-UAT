@@ -74,10 +74,18 @@ append layoutScripts
         e.preventDefault();
         var role = (btn.getAttribute && btn.getAttribute('data-nav-role')) || 'admin';
         if (role === 'customer') {
+          // Redirect to current page after sign-out only if it does not require login
+          var currentUrl = window.location.href;
+          var path = (window.location.pathname || '').toLowerCase();
+          var authRequiredPrefixes = ['/profile', '/checkout', '/orders/confirmation', '/orders/'];
+          var requiresAuth = authRequiredPrefixes.some(function(p) { return path.indexOf(p) === 0; });
+          var isAuthPage = path.indexOf('/customers/sign-in') === 0 || path.indexOf('/customers/sign-up') === 0;
+          var goAfterLogout = (requiresAuth || isAuthPage) ? '/' : currentUrl;
+
           localStorage.removeItem('customerToken');
           fetch('/api/customers/logout', { method: 'GET', credentials: 'same-origin' })
-            .then(function() { window.location.href = '/customers/sign-in'; })
-            .catch(function() { window.location.href = '/customers/sign-in'; });
+            .then(function() { window.location.href = goAfterLogout; })
+            .catch(function() { window.location.href = goAfterLogout; });
         } else {
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminUser');

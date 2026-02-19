@@ -522,7 +522,7 @@ append scripts
           if (!productId) return;
           var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
           if (!token) {
-            window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = '/customers/sign-in?redirect=' + encodeURIComponent(window.location.href);
             return;
           }
           var qtyEl = document.querySelector('[data-product-details] [data-quantity] input');

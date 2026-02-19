@@ -256,9 +256,31 @@ async function updateProduct({ req, productId }) {
     : mongoose.Types.Decimal128.fromString('0');
   const salePrice = body.salePrice ? mongoose.Types.Decimal128.fromString(body.salePrice.toString()) : null;
 
+  // Validate categories on update (same checks as create): IDs valid + belong to store, and product-type compatibility
+  const categories = parsed.categories;
+  const storeIdForValidation = storeId || product.store;
+  if (categories && categories.length > 0 && storeIdForValidation) {
+    for (const categoryId of categories) {
+      if (!isValidObjectId(categoryId, mongoose)) {
+        return { ok: false, status: 400, payload: { success: false, message: `Invalid category ID ${categoryId}` } };
+      }
+      const categoryExists = await categoryRepository.findOneForStoreById(storeIdForValidation, categoryId);
+      if (!categoryExists) {
+        return { ok: false, status: 404, payload: { success: false, message: `Category not found: ${categoryId}` } };
+      }
+    }
+    const compatibility = await validateProductCategoryCompatibility(product.productType, categories, storeIdForValidation);
+    if (!compatibility.valid) {
+      return { ok: false, status: 400, payload: { success: false, message: compatibility.message } };
+    }
+  }
+
   const images = mergeImages(product.images, req.files);
   const updateData = prepareUpdateData(body, parsed, images, price, salePrice);
-  const convertedVariants = parsed.variants ? convertVariantPrices(parsed.variants) : [];
+  const hasVariantsInBody = parsed.variants != null && Array.isArray(parsed.variants);
+  const convertedVariants = hasVariantsInBody ? convertVariantPrices(parsed.variants) : [];
+
+  const variantUpdate = hasVariantsInBody ? { variants: convertedVariants } : {};
 
   switch (product.productType) {
     case 'Clothing':
@@ -269,7 +291,7 @@ async function updateProduct({ req, productId }) {
         fit: body.fit,
         season: body.season,
         gender: body.gender,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'Electronics':
@@ -278,7 +300,7 @@ async function updateProduct({ req, productId }) {
         warranty: parsed.warranty,
         dimensions: parsed.dimensions,
         weight: parsed.weight,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'Furniture':
@@ -291,7 +313,7 @@ async function updateProduct({ req, productId }) {
         capacity: body.capacity,
         roomType: parsed.roomType,
         warranty: parsed.warranty,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'Books':
@@ -304,7 +326,7 @@ async function updateProduct({ req, productId }) {
         genre: parsed.genre || [],
         pages: body.pages,
         publicationDate: body.publicationDate,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'Food':
@@ -314,7 +336,7 @@ async function updateProduct({ req, productId }) {
         nutritionalInfo: parsed.nutritionalInfo,
         expiryDate: body.expiryDate,
         allergens: parsed.allergens || [],
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'Sports':
@@ -323,7 +345,7 @@ async function updateProduct({ req, productId }) {
         skillLevel: body.skillLevel,
         material: body.material,
         weight: parsed.weight,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'HomeGarden':
@@ -331,7 +353,7 @@ async function updateProduct({ req, productId }) {
         room: body.room,
         material: body.material,
         dimensions: parsed.dimensions,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
     case 'HealthBeauty':
@@ -341,17 +363,16 @@ async function updateProduct({ req, productId }) {
         ingredients: parsed.ingredients || [],
         volume: parsed.volume,
         expiryDate: body.expiryDate,
-        variants: convertedVariants,
+        ...variantUpdate,
       });
       break;
   }
 
+  const ProductModel = productTypeModelMap[product.productType] || BaseProduct;
+  const updateOptions = { new: true, runValidators: true };
   const updatedProduct = storeId
-    ? await productRepository.findOneAndUpdate({ _id: productId, store: storeId }, updateData, {
-        new: true,
-        runValidators: true,
-      })
-    : await productRepository.findByIdAndUpdate(productId, updateData, { new: true, runValidators: true });
+    ? await ProductModel.findOneAndUpdate({ _id: productId, store: storeId }, updateData, updateOptions)
+    : await ProductModel.findByIdAndUpdate(productId, updateData, updateOptions);
 
   // Clear product caches (preserve controller behavior)
   const cacheKeys = await storeCache.keys();

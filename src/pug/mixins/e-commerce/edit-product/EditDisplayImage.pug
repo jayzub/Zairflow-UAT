@@ -1,13 +1,12 @@
 mixin EditDisplayImage(product)
   h4.mb-3 Display images
   .dropzone.dropzone-multiple.p-0.mb-5#productImages(data-dropzone)
+    //- Single preview template: Dropzone clones this for each file (existing images added via JS)
     .dz-preview.d-flex.flex-wrap
-      if product && product.images && product.images.length > 0
-        each image in product.images
-          .border.border-translucent.bg-body-emphasis.rounded-3.d-flex.flex-center.position-relative.me-2.mb-2(style='height:80px;width:80px;')
-            img(src=image.url alt="..." data-dz-thumbnail).dz-image
-            a(href="#!" data-dz-remove).dz-remove.text-body-quaternary
-              span(data-feather='x')
+      .border.border-translucent.bg-body-emphasis.rounded-3.d-flex.flex-center.position-relative.me-2.mb-2(style='height:80px;width:80px;')
+        img(src=`${CWD}assets/img/icons/file.png` alt="..." data-dz-thumbnail).dz-image
+        a(href="#!" data-dz-remove).dz-remove.text-body-quaternary
+          span(data-feather='x')
     .dz-message.text-body-tertiary.text-opacity-85(data-dz-message) Drag your photos here
       span.text-body-secondary.px-1 or
       button.btn.btn-link.p-0(type='button') Browse from device

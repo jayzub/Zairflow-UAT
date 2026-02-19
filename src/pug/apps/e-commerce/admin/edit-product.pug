@@ -3,7 +3,7 @@ include ../../../mixins/dashboard/common
 include ../../../mixins/e-commerce/edit-product/EditOrganizeCard
 include ../../../mixins/e-commerce/edit-product/EditProductDescription
 include ../../../mixins/e-commerce/edit-product/EditDisplayImage
-include ../../../mixins/e-commerce/edit-product/EditVariantCard
+include ../../../mixins/e-commerce/add-product/DynamicProductFields
 
 append variables
   - var CWD = '../../../../'
@@ -26,38 +26,12 @@ prepend scripts
 append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Debug product data
+      // Product data from server
       const productData = !{JSON.stringify(product)};
       console.log('Product Data:', productData);
       console.log('Product Type:', productData.productType);
 
-      // Initialize Dropzone with existing images
-      if (typeof Dropzone !== 'undefined') {
-        const existingImages = !{JSON.stringify(product.images || [])};
-        const dropzone = new Dropzone("#productImages", {
-          url: "/api/products",
-          autoProcessQueue: false,
-          uploadMultiple: true,
-          parallelUploads: 5,
-          maxFiles: 5,
-          acceptedFiles: "image/*",
-          addRemoveLinks: true,
-          paramName: "images",
-          headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-          }
-        });
-
-        // Add existing images to dropzone
-        existingImages.forEach(image => {
-          const mockFile = { name: image.public_id, size: 12345 };
-          dropzone.emit("addedfile", mockFile);
-          dropzone.emit("thumbnail", mockFile, image.url);
-          dropzone.emit("complete", mockFile);
-        });
-      }
-
-      // Initialize TinyMCE with existing content
+      // Initialize TinyMCE
       tinymce.init({
         selector: '.tinymce',
         height: '15rem',
@@ -73,90 +47,828 @@ append scripts
         }
       });
 
-      // Show the correct product type fields based on the selected type
-      const productTypeSelect = document.querySelector('select[name="productType"]');
-      const typeFields = document.querySelectorAll('.product-type-fields');
-      
-      function showProductTypeFields(type) {
-        console.log('Showing fields for type:', type);
-        // First hide all type fields
-        typeFields.forEach(field => {
-          field.classList.add('d-none');
-          console.log('Hiding field:', field.className);
-        });
+      // Initialize Dropzone with existing images
+      let dropzone;
+      if (typeof Dropzone !== 'undefined') {
+        const existingImages = !{JSON.stringify(product.images || [])};
+        if (!document.querySelector("#productImages.dz-clickable")) {
+          const dzElement = document.querySelector("#productImages");
+          const previewContainer = dzElement && dzElement.querySelector(".dz-preview");
+          const dropzoneOptions = {
+            url: `/admin/products/${productData._id}`,
+            autoProcessQueue: false,
+            uploadMultiple: true,
+            parallelUploads: 5,
+            maxFiles: 5,
+            acceptedFiles: "image/*",
+            addRemoveLinks: true,
+            paramName: "images",
+            headers: {
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            withCredentials: true
+          };
+          if (previewContainer) {
+            dropzoneOptions.previewsContainer = previewContainer;
+            dropzoneOptions.previewTemplate = previewContainer.innerHTML;
+            previewContainer.innerHTML = ''; // So Dropzone only shows dynamically added previews
+          }
+          dropzone = new Dropzone("#productImages", dropzoneOptions);
+
+          // Add existing images to dropzone as mock files (mark them so we can filter them out later)
+          console.log('Adding existing images to Dropzone:', existingImages);
+          existingImages.forEach(image => {
+            const mockFile = { 
+              name: image.public_id || image.filename || 'existing-image', 
+              size: 12345,
+              _isExistingImage: true, // Mark as existing image
+              url: image.url // Store URL for reference
+            };
+            dropzone.emit("addedfile", mockFile);
+            dropzone.emit("thumbnail", mockFile, image.url);
+            dropzone.emit("complete", mockFile);
+            console.log('Added mock file to Dropzone:', mockFile.name);
+          });
+        } else {
+          dropzone = Dropzone.forElement("#productImages");
+        }
+      }
+
+      // Populate product types from backend config
+      async function populateProductTypes() {
+        try {
+          const response = await fetch('/admin/product-types/config');
+          if (response.ok) {
+            const result = await response.json();
+            const productTypeSelect = document.querySelector('#productTypeSelect') || document.querySelector('select[name="productType"]');
+            
+            if (!productTypeSelect) return;
+            
+            // Clear existing options
+            productTypeSelect.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select product type...';
+            productTypeSelect.appendChild(defaultOption);
+            
+            // Store product types configuration globally for dynamic field generation
+            window.productTypesConfig = {};
+            result.data.forEach(type => {
+              window.productTypesConfig[type.name] = type;
+              const option = document.createElement('option');
+              option.value = type.name;
+              option.textContent = type.displayName || type.name;
+              // Select current product type
+              if (productData.productType === type.name) {
+                option.selected = true;
+              }
+              productTypeSelect.appendChild(option);
+            });
+            
+            // Generate fields with existing data if product type is set (do not update category dropdown on load - server already rendered options)
+            if (productData.productType) {
+              setTimeout(() => {
+                generateProductTypeFields(productData.productType, productData);
+                // Populate variants after fields are generated
+                setTimeout(() => {
+                  populateVariants();
+                }, 200);
+              }, 100);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch product types:', error);
+        }
+      }
+
+      // Dynamic field generation function
+      function generateProductTypeFields(productType, existingData = {}) {
+        const container = document.getElementById('dynamicProductFields');
+        if (!container) return;
+
+        // Clear existing content
+        container.innerHTML = '';
+
+        if (!productType) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-info-circle me-2"></i>
+              Select a product type to see specific fields
+            </div>
+          `;
+          return;
+        }
+
+        // Get product type configuration
+        const productTypeConfig = getProductTypeConfig(productType);
+        if (!productTypeConfig) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Product type configuration not found
+            </div>
+          `;
+          return;
+        }
+
+        // Generate fields based on configuration
+        let fieldsHTML = `<h5 class="mb-3">${productTypeConfig.displayName || productTypeConfig.name} Details</h5>`;
         
-        // Then show the appropriate field
-        if (type) {
-          const selectedType = type.toLowerCase();
-          const targetField = document.querySelector(`.${selectedType}-fields`);
-          if (targetField) {
-            targetField.classList.remove('d-none');
-            console.log(`Showing ${selectedType} fields`);
-          } else {
-            console.log(`No fields found for type: ${selectedType}`);
+        if (productTypeConfig.fields) {
+          Object.entries(productTypeConfig.fields).forEach(([fieldName, fieldConfig]) => {
+            const fieldValue = existingData[fieldName];
+            fieldsHTML += generateFieldHTML(fieldName, fieldConfig, fieldValue);
+          });
+        }
+
+        container.innerHTML = fieldsHTML;
+      }
+
+      // Helper function to generate individual field HTML with existing values
+      function generateFieldHTML(fieldName, fieldConfig, existingValue) {
+        const { type, required, label, enum: enumValues, options } = fieldConfig;
+        const fieldLabel = label || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+        const isRequired = required ? 'required' : '';
+        
+        let fieldHTML = `
+          <div class="mb-3">
+            <label class="form-label">${fieldLabel}${required ? ' *' : ''}</label>
+        `;
+
+        switch (type) {
+          case 'string':
+            if (enumValues && options) {
+              fieldHTML += `<select class="form-select" name="${fieldName}" ${isRequired}>`;
+              fieldHTML += `<option value="">Select ${fieldLabel.toLowerCase()}...</option>`;
+              options.forEach(option => {
+                const selected = existingValue === option.value ? 'selected' : '';
+                fieldHTML += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+              });
+              fieldHTML += '</select>';
+            } else {
+              const value = existingValue || '';
+              fieldHTML += `<input class="form-control" type="text" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" value="${escapeHtml(value)}" ${isRequired}>`;
+            }
+            break;
+          
+          case 'number':
+            const numValue = existingValue !== undefined && existingValue !== null ? existingValue : '';
+            fieldHTML += `<input class="form-control" type="number" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" value="${numValue}" ${isRequired}>`;
+            break;
+          
+          case 'boolean':
+            const checked = existingValue ? 'checked' : '';
+            fieldHTML += `
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="${fieldName}" id="${fieldName}" ${checked}>
+                <label class="form-check-label" for="${fieldName}">${fieldLabel}</label>
+              </div>
+            `;
+            break;
+          
+          case 'date':
+            let dateValue = '';
+            if (existingValue) {
+              // Handle both Date objects and date strings
+              const date = existingValue instanceof Date ? existingValue : new Date(existingValue);
+              if (!isNaN(date.getTime())) {
+                dateValue = date.toISOString().split('T')[0];
+              }
+            }
+            fieldHTML += `<input class="form-control" type="date" name="${fieldName}" value="${dateValue}" ${isRequired}>`;
+            break;
+          
+          case 'array':
+            fieldHTML += `<div class="array-container">`;
+            if (existingValue && Array.isArray(existingValue) && existingValue.length > 0) {
+              existingValue.forEach((item, index) => {
+                const itemValue = typeof item === 'object' ? JSON.stringify(item) : item;
+                fieldHTML += `
+                  <div class="input-group mb-2">
+                    <input class="form-control" type="text" name="${fieldName}[${index}]" value="${escapeHtml(itemValue)}" placeholder="Enter ${fieldLabel.toLowerCase()}">
+                    <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
+                  </div>
+                `;
+              });
+            } else {
+              fieldHTML += `
+                <div class="input-group mb-2">
+                  <input class="form-control" type="text" name="${fieldName}[0]" placeholder="Enter ${fieldLabel.toLowerCase()}" ${isRequired}>
+                  <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
+                </div>
+              `;
+            }
+            fieldHTML += `<button class="btn btn-outline-primary btn-sm add-array-item" type="button" data-field="${fieldName}">Add ${fieldLabel}</button>`;
+            fieldHTML += `</div>`;
+            break;
+          
+          case 'object':
+            const objValue = existingValue ? (typeof existingValue === 'string' ? existingValue : JSON.stringify(existingValue, null, 2)) : '';
+            fieldHTML += `<textarea class="form-control" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()} (JSON format)" rows="3" ${isRequired}>${escapeHtml(objValue)}</textarea>`;
+            break;
+
+          case 'key_value_array':
+            fieldHTML += `<div class="key-value-container mb-3">`;
+            if (existingValue && Array.isArray(existingValue) && existingValue.length > 0) {
+              existingValue.forEach((item, index) => {
+                const key = Object.keys(item)[0] || '';
+                const value = item[key] || '';
+                fieldHTML += `
+                  <div class="key-value-item d-flex gap-2 mb-2">
+                    <input class="form-control" type="text" name="${fieldName}[${index}][key]" placeholder="Key" value="${escapeHtml(key)}" ${isRequired}>
+                    <input class="form-control" type="text" name="${fieldName}[${index}][value]" placeholder="Value" value="${escapeHtml(value)}" ${isRequired}>
+                    <button class="btn btn-outline-danger" type="button" onclick="this.closest('.key-value-item').remove()">×</button>
+                  </div>
+                `;
+              });
+            } else {
+              fieldHTML += `
+                <div class="key-value-item d-flex gap-2 mb-2">
+                  <input class="form-control" type="text" name="${fieldName}[0][key]" placeholder="Key" ${isRequired}>
+                  <input class="form-control" type="text" name="${fieldName}[0][value]" placeholder="Value" ${isRequired}>
+                  <button class="btn btn-outline-danger" type="button" onclick="this.closest('.key-value-item').remove()">×</button>
+                </div>
+              `;
+            }
+            fieldHTML += `
+              <button class="btn btn-outline-primary btn-sm add-key-value-item" type="button" data-field="${fieldName}">
+                Add Key-Value Pair
+              </button>
+            </div>`;
+            break;
+          
+          default:
+            const defaultValue = existingValue || '';
+            fieldHTML += `<input class="form-control" type="text" name="${fieldName}" placeholder="Enter ${fieldLabel.toLowerCase()}" value="${escapeHtml(defaultValue)}" ${isRequired}>`;
+        }
+
+        fieldHTML += '</div>';
+        return fieldHTML;
+      }
+
+      // Helper function to escape HTML
+      function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, m => map[m]);
+      }
+
+      // Helper function to get product type configuration
+      function getProductTypeConfig(productTypeName) {
+        return window.productTypesConfig?.[productTypeName];
+      }
+
+      // Initialize Choices.js for category dropdown
+      let categoryChoices = null;
+      function initializeCategoryDropdown() {
+        const categorySelect = document.querySelector('#categorySelect') || document.querySelector('select[name="category"]');
+        if (!categorySelect) {
+          console.warn('Category select element not found');
+          return false;
+        }
+        
+        try {
+          const existingInstance = Choices.getInstance(categorySelect);
+          if (existingInstance) {
+            categoryChoices = existingInstance;
+            return true;
+          }
+        } catch (e) {
+          // No existing instance, continue to create one
+        }
+        
+        try {
+          categoryChoices = new Choices(categorySelect, {
+            removeItemButton: true,
+            placeholder: true,
+            placeholderValue: 'Select categories...',
+            searchEnabled: true,
+            searchChoices: true,
+            allowHTML: false
+          });
+          return true;
+        } catch (e) {
+          console.error('Could not initialize Choices:', e);
+          return false;
+        }
+      }
+
+      // Fetch compatible categories for a product type
+      async function fetchCompatibleCategories(productType) {
+        if (!productType) {
+          return [];
+        }
+        
+        try {
+          const response = await fetch(`/admin/categories/compatible?productType=${encodeURIComponent(productType)}`, {
+            credentials: 'include'
+          });
+          
+          if (!response.ok) {
+            return [];
+          }
+          
+          const result = await response.json();
+          return result.success ? result.data : [];
+        } catch (error) {
+          console.error('Error fetching compatible categories:', error);
+          return [];
+        }
+      }
+
+      // Store all categories for fallback
+      const allCategories = !{JSON.stringify(categories || [])};
+
+      // Update category dropdown with compatible categories (only when product type changes; skip on initial load - server already rendered options)
+      async function updateCategoryDropdown(productType) {
+        if (!categoryChoices) {
+          const initialized = initializeCategoryDropdown();
+          if (!initialized || !categoryChoices) {
+            return;
           }
         }
-      }
-
-      // Show fields for the initial product type
-      if (productTypeSelect && productTypeSelect.value) {
-        console.log('Initial product type from select:', productTypeSelect.value);
-        showProductTypeFields(productTypeSelect.value);
-      } else if (productData.productType) {
-        // If no value in select, try to get from product data
-        console.log('Using product data type:', productData.productType);
-        showProductTypeFields(productData.productType);
         
-        // Set the select value to match the product type
-        if (productTypeSelect) {
-          productTypeSelect.value = productData.productType;
+        if (typeof categoryChoices.setChoices !== 'function') {
+          return;
+        }
+        
+        try {
+          let selectedValues = [];
+          try {
+            selectedValues = categoryChoices.getValue(true) || [];
+          } catch (e) {
+            if (productData.category) {
+              const categoryIds = Array.isArray(productData.category) 
+                ? productData.category.map(c => (c._id || c).toString())
+                : [(productData.category._id || productData.category).toString()];
+              selectedValues = categoryIds;
+            }
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          let choicesToSet = [];
+          
+          if (!productType) {
+            if (allCategories && allCategories.length > 0) {
+              choicesToSet = allCategories.map(category => ({
+                value: category._id.toString(),
+                label: category.name,
+                selected: selectedValues.includes(category._id.toString())
+              }));
+            }
+          } else {
+            const compatibleCategories = await fetchCompatibleCategories(productType);
+            
+            if (compatibleCategories.length === 0) {
+              choicesToSet = [{
+                value: '',
+                label: 'No compatible categories available',
+                disabled: true
+              }];
+            } else {
+              choicesToSet = compatibleCategories.map(category => ({
+                value: category._id.toString(),
+                label: category.name,
+                selected: selectedValues.includes(category._id.toString())
+              }));
+            }
+          }
+          
+          if (choicesToSet.length > 0) {
+            try {
+              categoryChoices.setChoices(choicesToSet, 'value', 'label', true);
+            } catch (setChoicesErr) {
+              console.warn('Choices setChoices failed (theme instance may not support it):', setChoicesErr);
+            }
+          }
+        } catch (error) {
+          console.error('Error updating category dropdown:', error);
         }
       }
 
-      // Handle product type change
-      productTypeSelect?.addEventListener('change', function() {
-        console.log('Product type changed to:', this.value);
-        showProductTypeFields(this.value);
+      // Product type selection handler
+      const productTypeSelect = document.querySelector('#productTypeSelect') || document.querySelector('select[name="productType"]');
+      
+      productTypeSelect?.addEventListener('change', async function() {
+        const selectedType = this.value;
+        console.log('Product type selected:', selectedType);
+        
+        // Generate product type specific fields with existing data
+        generateProductTypeFields(selectedType, productData);
+        
+        // Update category dropdown with compatible categories
+        await updateCategoryDropdown(selectedType);
       });
 
-      // Debug information
-      console.log('Product Type Select:', productTypeSelect?.value);
-      console.log('Type Fields:', typeFields.length);
-      typeFields.forEach(field => {
-        console.log('Field class:', field.className);
+      // Call the function when page loads
+      populateProductTypes();
+      
+      // Initialize category dropdown after DOM is ready (edit page: do not call updateCategoryDropdown on load - categories are already server-rendered)
+      function waitForChoicesAndInit() {
+        if (typeof Choices === 'undefined') {
+          setTimeout(waitForChoicesAndInit, 100);
+          return;
+        }
+        
+        setTimeout(() => {
+          initializeCategoryDropdown();
+          // Edit page: options are already in the template; only update when user changes product type
+        }, 200);
+      }
+      
+      setTimeout(waitForChoicesAndInit, 300);
+
+      // Event delegation for dynamic array fields
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-array-item')) {
+          const fieldName = e.target.dataset.field;
+          const container = e.target.closest('.array-container');
+          const existingInputs = container.querySelectorAll(`input[name^="${fieldName}["]`);
+          const newIndex = existingInputs.length;
+          
+          const newInput = document.createElement('div');
+          newInput.className = 'input-group mb-2';
+          newInput.innerHTML = `
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}]" placeholder="Enter ${fieldName}">
+            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.input-group').remove()">×</button>
+          `;
+          
+          container.insertBefore(newInput, e.target);
+        }
+        
+        if (e.target.classList.contains('add-key-value-item')) {
+          const fieldName = e.target.dataset.field;
+          const container = e.target.closest('.key-value-container');
+          const existingItems = container.querySelectorAll('.key-value-item');
+          const newIndex = existingItems.length;
+          
+          const newKeyValueItem = document.createElement('div');
+          newKeyValueItem.className = 'key-value-item d-flex gap-2 mb-2';
+          newKeyValueItem.innerHTML = `
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}][key]" placeholder="Key (e.g. cotton)">
+            <input class="form-control" type="text" name="${fieldName}[${newIndex}][value]" placeholder="Value (e.g. 60%)">
+            <button class="btn btn-outline-danger" type="button" onclick="this.closest('.key-value-item').remove()">×</button>
+          `;
+          
+          container.insertBefore(newKeyValueItem, e.target);
+        }
       });
 
-      // Initialize variant buttons
-      document.querySelectorAll('.add-variant-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const container = this.previousElementSibling;
-          const variantItem = container.querySelector('.variant-item').cloneNode(true);
-          // Clear input values
-          variantItem.querySelectorAll('input').forEach(input => input.value = '');
-          // Update index
-          const newIndex = container.querySelectorAll('.variant-item').length;
-          variantItem.querySelectorAll('input').forEach(input => {
-            input.name = input.name.replace(/\[\d+\]/, `[${newIndex}]`);
+      // Normalize value from DB (handles Decimal128 / $numberDecimal and numbers)
+      function variantNumberValue(val) {
+        if (val === undefined || val === null || val === '') return '';
+        if (typeof val === 'number' && !isNaN(val)) return String(val);
+        if (typeof val === 'string') return val;
+        // Mongoose Decimal128 serializes as { $numberDecimal: "19.99" }
+        if (val && typeof val === 'object' && typeof val.$numberDecimal === 'string') {
+          return val.$numberDecimal;
+        }
+        return String(Number(val));
+      }
+
+      // Populate variants from existing product data (only on initial load)
+      let variantsPopulated = false;
+      function populateVariants() {
+        if (variantsPopulated) return; // Don't repopulate if already done
+        
+        const container = document.querySelector('.variants-container');
+        if (!container) return;
+        
+        const variants = productData.variants || [];
+        if (variants.length > 0) {
+          container.innerHTML = '';
+          variants.forEach((variant, index) => {
+            const variantItem = document.createElement('div');
+            variantItem.className = 'variant-item mb-3';
+            const price = variantNumberValue(variant.price);
+            const salePrice = variantNumberValue(variant.salePrice);
+            const countInStock = variant.countInStock !== undefined && variant.countInStock !== null ? String(variant.countInStock) : '';
+            variantItem.innerHTML = `
+              <div class="">
+                <input class="form-control mb-2" type="text" name="variants[${index}][size]" placeholder="Size" value="${escapeHtml(variant.size || '')}">
+                <input class="form-control mb-2" type="text" name="variants[${index}][color]" placeholder="Color" value="${escapeHtml(variant.color || '')}">
+                <input class="form-control mb-2" type="text" name="variants[${index}][colorHex]" placeholder="Color Hex Code" value="${escapeHtml(variant.colorHex || '')}">
+                <input class="form-control mb-2" type="number" name="variants[${index}][price]" placeholder="Price" step="0.01" value="${escapeHtml(price)}">
+                <input class="form-control mb-2" type="number" name="variants[${index}][salePrice]" placeholder="Sale Price" step="0.01" value="${escapeHtml(salePrice)}">
+                <input class="form-control mb-2" type="number" name="variants[${index}][countInStock]" placeholder="Stock Quantity" min="0" value="${escapeHtml(countInStock)}">
+                <input class="form-control mb-2" type="text" name="variants[${index}][sku]" placeholder="SKU" value="${escapeHtml(variant.sku || '')}">
+                <button class="btn btn-outline-danger" type="button" onclick="this.closest('.variant-item').remove()">Remove Variant</button>
+              </div>
+            `;
+            container.appendChild(variantItem);
           });
-          container.appendChild(variantItem);
-        });
+          variantsPopulated = true;
+        }
+      }
+
+      // Variant handler using event delegation
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-variant-btn')) {
+          const container = document.querySelector('.variants-container');
+          if (!container) return;
+          
+          const variantItems = container.querySelectorAll('.variant-item');
+          const idx = variantItems.length;
+          const newVariant = document.createElement('div');
+          newVariant.className = 'variant-item mb-3';
+          newVariant.innerHTML = `
+            <div class="">
+              <input class="form-control mb-2" type="text" name="variants[${idx}][size]" placeholder="Size">
+              <input class="form-control mb-2" type="text" name="variants[${idx}][color]" placeholder="Color">
+              <input class="form-control mb-2" type="text" name="variants[${idx}][colorHex]" placeholder="Color Hex Code">
+              <input class="form-control mb-2" type="number" name="variants[${idx}][price]" placeholder="Price" step="0.01">
+              <input class="form-control mb-2" type="number" name="variants[${idx}][salePrice]" placeholder="Sale Price" step="0.01">
+              <input class="form-control mb-2" type="number" name="variants[${idx}][countInStock]" placeholder="Stock Quantity" min="0">
+              <input class="form-control mb-2" type="text" name="variants[${idx}][sku]" placeholder="SKU">
+              <button class="btn btn-outline-danger" type="button" onclick="this.closest('.variant-item').remove()">Remove Variant</button>
+            </div>
+          `;
+          container.appendChild(newVariant);
+        }
       });
 
-      // Initialize port buttons
-      document.querySelectorAll('.add-port-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const container = this.previousElementSibling;
-          const portItem = container.querySelector('.port-item').cloneNode(true);
-          // Clear input values
-          portItem.querySelectorAll('input').forEach(input => input.value = '');
-          // Update index
-          const newIndex = container.querySelectorAll('.port-item').length;
-          portItem.querySelectorAll('input').forEach(input => {
-            input.name = input.name.replace(/\[\d+\]/, `[${newIndex}]`);
-          });
-          container.appendChild(portItem);
+
+      // Form submission handler
+      const form = document.getElementById('productForm');
+      form?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submission started');
+
+        const productType = this.querySelector('[name="productType"]')?.value;
+        const name = this.querySelector('[name="name"]')?.value?.trim();
+        const productPrice = (this.querySelector('[name="price"]')?.value || '').trim();
+        const productCountInStock = (this.querySelector('[name="countInStock"]')?.value || '').trim();
+        const variantItems = this.querySelectorAll('.variant-item');
+        const hasVariantWithPrice = Array.from(variantItems).some(item => {
+          const priceInput = item.querySelector('input[name*="[price]"]');
+          return priceInput && priceInput.value && parseFloat(priceInput.value) > 0;
         });
+        const hasVariantWithStock = Array.from(variantItems).some(item => {
+          const stockInput = item.querySelector('input[name*="[countInStock]"]');
+          return stockInput && stockInput.value !== '';
+        });
+
+        if (!productType || !name) {
+          alert('Please fill in Product Type and Name.');
+          return;
+        }
+        if (!productPrice && !hasVariantWithPrice) {
+          alert('Please set either a product Price or add at least one variant with a price.');
+          return;
+        }
+        if (productCountInStock === '' && !hasVariantWithStock) {
+          alert('Please set either a product Stock quantity or add at least one variant with stock quantity.');
+          return;
+        }
+
+        const formData = new FormData(this);
+        await submitForm(formData);
       });
+
+      // Form submission helper function
+      async function submitForm(formData) {
+        try {
+          const updateBtn = document.querySelector('button[type="submit"]');
+          const originalText = updateBtn.innerHTML;
+          
+          updateBtn.disabled = true;
+          updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+          const cleanedFormData = new FormData();
+
+          // Add basic fields
+          cleanedFormData.append('name', formData.get('name').trim());
+          
+          // Get description from TinyMCE
+          let description = '';
+          try {
+            const editor = tinymce.get('description');
+            if (editor) {
+              description = editor.getContent();
+            } else {
+              description = formData.get('description') || '';
+            }
+          } catch (e) {
+            description = formData.get('description') || '';
+          }
+          cleanedFormData.append('description', description);
+
+          const productPriceVal = formData.get('price');
+          cleanedFormData.append('price', (productPriceVal && productPriceVal.toString().trim() !== '') ? productPriceVal : '0');
+          cleanedFormData.append('productType', formData.get('productType'));
+
+          const productCountInStockVal = formData.get('countInStock');
+          cleanedFormData.append('countInStock', (productCountInStockVal !== null && productCountInStockVal.toString().trim() !== '') ? productCountInStockVal.toString().trim() : '0');
+          
+          // Add optional fields
+          const optionalFields = ['salePrice', 'vendor', 'brand'];
+          optionalFields.forEach(field => {
+            const value = formData.get(field);
+            if (value && value.trim() !== '') {
+              cleanedFormData.append(field, value.trim());
+            }
+          });
+
+          // Add all dynamically generated fields
+          const dynamicallyGeneratedFields = [
+            'material', 'fit', 'season', 'gender',
+            'modelNumber', 'warranty', 'weight',
+            'style', 'capacity', 'color', 'colorHex',
+            'author', 'publisher', 'isbn', 'language', 'format', 'pages', 'publicationDate',
+            'expiryDate',
+            'sport', 'skillLevel',
+            'room',
+            'skinType'
+          ];
+          
+          dynamicallyGeneratedFields.forEach(field => {
+            const value = formData.get(field);
+            if (value && value.trim() !== '') {
+              cleanedFormData.append(field, value.trim());
+            }
+          });
+
+          // Handle boolean fields
+          cleanedFormData.append('isFeatured', formData.get('isFeatured') === 'on');
+          cleanedFormData.append('isAssembly', formData.get('isAssembly') === 'on');
+
+          // Add categories (before files - multer only reliably parses req.body for fields that appear before file fields)
+          const selectedCategories = Array.from(document.querySelectorAll('select[name="category"] option:checked'))
+            .map(option => option.value);
+          if (selectedCategories.length > 0) {
+            cleanedFormData.append('category', JSON.stringify(selectedCategories));
+          }
+
+          // Add tags
+          const selectedTags = Array.from(document.querySelectorAll('select[name="tags[]"] option:checked'))
+            .map(option => option.value);
+          if (selectedTags.length > 0) {
+            cleanedFormData.append('tags', JSON.stringify(selectedTags));
+          }
+
+          // Handle array fields
+          const arrayFields = ['care', 'ingredients', 'allergens', 'genre', 'roomType', 'material'];
+          arrayFields.forEach(fieldName => {
+            handleArrayField(fieldName, cleanedFormData);
+          });
+
+          // Handle variants array BEFORE files - multer requires text fields before file fields to populate req.body
+          const variantItems = document.querySelectorAll('.variant-item');
+          if (variantItems.length > 0) {
+            const variants = Array.from(variantItems).map(item => {
+              const sizeInput = item.querySelector('input[name*="[size]"]');
+              const colorInput = item.querySelector('input[name*="[color]"]');
+              const colorHexInput = item.querySelector('input[name*="[colorHex]"]');
+              const priceInput = item.querySelector('input[name*="[price]"]');
+              const salePriceInput = item.querySelector('input[name*="[salePrice]"]');
+              const countInStockInput = item.querySelector('input[name*="[countInStock]"]');
+              const skuInput = item.querySelector('input[name*="[sku]"]');
+              
+              const variant = {};
+              if (sizeInput && sizeInput.value) variant.size = sizeInput.value;
+              if (colorInput && colorInput.value) variant.color = colorInput.value;
+              if (colorHexInput && colorHexInput.value) variant.colorHex = colorHexInput.value;
+              variant.price = (priceInput && priceInput.value !== '') ? (parseFloat(priceInput.value) || 0) : 0;
+              variant.salePrice = (salePriceInput && salePriceInput.value !== '') ? (parseFloat(salePriceInput.value) || 0) : 0;
+              if (countInStockInput && countInStockInput.value !== '') {
+                variant.countInStock = parseInt(countInStockInput.value) || 0;
+              }
+              if (skuInput && skuInput.value) variant.sku = skuInput.value;
+              
+              return Object.keys(variant).length > 0 ? variant : null;
+            }).filter(v => v !== null);
+            
+            if (variants.length > 0) {
+              cleanedFormData.append('variants', JSON.stringify(variants));
+            }
+          }
+
+          // Handle key-value array fields
+          const keyValueArrayFields = ['materialComposition', 'specifications', 'dimensions', 'nutritionalInfo'];
+          keyValueArrayFields.forEach(fieldName => {
+            handleKeyValueArrayField(fieldName, cleanedFormData);
+          });
+
+          // Handle object fields (JSON textarea fields)
+          const objectFields = ['isAssembly', 'weight', 'volume'];
+          objectFields.forEach(fieldName => {
+            const value = formData.get(fieldName);
+            if (value && value.trim() !== '') {
+              try {
+                JSON.parse(value);
+                cleanedFormData.append(fieldName, value);
+              } catch (e) {
+                console.warn(`Field ${fieldName} is not valid JSON, skipping`);
+              }
+            }
+          });
+
+          // Add images LAST - multer only reliably populates req.body for fields that appear before file fields
+          if (dropzone) {
+            const files = dropzone.getAcceptedFiles();
+            files.forEach((file) => {
+              if (file instanceof File && file.size > 0) {
+                cleanedFormData.append('images', file);
+              }
+            });
+          }
+
+          // Use POST with _method=PUT in URL so multipart parses correctly (PUT + multipart can trigger "Unexpected end of form"); method-override routes to PUT handler
+          const response = await fetch(`/admin/products/${productData._id}?_method=PUT`, {
+            method: 'POST',
+            body: cleanedFormData,
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const contentType = response.headers.get('content-type');
+          let result;
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          } else {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 500));
+            throw new Error('Server returned non-JSON response.');
+          }
+
+          if (result.success) {
+            window.location.href = '/admin/products';
+          } else {
+            throw new Error(result.error || 'Error updating product');
+          }
+        } catch (error) {
+          console.error('Error details:', error);
+          alert('Error updating product: ' + error.message);
+        } finally {
+          const updateBtn = document.querySelector('button[type="submit"]');
+          updateBtn.disabled = false;
+          updateBtn.innerHTML = 'Update Product';
+        }
+      }
+
+      // Generic function to handle regular array fields
+      function handleArrayField(fieldName, cleanedFormData) {
+        const inputs = document.querySelectorAll(`input[name^="${fieldName}["]`);
+        const result = [];
+        
+        inputs.forEach(input => {
+          const value = input.value.trim();
+          if (value) {
+            result.push(value);
+          }
+        });
+        
+        if (result.length > 0) {
+          cleanedFormData.append(fieldName, JSON.stringify(result));
+        }
+      }
+
+      // Generic function to handle key-value array fields
+      function handleKeyValueArrayField(fieldName, cleanedFormData) {
+        const inputs = document.querySelectorAll(`input[name^="${fieldName}["]`);
+        const result = [];
+        
+        const groupedInputs = {};
+        inputs.forEach(input => {
+          const name = input.name;
+          const match = name.match(new RegExp(`${fieldName}\\[(\\d+)\\]\\[(key|value)\\]`));
+          if (match) {
+            const index = match[1];
+            const field = match[2];
+            if (!groupedInputs[index]) {
+              groupedInputs[index] = {};
+            }
+            groupedInputs[index][field] = input.value;
+          }
+        });
+        
+        Object.keys(groupedInputs).forEach(index => {
+          const item = groupedInputs[index];
+          if (item.key && item.value) {
+            result.push({ 
+              [item.key]: item.value
+            });
+          }
+        });
+        
+        if (result.length > 0) {
+          cleanedFormData.append(fieldName, JSON.stringify(result));
+        }
+      }
     });
 
 block content
@@ -177,4 +889,4 @@ block content
           .col-12.col-xl-12
             +EditOrganizeCard({ categories, vendors, product }).mb-3
           .col-12.col-xl-12
-            +EditVariantCard({ product })
+            +DynamicProductFields

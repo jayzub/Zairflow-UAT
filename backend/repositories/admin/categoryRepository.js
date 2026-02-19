@@ -8,10 +8,63 @@ function toObjectId(id) {
 }
 
 async function findAllForStoreWithTree(storeId) {
-  return Category.find({ store: toObjectId(storeId) })
-    .populate('parent', 'name')
-    .populate('children', 'name')
-    .sort({ displayOrder: 1, name: 1 });
+  const sid = toObjectId(storeId);
+  const docs = await Category.aggregate([
+    { $match: { store: sid } },
+    {
+      $lookup: {
+        from: 'products',
+        localField: '_id',
+        foreignField: 'category',
+        as: 'products',
+      },
+    },
+    {
+      $addFields: {
+        productCount: {
+          $size: {
+            $filter: {
+              input: '$products',
+              as: 'p',
+              cond: { $eq: ['$$p.store', sid] },
+            },
+          },
+        },
+      },
+    },
+    { $project: { products: 0 } },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'parent',
+        foreignField: '_id',
+        as: 'parentDoc',
+      },
+    },
+    {
+      $set: {
+        parent: {
+          $cond: {
+            if: { $gt: [{ $size: '$parentDoc' }, 0] },
+            then: { name: { $arrayElemAt: ['$parentDoc.name', 0] } },
+            else: null,
+          },
+        },
+      },
+    },
+    { $project: { parentDoc: 0 } },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: '_id',
+        foreignField: 'parent',
+        as: 'children',
+        pipeline: [{ $project: { name: 1, _id: 1 } }],
+      },
+    },
+    { $sort: { displayOrder: 1, name: 1 } },
+  ]);
+  return docs;
 }
 
 async function findForStoreParentSelection(storeId) {

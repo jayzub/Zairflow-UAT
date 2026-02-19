@@ -11,7 +11,7 @@ mixin CartDropdown
           | Your cart is empty
         #cartDropdownSignIn.text-center.text-body-tertiary.py-5.px-3(style='display: none;')
           | Please
-          a.ms-1(href='/customers/sign-in?redirect=' + encodeURIComponent('/cart')) sign in
+          a.ms-1(href='/customers/sign-in') sign in
           |  to view your cart
       .card-footer.p-2.border-top.border-translucent.bg-body
         a#cartDropdownGoToCart.btn.btn-primary.w-100(href='/cart')

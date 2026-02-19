@@ -1,7 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const BaseProduct = require('../../models/products/baseProduct');
-const { upload } = require('../../config/multerConfig');
 const { respondWithViewOrJson } = require('../../helpers/respondWithViewOrJson');
 const { asyncHandler } = require('../../middleware/asyncHandler');
 const adminProductsService = require('../../services/admin/adminProductsService');
@@ -131,24 +130,21 @@ exports.editProductPage = asyncHandler(async (req, res) => {
     }
 });
 
-// Admin: Update product
-exports.updateProduct = [
-    upload.array('images', 5), // Handle multiple image uploads
-    asyncHandler(async (req, res) => {
-        try {
-            const { id } = req.params;
-            const result = await adminProductsService.updateProduct({ req, productId: id });
-            return res.status(result.status).json(result.payload);
-        } catch (error) {
-            console.error('Error in updateProduct:', error);
-            return res.status(500).json({
-                success: false,
-                message: 'Error updating product',
-                error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-            });
-        }
-    })
-];
+// Admin: Update product (multer is applied in the route, do not duplicate here or the body stream is consumed twice → "Unexpected end of form")
+exports.updateProduct = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await adminProductsService.updateProduct({ req, productId: id });
+        return res.status(result.status).json(result.payload);
+    } catch (error) {
+        console.error('Error in updateProduct:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error updating product',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
 
 // Admin: Delete a product (Soft Delete)
 exports.removeProduct = asyncHandler(async (req, res) => {

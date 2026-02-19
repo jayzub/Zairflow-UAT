@@ -14,6 +14,27 @@ append variables
 append layoutScripts
   script.
     (function() {
+      // Remember current page (full URL) for "return after login" so subdomain works
+      if (typeof sessionStorage !== 'undefined') {
+        var path = window.location.pathname + window.location.search;
+        if (path.indexOf('/customers/sign-in') !== 0 && path.indexOf('/customers/sign-up') !== 0) {
+          sessionStorage.setItem('customerReturnUrl', path);
+          sessionStorage.setItem('customerReturnUrlFull', window.location.href);
+        }
+      }
+      // Add full-URL redirect to sign-in links so return-after-login works on subdomains
+      (function() {
+        var signInLinks = document.querySelectorAll('a[href*="/customers/sign-in"]');
+        var currentFull = window.location.href;
+        signInLinks.forEach(function(a) {
+          var href = a.getAttribute('href') || '';
+          if (href.indexOf('redirect=') === -1) {
+            var sep = href.indexOf('?') >= 0 ? '&' : '?';
+            a.setAttribute('href', href + sep + 'redirect=' + encodeURIComponent(currentFull));
+          }
+        });
+      })();
+
       var token = typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
       if (token) {
         fetch('/api/customers/session', { method: 'GET', headers: { 'Authorization': 'Bearer ' + token }, credentials: 'same-origin' }).catch(function() {});

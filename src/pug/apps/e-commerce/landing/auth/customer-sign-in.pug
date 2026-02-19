@@ -63,6 +63,48 @@ block append scripts
       const errorText = document.getElementById('errorText');
       const successText = document.getElementById('successText');
       
+      // Safe redirect: allow same-origin path or same-site full URL (so subdomain return works)
+      function isValidReturnPath(path) {
+        if (!path || typeof path !== 'string') return false;
+        const p = path.trim();
+        return p !== '' && p.startsWith('/') && !p.startsWith('//');
+      }
+      function isSameSiteUrl(urlStr) {
+        try {
+          const u = new URL(urlStr);
+          if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+          const cur = window.location;
+          if (u.origin === cur.origin) return true;
+          const curHost = cur.hostname.toLowerCase();
+          const uHost = u.hostname.toLowerCase();
+          if (curHost === uHost) return true;
+          // Allow subdomains of same parent: *.localhost, *.onrender.com, etc.
+          if (curHost.endsWith('.localhost') && uHost.endsWith('.localhost')) return true;
+          if (uHost.endsWith('.localhost') && curHost === 'localhost') return true;
+          if (curHost === 'localhost' && uHost.endsWith('.localhost')) return true;
+          var platformSuffixes = ['.onrender.com', '.herokuapp.com', '.netlify.app', '.vercel.app'];
+          for (var i = 0; i < platformSuffixes.length; i++) {
+            var s = platformSuffixes[i];
+            if (curHost.endsWith(s) && uHost.endsWith(s)) return true;
+          }
+          return false;
+        } catch (e) { return false; }
+      }
+      function getReturnUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get('redirect');
+        if (isValidReturnPath(redirect)) return redirect.trim();
+        if (redirect && isSameSiteUrl(redirect)) return redirect.trim();
+        try {
+          const stored = sessionStorage.getItem('customerReturnUrl');
+          if (isValidReturnPath(stored)) return stored.trim();
+          const storedFull = sessionStorage.getItem('customerReturnUrlFull');
+          if (storedFull && isSameSiteUrl(storedFull)) return storedFull.trim();
+        } catch (e) {}
+        return '/';
+      }
+      const returnUrl = getReturnUrl();
+      
       function hideMessages() {
         errorMessage.classList.add('d-none');
         successMessage.classList.add('d-none');
@@ -131,7 +173,7 @@ block append scripts
             
             showSuccess('Signed in successfully! Redirecting...');
             setTimeout(() => {
-              window.location.href = '/';
+              window.location.href = returnUrl;
             }, 1200);
           } else {
             showError(data.error || data.message || 'Sign in failed. Please check your credentials.');
@@ -144,10 +186,10 @@ block append scripts
         }
       });
       
-      // If already signed in, go home
+      // If already signed in, go to return URL or home
       const token = localStorage.getItem('customerToken');
       if (token) {
-        window.location.href = '/';
+        window.location.href = returnUrl;
       }
     });
 
