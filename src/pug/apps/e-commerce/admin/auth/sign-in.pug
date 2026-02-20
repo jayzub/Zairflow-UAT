@@ -67,6 +67,11 @@ block append scripts
       const errorText = document.getElementById('errorText');
       const successText = document.getElementById('successText');
       
+      // Read redirect from URL (set when user was sent here from a protected page)
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirect');
+      const safeRedirect = redirectTo && redirectTo.startsWith('/admin') && !redirectTo.startsWith('//') ? redirectTo : null;
+      
       // Hide messages initially
       function hideMessages() {
         errorMessage.classList.add('d-none');
@@ -146,6 +151,12 @@ block append scripts
             
             showSuccess('Sign in successful! Redirecting...');
             
+            // If user was sent here from a protected page, send them back after login
+            if (safeRedirect) {
+              setTimeout(() => { window.location.href = safeRedirect; }, 500);
+              return;
+            }
+            
             // Check if user is platform admin or has stores and redirect accordingly
             setTimeout(async () => {
               try {
@@ -197,7 +208,7 @@ block append scripts
       // Check if user is already logged in
       const token = localStorage.getItem('adminToken');
       if (token) {
-        // Redirect to admin index if already logged in
-        window.location.href = '/admin/';
+        // Redirect to requested page or admin index if already logged in
+        window.location.href = safeRedirect || '/admin/';
       }
     }); 
