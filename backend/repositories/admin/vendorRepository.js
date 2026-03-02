@@ -15,6 +15,13 @@ async function findOneForStoreByEmail(storeId, email) {
   return Vendor.findOne({ store: toObjectId(storeId), email });
 }
 
+async function findOneForStoreByName(storeId, name) {
+  if (!name || typeof name !== 'string') return null;
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  return Vendor.findOne({ store: toObjectId(storeId), name: trimmed });
+}
+
 async function findOneForStoreByEmailExcludingId(storeId, email, excludeId) {
   return Vendor.findOne({ store: toObjectId(storeId), email, _id: { $ne: toObjectId(excludeId) } });
 }
@@ -81,6 +88,7 @@ async function aggregateStatsForStore(storeId) {
 module.exports = {
   findOneForStoreById,
   findOneForStoreByEmail,
+  findOneForStoreByName,
   findOneForStoreByEmailExcludingId,
   listForStore,
   listActiveForStore,

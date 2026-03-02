@@ -32,6 +32,8 @@ const {
 } = require('../../helpers/productHelpers');
 
 const BaseProduct = require('../../models/products/baseProduct');
+const { mapCsvRowToProductData } = require('../../helpers/csvProductMapper');
+const { parse } = require('csv-parse/sync');
 
 function isAjaxRequestFromReq(req) {
   return (
@@ -437,6 +439,210 @@ async function getFeaturedProducts({ req, count }) {
   return { ok: true, status: 200, payload: { success: true, data: products } };
 }
 
+async function bulkImportProducts({ req, file }) {
+  const mongoose = require('mongoose');
+  const storeId = resolveStoreId(req, req.body || {});
+  if (!storeId) {
+    return {
+      ok: false,
+      status: 400,
+      payload: {
+        success: false,
+        message: 'Store ID is required. Please specify a store you have access to.',
+      },
+    };
+  }
+
+  let records;
+  try {
+    records = parse(file.buffer, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      bom: true,
+      relax_column_count: true,
+    });
+  } catch (parseErr) {
+    return {
+      ok: false,
+      status: 400,
+      payload: {
+        success: false,
+        message: 'Invalid CSV format. Could not parse file.',
+        error: process.env.NODE_ENV === 'development' ? parseErr.message : undefined,
+      },
+    };
+  }
+
+  const validProductTypes = await getAllowedProductTypesForStore(storeId);
+  const created = [];
+  const errors = [];
+
+  for (let i = 0; i < records.length; i += 1) {
+    const rowNum = i + 2; // 1-based, +1 for header
+    const row = records[i];
+
+    let body;
+    try {
+      body = mapCsvRowToProductData(row);
+    } catch (mapErr) {
+      errors.push({
+        row: rowNum,
+        message: 'Failed to map row',
+        data: process.env.NODE_ENV === 'development' ? row : undefined,
+      });
+      continue;
+    }
+
+    if (!body.name || !body.description || !body.productType) {
+      const missing = [];
+      if (!body.name) missing.push('name');
+      if (!body.description) missing.push('description');
+      if (!body.productType) missing.push('productType');
+      errors.push({
+        row: rowNum,
+        message: `Missing required fields: ${missing.join(', ')}`,
+        data: { name: body.name, productType: body.productType },
+      });
+      continue;
+    }
+
+    if (!validProductTypes.includes(body.productType)) {
+      errors.push({
+        row: rowNum,
+        message: `Invalid product type. Must be one of: ${validProductTypes.join(', ')}`,
+        data: { name: body.name, productType: body.productType },
+      });
+      continue;
+    }
+
+    const storeValidation = await validateProductTypeForStore(body.productType, storeId);
+    if (!storeValidation.valid) {
+      errors.push({
+        row: rowNum,
+        message: storeValidation.message,
+        data: { name: body.name },
+      });
+      continue;
+    }
+
+    let categoryIds = [];
+    if (body.category) {
+      const parts = String(body.category).split(',').map(s => s.trim()).filter(Boolean);
+      for (const part of parts) {
+        if (isValidObjectId(part, mongoose)) {
+          const cat = await categoryRepository.findOneForStoreById(storeId, part);
+          if (!cat) {
+            errors.push({
+              row: rowNum,
+              message: `Category not found: ${part}`,
+              data: { name: body.name, category: body.category },
+            });
+            categoryIds = null;
+            break;
+          }
+          categoryIds.push(cat._id);
+        } else {
+          const cat = await categoryRepository.findOneForStoreByName(storeId, part);
+          if (!cat) {
+            errors.push({
+              row: rowNum,
+              message: `Category not found: ${part}`,
+              data: { name: body.name, category: body.category },
+            });
+            categoryIds = null;
+            break;
+          }
+          categoryIds.push(cat._id);
+        }
+      }
+      if (categoryIds === null) continue;
+    }
+    body.category = categoryIds;
+
+    if (body.vendor) {
+      if (isValidObjectId(body.vendor, mongoose)) {
+        const vendor = await vendorRepository.findOneForStoreById(storeId, body.vendor);
+        if (!vendor) {
+          errors.push({
+            row: rowNum,
+            message: 'Vendor not found',
+            data: { name: body.name, vendor: body.vendor },
+          });
+          continue;
+        }
+        body.vendor = vendor._id;
+      } else {
+        const vendor = await vendorRepository.findOneForStoreByName(storeId, body.vendor);
+        if (!vendor) {
+          errors.push({
+            row: rowNum,
+            message: `Vendor not found: ${body.vendor}`,
+            data: { name: body.name, vendor: body.vendor },
+          });
+          continue;
+        }
+        body.vendor = vendor._id;
+      }
+    }
+
+    if (categoryIds && categoryIds.length > 0) {
+      const compatibility = await validateProductCategoryCompatibility(body.productType, categoryIds, storeId);
+      if (!compatibility.valid) {
+        errors.push({
+          row: rowNum,
+          message: compatibility.message,
+          data: { name: body.name },
+        });
+        continue;
+      }
+    }
+
+    if (body.variants && Array.isArray(body.variants)) {
+      body.variants = body.variants.map(v => {
+        const { _id: omit, ...rest } = v;
+        return rest;
+      });
+    }
+
+    if (body.description) {
+      body.description = sanitizeHtml(body.description, sanitizeOptions);
+    }
+
+    const ProductModel = productTypeModelMap[body.productType] || BaseProduct;
+    const productData = {
+      ...body,
+      store: storeId,
+    };
+    initProductFields(productData);
+
+    try {
+      const product = new ProductModel(productData);
+      await product.save();
+      created.push({ row: rowNum, id: product._id, name: product.name });
+    } catch (saveErr) {
+      errors.push({
+        row: rowNum,
+        message: saveErr.message || 'Failed to save product',
+        data: process.env.NODE_ENV === 'development' ? { name: body.name } : undefined,
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    status: 200,
+    payload: {
+      success: true,
+      created: created.length,
+      failed: errors.length,
+      total: records.length,
+      errors,
+      createdIds: created.map(c => c.id),
+    },
+  };
+}
+
 module.exports = {
   listProducts,
   getAddProductPageData,
@@ -447,5 +653,6 @@ module.exports = {
   deleteProductHard,
   getProductCount,
   getFeaturedProducts,
+  bulkImportProducts,
 };
 

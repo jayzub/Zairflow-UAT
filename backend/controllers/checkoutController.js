@@ -1,8 +1,10 @@
+const mongoose = require('mongoose');
 const Cart = require('../models/cart');
 const Order = require('../models/order');
 const OrderItem = require('../models/orderItem');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
+const { findVariantByOptions, findVariantById } = require('../helpers/variantHelpers');
 const Promotion = require('../models/promotion');
 const Customer = require('../models/customer');
 const crypto = require('crypto');
@@ -314,13 +316,46 @@ const placeOrder = asyncHandler(async (req, res) => {
             const orderItem = await OrderItem.create({
                 product: item.product._id || item.product,
                 quantity: qty,
-                unitPrice
+                unitPrice,
+                variantId: item.variantId || null,
+                options: item.options || {}
             });
             orderItemIds.push(orderItem._id);
 
-            // Inventory deduction (6.3)
-            if (product && typeof product.countInStock === 'number') {
-                await Product.findByIdAndUpdate(product._id, { $inc: { countInStock: -qty } });
+            // Inventory deduction (6.3) — variant-level when applicable
+            if (product) {
+                const variants = product.variants;
+                const hasVariants = variants && Array.isArray(variants) && variants.length > 0;
+                let variantToDeduct = null;
+
+                if (hasVariants) {
+                    if (item.variantId) {
+                        variantToDeduct = findVariantById(product, item.variantId);
+                    }
+                    if (!variantToDeduct && (item.options?.color || item.options?.size)) {
+                        const res = findVariantByOptions(product, item.options || {});
+                        variantToDeduct = res ? res.variant : null;
+                    }
+                }
+
+                if (variantToDeduct) {
+                    if (variantToDeduct._id) {
+                        await Product.findByIdAndUpdate(product._id, {
+                            $inc: { 'variants.$[elem].countInStock': -qty }
+                        }, {
+                            arrayFilters: [{ 'elem._id': new mongoose.Types.ObjectId(variantToDeduct._id) }]
+                        });
+                    } else {
+                        const idx = variants.findIndex((v) => v === variantToDeduct);
+                        if (idx >= 0) {
+                            await Product.findByIdAndUpdate(product._id, {
+                                $inc: { [`variants.${idx}.countInStock`]: -qty }
+                            });
+                        }
+                    }
+                } else {
+                    await Product.findByIdAndUpdate(product._id, { $inc: { countInStock: -qty } });
+                }
             }
         }
 

@@ -43,7 +43,10 @@ function buildOrderConfirmationHtml(orders, customerName) {
       <tbody>
 `;
         for (const item of items) {
-            const productName = (item.product && item.product.name) ? item.product.name : 'Product';
+            const baseName = (item.product && item.product.name) ? item.product.name : 'Product';
+            const opts = item.options || {};
+            const optsStr = [opts.size, opts.color].filter(Boolean).join(', ');
+            const productName = optsStr ? `${baseName} (${optsStr})` : baseName;
             const qty = item.quantity || 1;
             const up = (item.unitPrice != null && item.unitPrice >= 0) ? item.unitPrice : 0;
             const lineTotal = (qty * up).toFixed(2);

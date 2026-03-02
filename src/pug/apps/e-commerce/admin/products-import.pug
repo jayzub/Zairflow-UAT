@@ -1,0 +1,120 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Products', href: `/${adminUrl || 'admin'}/products` },
+      { label: 'Import', active: true }
+    ];
+
+block content
+  .mb-9
+    .row.g-3.mb-4
+      .col-auto
+        h2.mb-0 #{pageTitle}
+
+    .card.mb-4
+      .card-header
+        h5.mb-0 Upload CSV File
+      .card-body
+        form#importForm
+          .mb-3
+            label.form-label(for='csvFile') CSV file
+            input.form-control#csvFile(
+              type='file'
+              name='csv'
+              accept='.csv'
+              required
+            )
+            .form-text Upload a CSV file with product data. First row must be headers.
+          .mb-3
+            a.btn.btn-link.px-0(href=`/${adminUrl || 'admin'}/products/import/template` download)
+              span.fas.fa-download.me-2
+              | Download template
+          button.btn.btn-primary#submitBtn(type='submit' disabled)
+            span.spinner-border.spinner-border-sm.me-2.d-none(role='status' aria-hidden='true')
+            | Import products
+
+    #results.card.d-none
+      .card-header
+        h5.mb-0 Import results
+      .card-body
+        #resultsSummary.mb-4
+        #resultsErrors.d-none
+          h6.text-danger Failed rows
+          .table-responsive
+            table.table.table-sm
+              thead
+                tr
+                  th Row
+                  th Message
+                  th Data
+              tbody#resultsErrorsBody
+
+append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('importForm');
+      const fileInput = document.getElementById('csvFile');
+      const submitBtn = document.getElementById('submitBtn');
+      const resultsCard = document.getElementById('results');
+      const resultsSummary = document.getElementById('resultsSummary');
+      const resultsErrors = document.getElementById('resultsErrors');
+      const resultsErrorsBody = document.getElementById('resultsErrorsBody');
+      const spinner = submitBtn?.querySelector('.spinner-border');
+
+      fileInput?.addEventListener('change', function() {
+        submitBtn.disabled = !this.files?.length;
+      });
+
+      form?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!fileInput?.files?.length) return;
+
+        submitBtn.disabled = true;
+        spinner?.classList.remove('d-none');
+        resultsCard.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('csv', fileInput.files[0]);
+
+        try {
+          const res = await fetch('/admin/products/import', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.message || 'Import failed');
+          }
+
+          resultsSummary.innerHTML = `
+            <p class="mb-1"><strong>Created:</strong> ${data.created}</p>
+            <p class="mb-1"><strong>Failed:</strong> ${data.failed}</p>
+            <p class="mb-0"><strong>Total rows:</strong> ${data.total}</p>
+          `;
+
+          if (data.errors && data.errors.length) {
+            resultsErrors.classList.remove('d-none');
+            resultsErrorsBody.innerHTML = data.errors.map(function(err) {
+              const dataStr = err.data ? '<code>' + JSON.stringify(err.data) + '</code>' : '-';
+              return '<tr><td>' + err.row + '</td><td>' + (err.message || '') + '</td><td>' + dataStr + '</td></tr>';
+            }).join('');
+          } else {
+            resultsErrors.classList.add('d-none');
+          }
+
+          resultsCard.classList.remove('d-none');
+        } catch (err) {
+          resultsSummary.innerHTML = '<p class="text-danger">' + (err.message || 'Import failed') + '</p>';
+          resultsErrors.classList.add('d-none');
+          resultsCard.classList.remove('d-none');
+        } finally {
+          submitBtn.disabled = false;
+          spinner?.classList.add('d-none');
+        }
+      });
+    });

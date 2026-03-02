@@ -11,7 +11,8 @@ const {
     validateFeaturedCountParam,
     validateCreateProduct,
     validateUpdateProduct,
-    validateProductsListQuery
+    validateProductsListQuery,
+    validateBulkImport
 } = require('../../validators/admin/productsValidators');
 
 // Import product controller functions
@@ -24,7 +25,10 @@ const {
     removeProduct,
     deleteProduct,
     getProductCount,
-    getFeaturedProducts
+    getFeaturedProducts,
+    importProductsPage,
+    bulkImportProducts,
+    downloadImportTemplate
 } = require('../../controllers/adminControllers/products');
 
 // Configure multer to accept images field and allow other form fields
@@ -34,6 +38,19 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024, // 10MB limit per file
         files: 10 // Maximum 10 files
     }
+});
+
+// Multer for CSV bulk import (memory storage)
+const csvUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        const ext = (file.originalname || '').toLowerCase();
+        if (!ext.endsWith('.csv')) {
+            return cb(new Error('Only CSV files are allowed'), false);
+        }
+        cb(null, true);
+    },
 });
 
 // Middleware to filter files and assign to req.files as 'images' array
@@ -51,6 +68,9 @@ const processUploadedFiles = (req, res, next) => {
 // Admin product management pages and API endpoints (with store isolation)
 router.get('/products', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), addStoreFilter, validateProductsListQuery, getAllProducts);
 router.get('/products/add', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), addProductPage);
+router.get('/products/import', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), importProductsPage);
+router.get('/products/import/template', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), downloadImportTemplate);
+router.post('/products/import', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), csvUpload.single('csv'), validateBulkImport, bulkImportProducts);
 // Use upload.any() to accept files from any field, then filter in processUploadedFiles
 router.post('/products', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), upload.any(), processUploadedFiles, validateCreateProduct, createProduct);
 router.get('/products/edit/:id', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, editProductPage);

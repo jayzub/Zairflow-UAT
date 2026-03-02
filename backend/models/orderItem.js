@@ -12,6 +12,16 @@ const orderItemSchema = mongoose.Schema({
     unitPrice: {
         type: Number,
         default: null
+    },
+    // Stable reference to the variant purchased. Null when product has no variants.
+    variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+    },
+    // Display: which options were selected (e.g. color: "Blue", size: "M")
+    options: {
+        color: { type: String },
+        size: { type: String }
     }
 })
 

@@ -168,7 +168,51 @@ exports.getProductCount = asyncHandler(async (req, res) => {
 
 // Admin: Get featured products
 exports.getFeaturedProducts = asyncHandler(async (req, res) => {
-    const count = parseInt(req.params.count, 10) || 0;
-    const result = await adminProductsService.getFeaturedProducts({ req, count });
+  const count = parseInt(req.params.count, 10) || 0;
+  const result = await adminProductsService.getFeaturedProducts({ req, count });
+  return res.status(result.status).json(result.payload);
+});
+
+// Admin: Render import products page
+exports.importProductsPage = asyncHandler(async (req, res) => {
+  try {
+    res.render('admin/products-import', {
+      pageTitle: 'Import Products',
+      adminUrl: 'admin',
+    });
+  } catch (error) {
+    console.error('Error rendering import page:', error);
+    res.status(500).render('admin/error', {
+      pageTitle: 'Error',
+      message: 'Failed to load import page',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+// Admin: Download CSV import template
+exports.downloadImportTemplate = asyncHandler(async (req, res) => {
+  const csv = [
+    'name,description,productType,price,salePrice,countInStock,brand,tags,category,vendor,variants',
+    '"Blue T-Shirt","Cotton t-shirt in blue","Clothing",29.99,24.99,,Acme,"summer|cotton|casual",,,"S:Blue:34.99:28.99:TSH-BL-S:10||M:Blue:29.99::TSH-BL-M:15"',
+    '"Wireless Mouse","Ergonomic wireless mouse","Electronics",49.99,,50,TechCo,"office|wireless",,,',
+  ].join('\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="product-import-template.csv"');
+  res.send(csv);
+});
+
+// Admin: Bulk import products from CSV
+exports.bulkImportProducts = asyncHandler(async (req, res) => {
+  try {
+    const result = await adminProductsService.bulkImportProducts({ req, file: req.file });
     return res.status(result.status).json(result.payload);
-}); 
+  } catch (error) {
+    console.error('Error in bulkImportProducts:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error importing products',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+    });
+  }
+});

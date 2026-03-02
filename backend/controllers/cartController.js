@@ -1,6 +1,7 @@
 const Cart = require('../models/cart');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
+const { findVariantByOptions } = require('../helpers/variantHelpers');
 const Promotion = require('../models/promotion');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
@@ -325,12 +326,25 @@ const addCartItem = asyncHandler(async (req, res) => {
         return colorA === colorB && sizeA === sizeB;
     }
 
-    const existingIndex = cart.items.findIndex(
-        (item) =>
-            item.product.toString() === productId &&
-            item.store.toString() === productStoreId &&
-            optionsMatch(item.options, options || {})
-    );
+    // Resolve variant and its stable ID (null for products without variants or legacy variants)
+    const variantResult = findVariantByOptions(product, options || {});
+    const resolvedVariantId = variantResult && variantResult.variantId
+        ? variantResult.variantId
+        : null;
+
+    function itemsMatch(item) {
+        if (item.product.toString() !== productId || item.store.toString() !== productStoreId) {
+            return false;
+        }
+        // Prefer variantId match when both have it
+        if (resolvedVariantId && item.variantId) {
+            return String(item.variantId) === String(resolvedVariantId);
+        }
+        // Fallback to options match (legacy items or variants without _id yet)
+        return optionsMatch(item.options, options || {});
+    }
+
+    const existingIndex = cart.items.findIndex(itemsMatch);
     const currentInCart = existingIndex >= 0 ? cart.items[existingIndex].quantity : 0;
     const totalRequested = currentInCart + qty;
     if (totalRequested > available) {
@@ -347,12 +361,16 @@ const addCartItem = asyncHandler(async (req, res) => {
         cart.items[existingIndex].quantity += qty;
         cart.items[existingIndex].unitPrice = unitPrice != null ? unitPrice : cart.items[existingIndex].unitPrice;
         cart.items[existingIndex].unitOriginalPrice = unitOriginalPrice != null ? unitOriginalPrice : cart.items[existingIndex].unitOriginalPrice;
+        if (resolvedVariantId && !cart.items[existingIndex].variantId) {
+            cart.items[existingIndex].variantId = resolvedVariantId;
+        }
     } else {
         cart.items.push({
             product: productId,
             store: product.store,
             quantity: qty,
             options: options || {},
+            variantId: resolvedVariantId,
             unitPrice: unitPrice != null ? unitPrice : null,
             unitOriginalPrice: unitOriginalPrice != null ? unitOriginalPrice : null
         });

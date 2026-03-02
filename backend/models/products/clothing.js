@@ -9,7 +9,7 @@ const clothingVariantSchema = new mongoose.Schema({
     salePrice: { type: mongoose.Schema.Types.Decimal128, min: 0.0, default: 0.0 },
     sku: { type: String },
     countInStock: { type: Number, default: 0, min: 0 },
-}, { _id: false });
+});
 
 const clothingSchema = new mongoose.Schema({
     material: { type: String },

@@ -62,7 +62,10 @@ block ecomContent
                 th.text-end(scope='col') Total
             tbody
               each item in order.orderItems
-                - var name = (item.product && item.product.name) ? item.product.name : 'Product';
+                - var baseName = (item.product && item.product.name) ? item.product.name : 'Product';
+                - var opts = item.options || {};
+                - var optsStr = [opts.size, opts.color].filter(Boolean).join(', ');
+                - var name = optsStr ? baseName + ' (' + optsStr + ')' : baseName;
                 - var qty = item.quantity || 1;
                 - var up = (item.unitPrice != null && item.unitPrice >= 0) ? item.unitPrice : 0;
                 - var lineTotal = qty * up;

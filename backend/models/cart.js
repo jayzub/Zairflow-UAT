@@ -21,6 +21,11 @@ const cartItemSchema = new mongoose.Schema({
         color: { type: String },
         size: { type: String }
     },
+    // Stable reference to the specific variant (product.variants[]._id). Null when product has no variants or is base-only.
+    variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+    },
     unitPrice: {
         type: Number,
         default: null

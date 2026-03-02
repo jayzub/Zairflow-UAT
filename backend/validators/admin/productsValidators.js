@@ -39,11 +39,40 @@ const validateProductsListQuery = [
   validateRequest,
 ];
 
+const validateBulkImport = [
+  body('store').optional().isMongoId().withMessage('Invalid store ID'),
+  (req, res, next) => {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({
+        success: false,
+        message: 'CSV file is required. Please upload a .csv file.',
+      });
+    }
+    const ext = (req.file.originalname || '').toLowerCase();
+    if (!ext.endsWith('.csv')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid file type. Only CSV files are allowed.',
+      });
+    }
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (req.file.size > maxSize) {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 5MB.',
+      });
+    }
+    next();
+  },
+  validateRequest,
+];
+
 module.exports = {
   validateProductIdParam,
   validateFeaturedCountParam,
   validateCreateProduct,
   validateUpdateProduct,
   validateProductsListQuery,
+  validateBulkImport,
 };
 

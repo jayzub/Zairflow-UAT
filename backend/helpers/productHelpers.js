@@ -481,8 +481,11 @@ exports.initProductFields = (product) => {
     product.specifications.memory = product.specifications.memory || {};
     product.specifications.display = product.specifications.display || {};
     product.specifications.ports = product.specifications.ports || [];
-    product.weight = product.weight || {};
-    product.warranty = product.warranty || {};
+    // warranty and weight are String in Electronics/Furniture — never set to {}
+    if (product.weight === undefined || product.weight === null) product.weight = '';
+    else if (typeof product.weight === 'object' && product.weight !== null && !Array.isArray(product.weight)) product.weight = '';
+    if (product.warranty === undefined || product.warranty === null) product.warranty = '';
+    else if (typeof product.warranty === 'object' && product.warranty !== null && !Array.isArray(product.warranty)) product.warranty = '';
     product.materialComposition = product.materialComposition || [];
     product.care = product.care || [];
     product.materials = product.materials || [];
