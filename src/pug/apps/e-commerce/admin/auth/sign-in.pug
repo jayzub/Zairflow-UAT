@@ -205,10 +205,32 @@ block append scripts
         }
       });
       
-      // Check if user is already logged in
+      // Check if user is already logged in (avoid redirect loops when cookie is missing/expired)
       const token = localStorage.getItem('adminToken');
       if (token) {
-        // Redirect to requested page or admin index if already logged in
-        window.location.href = safeRedirect || '/admin/';
+        (async () => {
+          try {
+            const meRes = await fetch('/admin/me', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              credentials: 'include'
+            });
+
+            if (meRes.ok) {
+              window.location.href = safeRedirect || '/admin/';
+              return;
+            }
+          } catch (e) {
+            // fall through
+          }
+
+          // Token is invalid/expired (or server can't accept it). Clear and stay on sign-in.
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+        })();
       }
     }); 
