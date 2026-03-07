@@ -59,6 +59,8 @@ const baseProductSchema = new mongoose.Schema({
     numReviews: { type: Number, default: 0 },
     isFeatured: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    /** Soft delete: when true, product is hidden from catalog and admin list; can be restored. */
+    isDeleted: { type: Boolean, default: false },
     dateCreated: { type: Date, default: Date.now },
     countInStock: { type: Number, default: 0, min: 0 },
     // SEO fields

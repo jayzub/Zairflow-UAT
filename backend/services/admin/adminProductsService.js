@@ -90,6 +90,44 @@ async function listProducts({ req, limit, page, sort, order }) {
   return { ok: true, fromCache: false, isAjax, result };
 }
 
+function buildDeletedProductFilter(req) {
+  const base = { isDeleted: true };
+  if (!req.user.isPlatformAdmin && req.store) {
+    base.store = req.store._id;
+  }
+  return base;
+}
+
+async function listDeletedProducts({ req, limit, page, sort, order }) {
+  const filter = buildDeletedProductFilter(req);
+  const skip = (page - 1) * limit;
+  const aggregationPipeline = buildAggregationPipeline(filter, sort, order, skip, limit);
+
+  const [productList, productCount] = await Promise.all([
+    productRepository.aggregate(aggregationPipeline),
+    productRepository.count(filter),
+  ]);
+
+  const totalPages = Math.ceil(productCount / limit);
+  const serializedProducts = serializeProducts(productList);
+
+  return {
+    ok: true,
+    result: {
+      pageTitle: 'Removed from catalog',
+      products: serializedProducts,
+      currentPage: page,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      productCount,
+      limit,
+      pageRange: getPageRange(page, totalPages),
+      api: process.env.API_URL || '/api',
+    },
+  };
+}
+
 async function getAddProductPageData({ storeId }) {
   const productTypes = getProductTypes(BaseProduct);
   const { categories, vendors } = await fetchCategoriesAndVendors(storeId);
@@ -407,6 +445,32 @@ async function removeProductSoft({ req, productId }) {
   return { ok: true, status: 200, payload: { success: true, message: 'Product marked as deleted successfully' } };
 }
 
+async function restoreProductSoft({ req, productId }) {
+  const mongoose = require('mongoose');
+  if (!mongoose.isValidObjectId(productId)) {
+    return { ok: false, status: 400, payload: { success: false, message: 'Invalid Product ID' } };
+  }
+
+  const storeId = req.user?.isPlatformAdmin ? null : req.store?._id;
+  const restoredProduct = storeId
+    ? await productRepository.findOneAndUpdate(
+        { _id: productId, store: storeId, isDeleted: true },
+        { isDeleted: false },
+        { new: true }
+      )
+    : await productRepository.findOneAndUpdate(
+        { _id: productId, isDeleted: true },
+        { isDeleted: false },
+        { new: true }
+      );
+
+  if (!restoredProduct) {
+    return { ok: false, status: 404, payload: { success: false, message: 'Product not found or not in removed list' } };
+  }
+
+  return { ok: true, status: 200, payload: { success: true, message: 'Product restored successfully' } };
+}
+
 async function deleteProductHard({ req, productId }) {
   const storeId = req.user?.isPlatformAdmin ? null : req.store?._id;
   const product = storeId
@@ -427,14 +491,16 @@ async function deleteProductHard({ req, productId }) {
 
 async function getProductCount({ req }) {
   const storeId = req.user?.isPlatformAdmin ? null : req.store?._id;
-  const count = await productRepository.count(storeId ? { store: storeId } : {});
+  const filter = storeId ? { store: storeId, isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+  const count = await productRepository.count(filter);
   return { ok: true, status: 200, payload: { success: true, data: { count } } };
 }
 
 async function getFeaturedProducts({ req, count }) {
   const storeId = req.user?.isPlatformAdmin ? null : req.store?._id;
-  const filter = storeId ? { isFeatured: true, store: storeId } : { isFeatured: true };
-  // keep as model query (simple + existing behavior)
+  const filter = storeId
+    ? { isFeatured: true, store: storeId, isDeleted: { $ne: true } }
+    : { isFeatured: true, isDeleted: { $ne: true } };
   const products = await BaseProduct.find(filter).limit(count);
   return { ok: true, status: 200, payload: { success: true, data: products } };
 }
@@ -470,6 +536,18 @@ async function bulkImportProducts({ req, file }) {
         success: false,
         message: 'Invalid CSV format. Could not parse file.',
         error: process.env.NODE_ENV === 'development' ? parseErr.message : undefined,
+      },
+    };
+  }
+
+  const { MAX_CSV_IMPORT_ROWS } = require('../../config/importLimits');
+  if (records.length > MAX_CSV_IMPORT_ROWS) {
+    return {
+      ok: false,
+      status: 400,
+      payload: {
+        success: false,
+        message: `Too many rows. Maximum is ${MAX_CSV_IMPORT_ROWS} data rows (file has ${records.length}).`,
       },
     };
   }
@@ -645,11 +723,13 @@ async function bulkImportProducts({ req, file }) {
 
 module.exports = {
   listProducts,
+  listDeletedProducts,
   getAddProductPageData,
   createProduct,
   getEditProductPageData,
   updateProduct,
   removeProductSoft,
+  restoreProductSoft,
   deleteProductHard,
   getProductCount,
   getFeaturedProducts,

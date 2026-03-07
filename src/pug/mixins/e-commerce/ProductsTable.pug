@@ -1,5 +1,5 @@
-mixin ProductTableRow(product,index)
-  tr.position-static
+mixin ProductTableRow(product, index, rowOptions={})
+  tr.position-static(data-product-id=product._id.toString())
     td.fs-9.align-middle
       .form-check.mb-0.fs-8
         input.form-check-input(type='checkbox' data-bulk-select-row!=data)
@@ -82,10 +82,11 @@ mixin ProductTableRow(product,index)
         a(href='#!')=`${product.vendor.name}`
     td.time.align-middle.white-space-nowrap.text-body-tertiary.text-opacity-85.ps-4= new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(product.dateCreated))
     td.align-middle.white-space-nowrap.text-end.pe-0.ps-4.btn-reveal-trigger
-      +DashboardDropdown(product._id.toString())
+      - var rowDropdownOptions = rowOptions.deletedPage ? { deletedProductActions: true } : { productRemove: true }
+      +DashboardDropdown(product._id.toString(), null, 'fs-10', rowDropdownOptions)
 
 
-mixin ProductTable(products)
+mixin ProductTable(products, tableOptions={})
   .table-responsive.scrollbar.mx-n1.px-1
     table.table.fs-9.mb-0
       thead
@@ -110,5 +111,5 @@ mixin ProductTable(products)
 
       tbody.list#products-table-body
         each product, index in products
-          +ProductTableRow(product,index)
+          +ProductTableRow(product, index, { deletedPage: tableOptions.deletedPage })
   .row.align-items-center.justify-content-between.py-2.pe-0.fs-9

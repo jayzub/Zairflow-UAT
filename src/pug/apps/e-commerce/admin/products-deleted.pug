@@ -1,0 +1,96 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+include ../../../mixins/e-commerce/ProductsTable
+
+append variables
+  -
+    var breadcrumb = [
+      { label: 'Products', href: `/${adminUrl || 'admin'}/products` },
+      { label: 'Removed from catalog', active: true }
+    ];
+
+block content
+  .mb-9
+    .row.g-3.mb-4
+      .col-auto
+        h2.mb-0 #{pageTitle}
+      .col-auto.ms-auto
+        a.btn.btn-phoenix-primary(href=`/${adminUrl || 'admin'}/products`)
+          span.fas.fa-arrow-left.me-2
+          | Back to products
+
+    .mb-3
+      p.text-body-secondary.mb-0
+        | Products removed from the catalog are hidden from the store. You can restore them from the list below.
+
+    .d-flex.justify-content-between.align-items-center.mb-3
+      .text-body-secondary
+        | Showing #{productCount === 0 ? 0 : (currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} removed products
+      if totalPages > 1
+        nav(aria-label='Pagination')
+          ul.pagination.pagination-sm.mb-0
+            li.page-item(class=!hasPrevPage ? 'disabled' : '')
+              a.page-link(href=hasPrevPage ? `?page=${currentPage - 1}&limit=${limit}` : '#') &laquo;
+            each pageNum in pageRange
+              if pageNum === '...'
+                li.page-item.disabled
+                  span.page-link &hellip;
+              else
+                li.page-item(class=pageNum === currentPage ? 'active' : '')
+                  a.page-link(href=`?page=${pageNum}&limit=${limit}`)= pageNum
+            li.page-item(class=!hasNextPage ? 'disabled' : '')
+              a.page-link(href=hasNextPage ? `?page=${currentPage + 1}&limit=${limit}` : '#') &raquo;
+
+    .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
+      if products && products.length > 0
+        +ProductTable(products, { deletedPage: true })
+      else
+        .text-center.py-8
+          p.text-body-secondary.mb-2 No removed products.
+          a.btn.btn-phoenix-primary(href=`/${adminUrl || 'admin'}/products`) Back to products
+
+append scripts
+  script.
+    function restoreProduct(productId) {
+      fetch('/admin/products/' + productId + '/restore', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            var row = document.querySelector('[data-product-id="' + productId + '"]');
+            if (row) row.remove();
+            alert('Product restored. It will appear in the main product list again.');
+          } else {
+            alert(data.message || 'Failed to restore product.');
+          }
+        })
+        .catch(function(err) {
+          console.error(err);
+          alert('Error restoring product.');
+        });
+    }
+    function hardDeleteProduct(productId) {
+      if (!confirm('Permanently delete this product? This cannot be undone. The product and its main image will be removed.')) return;
+      fetch('/admin/products/delete/' + productId, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            var row = document.querySelector('[data-product-id="' + productId + '"]');
+            if (row) row.remove();
+            alert('Product permanently deleted.');
+          } else {
+            alert(data.message || 'Failed to delete product.');
+          }
+        })
+        .catch(function(err) {
+          console.error(err);
+          alert('Error deleting product.');
+        });
+    }

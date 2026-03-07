@@ -16,9 +16,9 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 
 ## 2. Product & import
 
-- [ ] **2.1** Enforce or document a **max CSV row count and file size** for bulk product import; add validator if not present. Document in admin import UI.
-- [ ] **2.2** Confirm all configured product types (and custom types) are validated and misconfig yields clear 4xx, not runtime crashes.
-- [ ] **2.3** Document delete semantics (soft vs hard delete) for products and ensure admin “Delete” copy matches behavior.
+- [x] **2.1** Enforce or document a **max CSV row count and file size** for bulk product import; add validator if not present. Document in admin import UI.
+- [x] **2.2** Confirm all configured product types (and custom types) are validated and misconfig yields clear 4xx, not runtime crashes.
+- [x] **2.3** Document delete semantics (soft vs hard delete) for products and ensure admin “Delete” copy matches behavior.
 - [ ] **2.4** *(Optional for MVP)* Decide if admins need a **downloadable error CSV** for failed import rows; implement or document current behavior.
 
 ---
@@ -66,3 +66,5 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 - `docs/PROCESS_FLOW_ADD_TO_CART_TO_CHECKOUT.md` — cart/checkout flow and Phase 6.2 payment stub.
 - `docs/VARIANT_ID_IMPLEMENTATION.md` — variantId in cart/order/inventory.
 - `docs/BULK_PRODUCT_IMPORT_ARCHITECTURE.md` — import design and limits.
+- `docs/PRODUCT_TYPES_VALIDATION.md` — product type validation and 4xx behaviour.
+- `docs/PRODUCT_DELETE_SEMANTICS.md` — product soft vs hard delete; admin copy.

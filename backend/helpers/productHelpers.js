@@ -8,7 +8,8 @@ exports.getRelatedProducts = async (currentProductId, categoryId, storeId = null
         const filter = {
             _id: { $ne: currentProductId },
             category: categoryId,
-            isActive: true
+            isActive: true,
+            isDeleted: { $ne: true }
         };
         
         if (storeId) {
@@ -53,6 +54,7 @@ exports.getSimilarProducts = async ({
         const baseFilter = {
             _id: { $ne: currentProductId },
             isActive: true,
+            isDeleted: { $ne: true },
             countInStock: { $gt: 0 }
         };
         if (storeId) baseFilter.store = storeId;
@@ -149,9 +151,9 @@ exports.getSimilarProducts = async ({
     }
 };
 
-// Helper to build product filter from request
+// Helper to build product filter from request (excludes soft-deleted products)
 exports.buildProductFilter = (req) => {
-    let filter = { isActive: true };
+    let filter = { isActive: true, isDeleted: { $ne: true } };
     if (!req.user.isPlatformAdmin && req.store) {
         filter.store = req.store._id;
     }
@@ -694,23 +696,28 @@ exports.validateProductTypeData = (productType, data) => {
 exports.createProductSpecificData = async (productType, body, parsed, storeId) => {
     // First try to get predefined product type config
     let config = require('../config/productTypes').getProductTypeConfig(productType);
-    
+
     // If not found, try to get custom product type config
     if (!config && storeId) {
         const { getProductTypeConfigWithCustom } = require('../config/productTypes');
         config = await getProductTypeConfigWithCustom(productType, storeId);
     }
-    
-    if (!config) {
+
+    if (!config || typeof config !== 'object') {
         throw new Error(`Invalid product type: ${productType}`);
     }
-    
+    if (typeof config.fields !== 'object' || config.fields === null) {
+        throw new Error(`Product type "${productType}" has invalid configuration (missing or invalid fields). Please check custom product type settings or contact support.`);
+    }
+
     const productData = {};
-    
+    const fields = config.fields;
+
     // Dynamically add fields based on configuration
-    Object.keys(config.fields).forEach(fieldName => {
-        const fieldConfig = config.fields[fieldName];
-        
+    Object.keys(fields).forEach((fieldName) => {
+        const fieldConfig = fields[fieldName];
+        if (!fieldConfig || typeof fieldConfig !== 'object') return;
+
         switch (fieldConfig.type) {
             case 'string':
                 if (body[fieldName]) {

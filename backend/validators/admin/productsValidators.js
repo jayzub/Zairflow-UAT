@@ -1,5 +1,6 @@
 const { body, param, query } = require('express-validator');
 const { validateRequest } = require('../../middleware/validation');
+const { MAX_CSV_IMPORT_SIZE_BYTES, MAX_CSV_IMPORT_ROWS } = require('../../config/importLimits');
 
 const validateProductIdParam = [
   param('id').isMongoId().withMessage('Invalid Product ID'),
@@ -55,11 +56,20 @@ const validateBulkImport = [
         message: 'Invalid file type. Only CSV files are allowed.',
       });
     }
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (req.file.size > maxSize) {
+    if (req.file.size > MAX_CSV_IMPORT_SIZE_BYTES) {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Maximum size is 5MB.',
+        message: `File too large. Maximum size is ${MAX_CSV_IMPORT_SIZE_BYTES / (1024 * 1024)}MB.`,
+      });
+    }
+    // Enforce max row count (approximate: count lines minus header)
+    const text = req.file.buffer.toString('utf8');
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+    const dataRows = Math.max(0, lines.length - 1);
+    if (dataRows > MAX_CSV_IMPORT_ROWS) {
+      return res.status(400).json({
+        success: false,
+        message: `Too many rows. Maximum is ${MAX_CSV_IMPORT_ROWS} data rows (file has ${dataRows}).`,
       });
     }
     next();

@@ -159,11 +159,12 @@ exports.getProductsByCategory = asyncHandler(async (req, res) => {
         });
     }
     
-    // Build product filter
+    // Build product filter (exclude soft-deleted)
     const filter = {
         category: categoryId,
         store: store._id,
-        isActive: true
+        isActive: true,
+        isDeleted: { $ne: true }
     };
     
     // Calculate pagination

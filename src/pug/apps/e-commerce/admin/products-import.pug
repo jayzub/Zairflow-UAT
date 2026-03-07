@@ -28,6 +28,8 @@ block content
               required
             )
             .form-text Upload a CSV file with product data. First row must be headers.
+            .form-text.text-body-tertiary.mt-1
+              | Max file size: #{typeof importMaxSize !== 'undefined' ? importMaxSize : '5MB'}. Max data rows: #{typeof importMaxRows !== 'undefined' ? importMaxRows : '500'}.
           .mb-3
             a.btn.btn-link.px-0(href=`/${adminUrl || 'admin'}/products/import/template` download)
               span.fas.fa-download.me-2

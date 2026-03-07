@@ -92,7 +92,7 @@ Enable admins to create multiple products at once by uploading a CSV file instea
 | Component | Responsibility |
 |-----------|----------------|
 | **Route** | Auth, RBAC, store isolation, multer for CSV upload |
-| **Validator** | File type (.csv), size (e.g. 5MB max), presence |
+| **Validator** | File type (.csv), size (5MB max, `backend/config/importLimits.js`), max data rows (500), presence |
 | **Controller** | Call service, return JSON with results |
 | **Service** | Parse CSV, validate each row, create products, aggregate results |
 | **Helper** | `csvProductMapper` – map raw row to product payload, parse variants (JSON or simple format) |

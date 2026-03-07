@@ -14,15 +14,18 @@ const {
     validateProductsListQuery,
     validateBulkImport
 } = require('../../validators/admin/productsValidators');
+const { MAX_CSV_IMPORT_SIZE_BYTES } = require('../../config/importLimits');
 
 // Import product controller functions
 const {
     getAllProducts,
+    getDeletedProductsPage,
     addProductPage,
     createProduct,
     editProductPage,
     updateProduct,
     removeProduct,
+    restoreProduct,
     deleteProduct,
     getProductCount,
     getFeaturedProducts,
@@ -43,7 +46,7 @@ const upload = multer({
 // Multer for CSV bulk import (memory storage)
 const csvUpload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    limits: { fileSize: MAX_CSV_IMPORT_SIZE_BYTES },
     fileFilter: (req, file, cb) => {
         const ext = (file.originalname || '').toLowerCase();
         if (!ext.endsWith('.csv')) {
@@ -67,6 +70,7 @@ const processUploadedFiles = (req, res, next) => {
 
 // Admin product management pages and API endpoints (with store isolation)
 router.get('/products', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), addStoreFilter, validateProductsListQuery, getAllProducts);
+router.get('/products/deleted', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), getDeletedProductsPage);
 router.get('/products/add', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), addProductPage);
 router.get('/products/import', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), importProductsPage);
 router.get('/products/import/template', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), downloadImportTemplate);
@@ -75,6 +79,7 @@ router.post('/products/import', requireAuth, requirePermission('product:create')
 router.post('/products', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), upload.any(), processUploadedFiles, validateCreateProduct, createProduct);
 router.get('/products/edit/:id', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, editProductPage);
 router.put('/products/:id', requireAuth, requirePermission('product:update'), checkUserStores, extractStore, requireStoreAccess('any'), upload.array('images', 5), validateUpdateProduct, updateProduct);
+router.put('/products/:id/restore', requireAuth, requirePermission('product:update'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, restoreProduct);
 router.delete('/products/:id', requireAuth, requirePermission('product:delete'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, removeProduct);
 router.delete('/products/delete/:id', requireAuth, requirePermission('product:delete'), checkUserStores, extractStore, requireStoreAccess('any'), validateProductIdParam, deleteProduct);
 

@@ -79,6 +79,7 @@ const renderCustomerHomepage = asyncHandler(async (req, res) => {
     BaseProduct.find({
       store: store._id,
       isActive: true,
+      isDeleted: { $ne: true },
       salePrice: { $exists: true, $gt: 0 },
     })
       .sort({ dateCreated: -1, _id: 1 })

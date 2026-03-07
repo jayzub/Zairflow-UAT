@@ -314,20 +314,25 @@ const getProductTypeConfigWithCustom = async (productTypeName, storeId) => {
     if (predefined) {
         return predefined;
     }
-    
+
     // If not found, check custom product types
     if (storeId) {
         try {
             const CustomProductType = require('../models/customProductType');
             const customType = await CustomProductType.getByNameAndStore(productTypeName, storeId);
             if (customType) {
-                return customType.toProductTypeConfig();
+                const config = customType.toProductTypeConfig();
+                // Ensure config has valid fields object so callers never crash
+                if (config && typeof config === 'object' && (!config.fields || typeof config.fields !== 'object')) {
+                    config.fields = {};
+                }
+                return config;
             }
         } catch (error) {
             console.error('Error fetching custom product type:', error);
         }
     }
-    
+
     return null;
 };
 
@@ -342,8 +347,9 @@ const getAllProductTypesWithCustom = async (storeId) => {
     try {
         const CustomProductType = require('../models/customProductType');
         const customTypes = await CustomProductType.getByStore(storeId);
-        const customConfigs = customTypes.map(type => type.toProductTypeConfig());
-        
+        const customConfigs = customTypes
+            .map(type => type.toProductTypeConfig())
+            .filter(config => config && typeof config === 'object' && typeof (config.fields) === 'object' && config.fields !== null);
         return [...predefined, ...customConfigs];
     } catch (error) {
         console.error('Error fetching custom product types:', error);

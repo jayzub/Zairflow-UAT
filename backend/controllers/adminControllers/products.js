@@ -7,6 +7,23 @@ const adminProductsService = require('../../services/admin/adminProductsService'
 const { getProductTypes, initProductFields } = require('../../helpers/productHelpers');
 const { DEFAULT_LIMIT, DEFAULT_PAGE, DEFAULT_SORT, DEFAULT_ORDER } = require('../../utils/constants');
 
+// Admin: Get soft-deleted products page
+exports.getDeletedProductsPage = asyncHandler(async (req, res) => {
+    const limit = parseInt(req.query.limit, 10) || DEFAULT_LIMIT;
+    const page = parseInt(req.query.page, 10) || DEFAULT_PAGE;
+    const sort = req.query.sort || DEFAULT_SORT;
+    const order = req.query.order === 'asc' ? 1 : DEFAULT_ORDER;
+
+    const { ok, result } = await adminProductsService.listDeletedProducts({ req, limit, page, sort, order });
+    if (!ok) {
+        return res.status(500).render('admin/error', {
+            pageTitle: 'Error',
+            message: 'Failed to load removed products',
+        });
+    }
+    return res.render('admin/products-deleted', result);
+});
+
 // Admin: Get all products with admin-specific logic
 exports.getAllProducts = asyncHandler(async (req, res) => {
     try {
@@ -153,6 +170,13 @@ exports.removeProduct = asyncHandler(async (req, res) => {
     return res.status(result.status).json(result.payload);
 });
 
+// Admin: Restore a soft-deleted product
+exports.restoreProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await adminProductsService.restoreProductSoft({ req, productId: id });
+    return res.status(result.status).json(result.payload);
+});
+
 // Admin: Delete a product (hard delete)
 exports.deleteProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -176,9 +200,12 @@ exports.getFeaturedProducts = asyncHandler(async (req, res) => {
 // Admin: Render import products page
 exports.importProductsPage = asyncHandler(async (req, res) => {
   try {
+    const importLimits = require('../../config/importLimits');
     res.render('admin/products-import', {
       pageTitle: 'Import Products',
       adminUrl: 'admin',
+      importMaxSize: importLimits.MAX_CSV_IMPORT_SIZE_LABEL,
+      importMaxRows: importLimits.MAX_CSV_IMPORT_ROWS,
     });
   } catch (error) {
     console.error('Error rendering import page:', error);

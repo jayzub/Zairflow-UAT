@@ -1,11 +1,21 @@
-mixin DashboardDropdown(id, reveal, iconClass='fs-10') 
+mixin DashboardDropdown(id, reveal, iconClass='fs-10', options={})
+  - var isProductRemove = options.productRemove === true
+  - var isDeletedProductActions = options.deletedProductActions === true
   .btn-reveal-trigger.position-static
     button.btn.btn-sm.dropdown-toggle.dropdown-caret-none.transition-none&attributes(attributes)(type='button' class=`btn-reveal${reveal ? '-' + reveal : ''}` id=id data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent")
       span.fas.fa-ellipsis-h(class=iconClass)
     .dropdown-menu.dropdown-menu-end.py-2(aria-labelledby=id )
-      a(href=`/api/products/${id}`).dropdown-item View
-      a(href=`/admin/products/edit/${id}`).dropdown-item Edit
-      .dropdown-divider
-      a(href='#!').dropdown-item.text-danger Remove
+      if isDeletedProductActions
+        a(href='#!' onclick=`restoreProduct('${id}')`).dropdown-item Restore
+        .dropdown-divider
+        a(href='#!' onclick=`hardDeleteProduct('${id}')`).dropdown-item.text-danger Delete
+      else
+        a(href=`/api/products/${id}`).dropdown-item View
+        a(href=`/admin/products/edit/${id}`).dropdown-item Edit
+        .dropdown-divider
+        if isProductRemove
+          a(href='#!' onclick=`removeFromCatalog('${id}')`).dropdown-item.text-danger Remove from catalog
+        else
+          a(href='#!').dropdown-item.text-danger Remove
 
 
