@@ -6,13 +6,13 @@ const { extractStore, requireStoreAccess } = require('../../middleware/storeIsol
 const { checkUserStores } = require('../../middleware/admin/checkUserStores');
 const { getDashboardStats } = require('../../controllers/adminControllers/dashboard');
 
-// Admin index (with store isolation)
-router.get('/', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
+// Admin index (with store isolation and permission)
+router.get('/', requireAuth, requirePermission('analytics:read'), checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
     res.render('admin/admin-index');
 });
 
 // Admin dashboard (analytics and statistics)
-router.get('/dashboard', requireAuth, checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
+router.get('/dashboard', requireAuth, requirePermission('analytics:read'), checkUserStores, extractStore, requireStoreAccess('any'), (req, res) => {
     res.render('admin/dashboard');
 });
 

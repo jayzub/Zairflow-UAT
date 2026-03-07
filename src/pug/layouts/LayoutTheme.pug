@@ -65,9 +65,16 @@ append layoutScripts
   script(src=`${CWD}vendors/feather-icons/feather.min.js`)
   script(src=`${CWD}vendors/dayjs/dayjs.min.js`)
   
-  //- Add logout functionality for Sign out button in ProfileDropdown (admin vs customer)
+  //- Admin logout: clear server cookie (POST /admin/logout) then all admin-related client storage; redirect to sign-in.
+  //- Reachable from: navbar ProfileDropdown "Sign out" (when navUser is set on admin pages) and explicit Logout buttons on admin-index, stores-list, create-store.
   script.
     document.addEventListener('DOMContentLoaded', function() {
+      function clearAdminClientStorage() {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+      }
       document.addEventListener('click', function(e) {
         var btn = e.target && (e.target.id === 'signOutBtn' ? e.target : e.target.closest('#signOutBtn'));
         if (!btn) return;
@@ -89,13 +96,11 @@ append layoutScripts
         } else {
           fetch('/admin/logout', { method: 'POST', credentials: 'include' })
             .then(function() {
-              localStorage.removeItem('adminToken');
-              localStorage.removeItem('adminUser');
+              clearAdminClientStorage();
               window.location.href = '/admin/auth/sign-in';
             })
             .catch(function() {
-              localStorage.removeItem('adminToken');
-              localStorage.removeItem('adminUser');
+              clearAdminClientStorage();
               window.location.href = '/admin/auth/sign-in';
             });
         }

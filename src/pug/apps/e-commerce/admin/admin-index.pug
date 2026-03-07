@@ -168,17 +168,21 @@ block append scripts
         checkUserPermissions();
       })();
 
-      // Handle logout: clear server cookie then client state
+      // Handle logout: clear server cookie then all admin client storage
       document.getElementById('logoutBtn').addEventListener('click', function() {
+        function clearAdminStorage() {
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userRole');
+        }
         fetch('/admin/logout', { method: 'POST', credentials: 'include' })
           .then(function() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
+            clearAdminStorage();
             window.location.href = '/admin/auth/sign-in';
           })
           .catch(function() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
+            clearAdminStorage();
             window.location.href = '/admin/auth/sign-in';
           });
       });

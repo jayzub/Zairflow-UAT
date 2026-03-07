@@ -39,6 +39,23 @@ const adminRegisterLimit = rateLimit({
 });
 
 /**
+ * Rate limit for admin forgot-password (abuse protection).
+ * 3 attempts per 15 minutes per IP.
+ */
+const adminForgotPasswordLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: {
+        success: false,
+        message: 'Too many reset requests. Please try again in 15 minutes.',
+        retryAfter: 15
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.connection?.remoteAddress || 'unknown'
+});
+
+/**
  * Rate limit for store creation (5 stores per 15 minutes per IP)
  */
 const storeCreationLimit = rateLimit({
@@ -181,6 +198,7 @@ const generalApiLimit = rateLimit({
 module.exports = {
     adminLoginLimit,
     adminRegisterLimit,
+    adminForgotPasswordLimit,
     storeCreationLimit,
     storeUpdateLimit,
     storeDiscoveryLimit,

@@ -36,6 +36,17 @@ const validateChangePassword = [
   validateRequest,
 ];
 
+const validateForgotPassword = [
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  validateRequest,
+];
+
+const validateResetPassword = [
+  body('token').isString().withMessage('Reset token is required').notEmpty().withMessage('Reset token is required'),
+  body('newPassword').isString().withMessage('New password is required').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  validateRequest,
+];
+
 const validateCreateAdmin = [
   body('firstName').trim().isLength({ min: 1, max: 100 }).withMessage('firstName is required'),
   body('lastName').trim().isLength({ min: 1, max: 100 }).withMessage('lastName is required'),
@@ -78,6 +89,8 @@ module.exports = {
   validateAdminRegister,
   validateMeUpdate,
   validateChangePassword,
+  validateForgotPassword,
+  validateResetPassword,
   validateCreateAdmin,
   validateCreateStoreAdmin,
   validateUserIdParam,

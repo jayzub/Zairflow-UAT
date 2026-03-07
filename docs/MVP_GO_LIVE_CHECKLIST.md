@@ -8,9 +8,9 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 
 - [x] **1.1** Decide admin auth model: prefer HttpOnly cookie for session token; avoid relying on `localStorage` Bearer for privileged admin APIs. Document or refactor so one mechanism is canonical.
 - [x] **1.2** Add rate limiting (and optional brute-force protection) to `/admin/login` (and register if public).
-- [ ] **1.3** Admin password reset: verify backend (token generation, expiry, reset POST) is implemented and wired to “Forgot password?” template; otherwise hide the link or add a “Contact support” message for MVP.
-- [ ] **1.4** Ensure explicit logout clears both server session/cookie and client storage and that logout is reachable from admin UI.
-- [ ] **1.5** Audit all admin routes (orders, customers, categories, vendors, custom types, etc.) for consistent `requireAuth`, `requirePermission(...)`, and store isolation; fix any that bypass them.
+- [x] **1.3** Admin password reset: verify backend (token generation, expiry, reset POST) is implemented and wired to “Forgot password?” template; otherwise hide the link or add a “Contact support” message for MVP.
+- [x] **1.4** Ensure explicit logout clears both server session/cookie and client storage and that logout is reachable from admin UI.
+- [x] **1.5** Audit all admin routes (orders, customers, categories, vendors, custom types, etc.) for consistent `requireAuth`, `requirePermission(...)`, and store isolation; fix any that bypass them.
 
 ---
 
@@ -62,6 +62,7 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 ## References
 
 - `docs/ADMIN_AUTH_MODEL.md` — Admin auth: cookie-only, no localStorage token.
+- `docs/ADMIN_ROUTES_AUDIT.md` — Admin routes audit (requireAuth, requirePermission, store isolation).
 - `docs/PROCESS_FLOW_ADD_TO_CART_TO_CHECKOUT.md` — cart/checkout flow and Phase 6.2 payment stub.
 - `docs/VARIANT_ID_IMPLEMENTATION.md` — variantId in cart/order/inventory.
 - `docs/BULK_PRODUCT_IMPORT_ARCHITECTURE.md` — import design and limits.

@@ -11,6 +11,8 @@ function errorHandler(err, req, res, next) {
     const adminJsonPrefixes = [
       '/admin/login',
       '/admin/register',
+      '/admin/forgot-password',
+      '/admin/reset-password',
       '/admin/me',
       '/admin/change-password',
       '/admin/admins',
