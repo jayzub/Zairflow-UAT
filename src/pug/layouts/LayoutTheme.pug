@@ -87,9 +87,17 @@ append layoutScripts
             .then(function() { window.location.href = goAfterLogout; })
             .catch(function() { window.location.href = goAfterLogout; });
         } else {
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminUser');
-          window.location.href = '/admin/auth/sign-in';
+          fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+            .then(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              window.location.href = '/admin/auth/sign-in';
+            })
+            .catch(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              window.location.href = '/admin/auth/sign-in';
+            });
         }
       });
     });

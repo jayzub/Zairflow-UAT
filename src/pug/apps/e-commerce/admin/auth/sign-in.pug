@@ -140,55 +140,43 @@ block append scripts
           const data = await response.json();
           
           if (response.ok && data.success) {
-            // Store token in localStorage
-            localStorage.setItem('adminToken', data.token);
+            // Auth is via HTTP-only cookie; store only display info for navbar (no token in localStorage)
             localStorage.setItem('adminUser', JSON.stringify({
               email: data.user,
               role: data.role,
               isPlatformAdmin: data.isPlatformAdmin,
               isAdmin: true
             }));
-            
+
             showSuccess('Sign in successful! Redirecting...');
-            
+
             // If user was sent here from a protected page, send them back after login
             if (safeRedirect) {
               setTimeout(() => { window.location.href = safeRedirect; }, 500);
               return;
             }
-            
-            // Check if user is platform admin or has stores and redirect accordingly
+
+            // Check if user is platform admin or has stores and redirect accordingly (cookie sent automatically)
             setTimeout(async () => {
               try {
-                // Platform admins should go directly to admin dashboard
                 if (data.isPlatformAdmin || data.role === 'platform_admin') {
                   window.location.href = '/admin/';
                   return;
                 }
-                
-                // For regular admins, check if they have stores
-                const storeResponse = await fetch('/admin/stores/my-stores', {
-                  headers: {
-                    'Authorization': `Bearer ${data.token}`
-                  }
-                });
-                
+
+                const storeResponse = await fetch('/admin/stores/my-stores', { credentials: 'include' });
                 if (storeResponse.ok) {
                   const storeData = await storeResponse.json();
                   if (storeData.success && storeData.data && storeData.data.length > 0) {
-                    // User has stores, redirect to admin index
                     window.location.href = '/admin/';
                   } else {
-                    // User has no stores, redirect to create-store
                     window.location.href = '/admin/create-store';
                   }
                 } else {
-                  // Fallback to admin index
                   window.location.href = '/admin/';
                 }
               } catch (error) {
                 console.error('Error checking stores:', error);
-                // Fallback to admin index
                 window.location.href = '/admin/';
               }
             }, 1500);
@@ -205,32 +193,23 @@ block append scripts
         }
       });
       
-      // Check if user is already logged in (avoid redirect loops when cookie is missing/expired)
-      const token = localStorage.getItem('adminToken');
-      if (token) {
-        (async () => {
-          try {
-            const meRes = await fetch('/admin/me', {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-              },
-              credentials: 'include'
-            });
-
-            if (meRes.ok) {
-              window.location.href = safeRedirect || '/admin/';
-              return;
-            }
-          } catch (e) {
-            // fall through
+      // If cookie-based session exists, /admin/me will return 200 and we redirect
+      (async () => {
+        try {
+          const meRes = await fetch('/admin/me', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include'
+          });
+          if (meRes.ok) {
+            window.location.href = safeRedirect || '/admin/';
+            return;
           }
-
-          // Token is invalid/expired (or server can't accept it). Clear and stay on sign-in.
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminUser');
-        })();
-      }
+        } catch (e) {
+          // fall through
+        }
+        // Clear any leftover client-side state
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+      })();
     }); 

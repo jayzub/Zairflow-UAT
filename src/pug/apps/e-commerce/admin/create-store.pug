@@ -242,13 +242,21 @@ block append scripts
       // Sign out functionality
       signOutBtn.addEventListener('click', function() {
         if (confirm('Are you sure you want to sign out?')) {
-          // Clear authentication data
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('userEmail');
-          localStorage.removeItem('userRole');
-          
-          // Redirect to sign in page
-          window.location.href = '/admin/auth/sign-in';
+          fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+            .then(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              localStorage.removeItem('userEmail');
+              localStorage.removeItem('userRole');
+              window.location.href = '/admin/auth/sign-in';
+            })
+            .catch(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              localStorage.removeItem('userEmail');
+              localStorage.removeItem('userRole');
+              window.location.href = '/admin/auth/sign-in';
+            });
         }
       });
       
@@ -351,10 +359,8 @@ block append scripts
           
           const response = await fetch('/admin/stores', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify(storeData)
           });
           
@@ -385,42 +391,32 @@ block append scripts
         }
       });
       
-      // Check if user is authenticated
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        // Redirect to sign in if not authenticated
-        window.location.href = '/admin/auth/sign-in';
-        return;
-      }
-      
-      // Check if user already has stores (if so, redirect to dashboard)
-      async function checkUserStores() {
+      // Check if user is authenticated (cookie); redirect if not
+      (async function init() {
+        const meRes = await fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!meRes.ok) {
+          window.location.href = '/admin/auth/sign-in';
+          return;
+        }
+
+        // Check if user already has stores (if so, redirect to dashboard)
         try {
-          const response = await fetch('/admin/stores/my-stores', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
+          const response = await fetch('/admin/stores/my-stores', { credentials: 'include' });
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data && data.data.length > 0) {
-                      // User already has stores, redirect to admin index
-        window.location.href = '/admin/';
+              window.location.href = '/admin/';
               return;
             }
           }
         } catch (error) {
           console.error('Error checking user stores:', error);
         }
-      }
-      
-      // Check user stores on page load
-      checkUserStores();
-      
-      // Auto-fill contact email with user's email if available
-      const userEmail = localStorage.getItem('userEmail');
-      if (userEmail && !document.getElementById('contactEmail').value) {
-        document.getElementById('contactEmail').value = userEmail;
-      }
+
+        // Auto-fill contact email with user's email if available
+        const userEmail = localStorage.getItem('userEmail');
+        if (userEmail && !document.getElementById('contactEmail').value) {
+          document.getElementById('contactEmail').value = userEmail;
+        }
+      })();
     }); 

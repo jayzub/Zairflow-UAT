@@ -42,46 +42,39 @@ block wrapperContent
 block append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if user is logged in
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        window.location.href = '/admin/auth/sign-in';
-        return;
-      }
-      
-      // Load user's stores
-      async function loadStores() {
-        try {
-          const response = await fetch('/admin/stores/my-stores', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.data && data.data.length > 0) {
-              displayStores(data.data);
+      // Auth is cookie-based
+      (async function init() {
+        const meRes = await fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!meRes.ok) {
+          window.location.href = '/admin/auth/sign-in';
+          return;
+        }
+
+        async function loadStores() {
+          try {
+            const response = await fetch('/admin/stores/my-stores', { credentials: 'include' });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data && data.data.length > 0) {
+                displayStores(data.data);
+              } else {
+                showNoStoresMessage();
+              }
             } else {
               showNoStoresMessage();
             }
-          } else {
+          } catch (error) {
+            console.error('Error loading stores:', error);
             showNoStoresMessage();
           }
-        } catch (error) {
-          console.error('Error loading stores:', error);
-          showNoStoresMessage();
         }
-      }
-      
-      function displayStores(stores) {
-        const storesList = document.getElementById('storesList');
-        const noStoresMessage = document.getElementById('noStoresMessage');
-        
-        storesList.classList.remove('d-none');
-        noStoresMessage.classList.add('d-none');
-        
-        const storesHtml = stores.map(store => `
+
+        function displayStores(stores) {
+          const storesList = document.getElementById('storesList');
+          const noStoresMessage = document.getElementById('noStoresMessage');
+          storesList.classList.remove('d-none');
+          noStoresMessage.classList.add('d-none');
+          const storesHtml = stores.map(store => `
           <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
               <div class="card-body">
@@ -115,46 +108,34 @@ block append scripts
             </div>
           </div>
         `).join('');
-        
-        storesList.innerHTML = `
-          <div class="row">
-            ${storesHtml}
-          </div>
-        `;
-      }
-      
-      function showNoStoresMessage() {
-        const storesList = document.getElementById('storesList');
-        const noStoresMessage = document.getElementById('noStoresMessage');
-        
-        storesList.classList.add('d-none');
-        noStoresMessage.classList.remove('d-none');
-      }
-      
-      // Load stores on page load
-      loadStores();
-      
-      // Handle logout
-      document.getElementById('logoutBtn').addEventListener('click', function() {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        window.location.href = '/admin/auth/sign-in';
-      });
-      
-      // Add authentication header to all fetch requests
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options = {}) {
-        if (token) {
-          options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-          };
+          storesList.innerHTML = '<div class="row">' + storesHtml + '</div>';
         }
-        return originalFetch(url, options);
-      };
-      
-      // Global function for viewing store analytics
-      window.viewStoreAnalytics = function(storeId) {
-        window.location.href = `/admin/stores/${storeId}/analytics`;
-      };
+
+        function showNoStoresMessage() {
+          const storesList = document.getElementById('storesList');
+          const noStoresMessage = document.getElementById('noStoresMessage');
+          storesList.classList.add('d-none');
+          noStoresMessage.classList.remove('d-none');
+        }
+
+        loadStores();
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+          fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+            .then(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              window.location.href = '/admin/auth/sign-in';
+            })
+            .catch(function() {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('adminUser');
+              window.location.href = '/admin/auth/sign-in';
+            });
+        });
+
+        window.viewStoreAnalytics = function(storeId) {
+          window.location.href = '/admin/stores/' + storeId + '/analytics';
+        };
+      })();
     }); 

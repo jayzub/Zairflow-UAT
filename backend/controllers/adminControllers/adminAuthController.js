@@ -28,20 +28,21 @@ exports.login = asyncHandler(async (req, res) => {
     { expiresIn: '1d' }
   );
 
-  // Set JWT as HTTP-only cookie
-  res.cookie('token', token, {
+  // Set JWT as HTTP-only cookie (canonical auth; do not send token in body to avoid XSS via localStorage)
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 1 day
-  });
+    path: '/',
+  };
+  res.cookie('token', token, cookieOptions);
 
   return res.status(200).json({
     success: true,
     user: user.email,
     role: user.role,
     isPlatformAdmin: user.isPlatformAdmin,
-    token: token,
   });
 });
 
@@ -84,4 +85,12 @@ exports.register = asyncHandler(async (req, res) => {
     message: 'User registered successfully',
   });
 });
+
+/**
+ * Log out admin: clear the HTTP-only token cookie. Client should clear any local state (e.g. adminUser) and redirect to sign-in.
+ */
+exports.logout = (req, res) => {
+  res.clearCookie('token', { httpOnly: true, path: '/', sameSite: 'lax' });
+  res.status(204).end();
+};
 

@@ -27,10 +27,9 @@ block wrapperContent
 block append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if user is already logged in
-      const token = localStorage.getItem('adminToken');
-      if (token) {
-        // Redirect to admin index if already logged in
-        window.location.href = '/admin/';
-      }
+      fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res) {
+          if (res.ok) window.location.href = '/admin/';
+        })
+        .catch(function() {});
     }); 

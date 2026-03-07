@@ -83,23 +83,10 @@ block wrapperContent
 block append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if user is logged in
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        // Redirect to login if not authenticated
-        window.location.href = '/admin/auth/sign-in';
-        return;
-      }
-      
-      // Add authentication header to all fetch requests
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options = {}) {
-        if (token) {
-          options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-          };
-        }
-        return originalFetch(url, options);
-      };
+      // Auth is cookie-based; redirect if not logged in
+      fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res) {
+          if (!res.ok) window.location.href = '/admin/auth/sign-in';
+        })
+        .catch(function() { window.location.href = '/admin/auth/sign-in'; });
     });

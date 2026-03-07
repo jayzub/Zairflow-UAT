@@ -4,7 +4,7 @@ const Order = require('../models/order');
 const OrderItem = require('../models/orderItem');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
-const { findVariantByOptions, findVariantById } = require('../helpers/variantHelpers');
+const { findVariantByOptions, findVariantById, getAvailableStockForItem } = require('../helpers/variantHelpers');
 const Promotion = require('../models/promotion');
 const Customer = require('../models/customer');
 const crypto = require('crypto');
@@ -50,48 +50,6 @@ function parsePrice(value) {
     if (typeof value === 'object' && value.$numberDecimal != null) return parseFloat(value.$numberDecimal) || null;
     if (typeof value.toString === 'function') return parseFloat(value.toString()) || null;
     return null;
-}
-
-/**
- * Get available stock for product (or variant when options provided). Phase 8.1.
- */
-function getAvailableStock(product, options = {}) {
-    if (!product) return 0;
-    const baseStock = typeof product.countInStock === 'number' ? Math.max(0, product.countInStock) : 0;
-    const variants = product.variants;
-    if (!variants || !Array.isArray(variants) || variants.length === 0) return baseStock;
-    const color = (options && options.color) ? String(options.color).trim() : '';
-    const size = (options && options.size) ? String(options.size).trim() : '';
-    let match = null;
-    if (color && size) match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
-    if (!match && color) match = variants.find(v => String(v.color || '').trim() === color);
-    if (!match && size) match = variants.find(v => String(v.size || '').trim() === size);
-    if (match && match.countInStock != null) return Math.max(0, parseInt(match.countInStock, 10) || 0);
-    return baseStock;
-}
-
-/**
- * Resolve current unit price from product (and variant if options match). Phase 8.2.
- */
-function resolveCurrentUnitPrice(product, options = {}) {
-    if (!product) return null;
-    const reg = parsePrice(product.price);
-    const sale = parsePrice(product.salePrice);
-    const basePrice = (sale != null && sale > 0 && (reg == null || sale < reg)) ? sale : (reg != null ? reg : 0);
-    const variants = product.variants;
-    if (!variants || !Array.isArray(variants) || variants.length === 0) return basePrice;
-    const color = (options && options.color) ? String(options.color).trim() : '';
-    const size = (options && options.size) ? String(options.size).trim() : '';
-    let match = null;
-    if (color && size) match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
-    if (!match && color) match = variants.find(v => String(v.color || '').trim() === color);
-    if (!match && size) match = variants.find(v => String(v.size || '').trim() === size);
-    if (match) {
-        const vReg = parsePrice(match.price);
-        const vSale = parsePrice(match.salePrice);
-        return (vSale != null && vSale > 0 && (vReg == null || vSale < vReg)) ? vSale : (vReg != null ? vReg : basePrice);
-    }
-    return basePrice;
 }
 
 /**
@@ -217,13 +175,15 @@ const placeOrder = asyncHandler(async (req, res) => {
     const shippingCost = typeof req.body.shippingCost === 'number' ? req.body.shippingCost : (parseFloat(req.body.shippingCost) || 0);
     const shippingMethodId = req.body.shippingMethodId || 'free';
 
-    // Phase 8.1: Re-check inventory before placing order
+    // Phase 8.1: Re-check inventory before placing order (use variantId when present for consistency with order items and deduction)
     const unavailableItems = [];
     for (const item of cart.items) {
         const product = item.product;
         if (!product) continue;
-        const options = item.options || {};
-        const available = getAvailableStock(product, options);
+        const available = getAvailableStockForItem(product, {
+            variantId: item.variantId || null,
+            options: item.options || {}
+        });
         const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
         if (qty > available) {
             unavailableItems.push({
@@ -365,6 +325,9 @@ const placeOrder = asyncHandler(async (req, res) => {
         const tax = Math.round(subtotalAfterDiscount * (taxRate / 100) * 100) / 100;
         const orderTotal = Math.round((subtotalAfterDiscount + tax + shippingCost) * 100) / 100;
 
+        // Payment semantics: only mark 'paid' when money is received. COD = paid at placement; card = pending until Stripe charge is implemented (Phase 6.2).
+        const paymentStatus = paymentMethod === 'cod' ? 'paid' : 'pending';
+
         const order = await Order.create({
             store: storeIdKey,
             orderNumber,
@@ -384,7 +347,7 @@ const placeOrder = asyncHandler(async (req, res) => {
             customer: customerId,
             customerEmail: customer.email,
             customerName: customer.name || customer.email,
-            paymentStatus: 'paid',
+            paymentStatus,
             paymentMethod,
             stripePaymentMethodId: paymentMethodId || undefined
         });

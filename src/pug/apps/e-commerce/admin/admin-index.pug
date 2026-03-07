@@ -101,95 +101,85 @@ block wrapperContent
 block append scripts
   script.
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if user is logged in
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        // Redirect to login if not authenticated
-        window.location.href = '/admin/auth/sign-in';
-        return;
+      // Auth is cookie-based: ensure all fetch use credentials; no Bearer token
+      function ensureCredentials(options) {
+        options = options || {};
+        options.credentials = options.credentials || 'include';
+        return options;
       }
-      
-      // Check if user has stores
-      async function checkUserStores() {
+
+      // Check if user is logged in (cookie); if not, redirect to sign-in
+      (async function init() {
         try {
-          const response = await fetch('/admin/stores/my-stores', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (!data.success || !data.data || data.data.length === 0) {
-              // User has no stores, redirect to create-store
+          const meRes = await fetch('/admin/me', ensureCredentials({ headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }));
+          if (!meRes.ok) {
+            window.location.href = '/admin/auth/sign-in';
+            return;
+          }
+        } catch (e) {
+          window.location.href = '/admin/auth/sign-in';
+          return;
+        }
+
+        // Check if user has stores
+        async function checkUserStores() {
+          try {
+            const response = await fetch('/admin/stores/my-stores', ensureCredentials());
+            if (response.ok) {
+              const data = await response.json();
+              if (!data.success || !data.data || data.data.length === 0) {
+                window.location.href = '/admin/create-store';
+                return;
+              }
+            } else {
               window.location.href = '/admin/create-store';
               return;
             }
-          } else {
-            // Error checking stores, redirect to create-store as fallback
+          } catch (error) {
+            console.error('Error checking user stores:', error);
             window.location.href = '/admin/create-store';
             return;
           }
-        } catch (error) {
-          console.error('Error checking user stores:', error);
-          // Error checking stores, redirect to create-store as fallback
-          window.location.href = '/admin/create-store';
-          return;
         }
-      }
-      
-      // Check user permissions and show/hide elements accordingly
-      async function checkUserPermissions() {
-        try {
-          const userResponse = await fetch('/admin/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            
-            if (userData.success && userData.data) {
-              const user = userData.data;
-              
-              // Show/hide create admin card based on role
-              const createAdminCard = document.getElementById('createAdminCard');
-              if (createAdminCard) {
-                if (user.role === 'store_owner' || user.isPlatformAdmin) {
-                  createAdminCard.classList.remove('d-none');
-                } else {
-                  createAdminCard.classList.add('d-none');
+
+        async function checkUserPermissions() {
+          try {
+            const userResponse = await fetch('/admin/me', ensureCredentials({ headers: { 'Accept': 'application/json' } }));
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              if (userData.success && userData.data) {
+                const user = userData.data;
+                const createAdminCard = document.getElementById('createAdminCard');
+                if (createAdminCard) {
+                  if (user.role === 'store_owner' || user.isPlatformAdmin) {
+                    createAdminCard.classList.remove('d-none');
+                  } else {
+                    createAdminCard.classList.add('d-none');
+                  }
                 }
               }
             }
+          } catch (error) {
+            console.error('Error checking user permissions:', error);
           }
-        } catch (error) {
-          console.error('Error checking user permissions:', error);
         }
-      }
-      
-      // Check user stores on page load
-      checkUserStores();
-      checkUserPermissions();
-      
-      // Handle logout
+
+        checkUserStores();
+        checkUserPermissions();
+      })();
+
+      // Handle logout: clear server cookie then client state
       document.getElementById('logoutBtn').addEventListener('click', function() {
-        // Clear local storage
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        
-        // Redirect to login page
-        window.location.href = '/admin/auth/sign-in';
+        fetch('/admin/logout', { method: 'POST', credentials: 'include' })
+          .then(function() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            window.location.href = '/admin/auth/sign-in';
+          })
+          .catch(function() {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            window.location.href = '/admin/auth/sign-in';
+          });
       });
-      
-      // Add authentication header to all fetch requests
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options = {}) {
-        if (token) {
-          options.headers = {
-            ...options.headers,
-            'Authorization': `Bearer ${token}`
-          };
-        }
-        return originalFetch(url, options);
-      };
     }); 

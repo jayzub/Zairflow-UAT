@@ -58,7 +58,32 @@ function findVariantById(product, variantId) {
     return product.variants.find((v) => v._id && String(v._id) === idStr) || null;
 }
 
+/**
+ * Get available stock for a cart/checkout item. Prefers variantId when present for consistency with
+ * order creation and inventory deduction; falls back to options-based lookup (legacy or no variant).
+ *
+ * @param {Object} product - Product document with optional variants array
+ * @param {{ variantId?: ObjectId|string, options?: { color?: string, size?: string } }} opts
+ * @returns {number} - Available quantity (0 when variant not found or product has no stock)
+ */
+function getAvailableStockForItem(product, opts = {}) {
+    if (!product) return 0;
+    const { variantId, options = {} } = opts;
+    if (variantId) {
+        const v = findVariantById(product, variantId);
+        if (v && v.countInStock != null) return Math.max(0, parseInt(v.countInStock, 10) || 0);
+        return 0;
+    }
+    const result = findVariantByOptions(product, options);
+    if (result && result.variant && result.variant.countInStock != null) {
+        return Math.max(0, parseInt(result.variant.countInStock, 10) || 0);
+    }
+    const baseStock = typeof product.countInStock === 'number' ? Math.max(0, product.countInStock) : 0;
+    return baseStock;
+}
+
 module.exports = {
     findVariantByOptions,
-    findVariantById
+    findVariantById,
+    getAvailableStockForItem
 };

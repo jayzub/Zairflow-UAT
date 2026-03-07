@@ -1,8 +1,42 @@
 /**
- * Rate limiting middleware for store operations
+ * Rate limiting middleware for store operations and admin auth
  */
 
 const rateLimit = require('express-rate-limit');
+
+/**
+ * Rate limit for admin login (brute-force protection).
+ * 10 attempts per 15 minutes per IP; no auth yet so key is IP only.
+ */
+const adminLoginLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,
+    message: {
+        success: false,
+        message: 'Too many login attempts. Please try again in 15 minutes.',
+        retryAfter: 15
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.connection?.remoteAddress || 'unknown'
+});
+
+/**
+ * Rate limit for admin register (abuse protection).
+ * 5 attempts per 15 minutes per IP.
+ */
+const adminRegisterLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5,
+    message: {
+        success: false,
+        message: 'Too many registration attempts. Please try again in 15 minutes.',
+        retryAfter: 15
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.connection?.remoteAddress || 'unknown'
+});
 
 /**
  * Rate limit for store creation (5 stores per 15 minutes per IP)
@@ -145,6 +179,8 @@ const generalApiLimit = rateLimit({
 });
 
 module.exports = {
+    adminLoginLimit,
+    adminRegisterLimit,
     storeCreationLimit,
     storeUpdateLimit,
     storeDiscoveryLimit,

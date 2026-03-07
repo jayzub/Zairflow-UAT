@@ -243,11 +243,7 @@ block append scripts
         
         try {
           // First, get the user's stores to find the store ID
-          const storeResponse = await fetch('/admin/stores/my-stores', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            }
-          });
+          const storeResponse = await fetch('/admin/stores/my-stores', { credentials: 'include' });
           
           let storeId = null;
           if (storeResponse.ok) {
@@ -260,10 +256,8 @@ block append scripts
           
           const response = await fetch('/admin/create-store-admin', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            },
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               firstName: firstName,
               lastName: lastName,
@@ -298,45 +292,25 @@ block append scripts
         }
       });
       
-      // Check if user is authenticated and has permission
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        // Redirect to sign in if not authenticated
-        window.location.href = '/admin/auth/sign-in';
-        return;
-      }
-      
-      // Check if user has permission to create admins
-      async function checkCreateAdminPermission() {
-        try {
-          const userResponse = await fetch('/admin/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            if (userData.success && userData.data) {
-              const user = userData.data;
-              
-              // Only store owners and platform admins can create admins
-              if (user.role !== 'store_owner' && !user.isPlatformAdmin) {
-                alert('Access denied. Only store owners and platform admins can create store admins.');
-                window.location.href = '/admin/';
-                return;
-              }
-            }
-          } else {
-            // If we can't get user data, redirect to admin index
+      // Check if user is authenticated (cookie) and has permission
+      (async function init() {
+        const meRes = await fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!meRes.ok) {
+          window.location.href = '/admin/auth/sign-in';
+          return;
+        }
+
+        const userData = await meRes.json();
+        if (userData.success && userData.data) {
+          const user = userData.data;
+          if (user.role !== 'store_owner' && !user.isPlatformAdmin) {
+            alert('Access denied. Only store owners and platform admins can create store admins.');
             window.location.href = '/admin/';
             return;
           }
-        } catch (error) {
-          console.error('Error checking permissions:', error);
+        } else {
           window.location.href = '/admin/';
           return;
         }
-      }
-      
-      // Check permissions on page load
-      checkCreateAdminPermission();
+      })();
     }); 
