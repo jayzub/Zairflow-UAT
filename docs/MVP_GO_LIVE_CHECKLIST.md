@@ -19,7 +19,7 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 - [x] **2.1** Enforce or document a **max CSV row count and file size** for bulk product import; add validator if not present. Document in admin import UI.
 - [x] **2.2** Confirm all configured product types (and custom types) are validated and misconfig yields clear 4xx, not runtime crashes.
 - [x] **2.3** Document delete semantics (soft vs hard delete) for products and ensure admin “Delete” copy matches behavior.
-- [ ] **2.4** *(Optional for MVP)* Decide if admins need a **downloadable error CSV** for failed import rows; implement or document current behavior.
+- [x] **2.4** *(Optional for MVP)* Decide if admins need a **downloadable error CSV** for failed import rows; implement or document current behavior.
 
 ---
 

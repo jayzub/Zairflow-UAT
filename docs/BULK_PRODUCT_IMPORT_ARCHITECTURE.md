@@ -591,6 +591,7 @@ In the same pug file or a separate JS include:
 - POST to `/admin/products/import`
 - Parse JSON response, show results
 - Display errors in a table (row number, message, optional row data)
+- **Download error CSV:** When there are failed rows, show a "Download error CSV" button. On click, the client builds a CSV from the `errors` array (columns: Row, Error Message, Name, Product Type, Category, Vendor) and triggers a download with a filename like `import-errors-YYYYMMDDHHmmss.csv`. No server round-trip; the import response already includes the full `errors` array.
 
 #### Step 3.5: Create downloadable template
 
@@ -665,6 +666,8 @@ For atomicity, wrap each batch in `mongoose.startSession()` and `session.withTra
   ]
 }
 ```
+
+Admins can **download a CSV of failed rows** from the import results UI: a "Download error CSV" button appears when `errors.length > 0`. The client builds a CSV with columns Row, Error Message, Name, Product Type, Category, Vendor (from each `errors[].row`, `errors[].message`, and `errors[].data`) and downloads it as `import-errors-<timestamp>.csv`.
 
 **Response (400):**
 
