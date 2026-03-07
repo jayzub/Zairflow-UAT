@@ -97,8 +97,8 @@ block content
               span.fas.fa-trash-alt.me-2
               | Removed from catalog
       
-      // Products per page selector
-      .d-flex.justify-content-between.align-items-center.mb-3
+      // Products per page selector and bulk actions
+      .d-flex.justify-content-between.align-items-center.mb-3.flex-wrap.gap-2
         .d-flex.align-items-center
           span.text-body-secondary.me-2 Show
           select#products-per-page.form-select.form-select-sm.w-auto.me-2(name='limit')
@@ -106,12 +106,17 @@ block content
             option(value='20', selected=limit == 20) 20
             option(value='50', selected=limit == 50) 50
           span.text-body-secondary products per page
-        .text-body-secondary
-          | Showing #{(currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} products
+        #products-bulk-replace
+          span.text-body-secondary
+            | Showing #{(currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} products
+        #products-bulk-actions.d-none.d-flex.align-items-center.gap-2
+          button#bulk-remove-btn.btn.btn-phoenix-secondary.btn-sm(type='button')
+            span.fas.fa-eye-slash.me-1
+            | Remove from catalog
       .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
         #products-table
           if products && products.length > 0
-            +ProductTable(products)
+            +ProductTable(products, { bulkSelectActionsId: 'products-bulk-actions', bulkSelectReplaceElementId: 'products-bulk-replace' })
           else
             .text-center.py-4
               p.text-body-secondary No products available
@@ -152,6 +157,46 @@ block content
 
 append scripts
   script.
+    function getSelectedProductIds() {
+      var body = document.getElementById('products-table-body');
+      if (!body) return [];
+      var checkboxes = body.querySelectorAll('input[type="checkbox"][data-bulk-select-row]:checked');
+      return Array.prototype.map.call(checkboxes, function(cb) {
+        var tr = cb.closest('tr');
+        return tr && tr.getAttribute('data-product-id');
+      }).filter(Boolean);
+    }
+    function bulkRemoveFromCatalogSelected() {
+      var ids = getSelectedProductIds();
+      if (ids.length === 0) { alert('Select at least one product.'); return; }
+      if (!confirm('Remove ' + ids.length + ' product(s) from the catalog? They will be hidden and can be restored from "Removed from catalog".')) return;
+      var done = 0, failed = 0;
+      function runNext() {
+        if (done + failed >= ids.length) {
+          alert('Removed ' + done + ' product(s) from catalog.' + (failed ? ' Failed: ' + failed + '.' : ''));
+          ids.forEach(function(id) {
+            var row = document.querySelector('[data-product-id="' + id + '"]');
+            if (row) row.remove();
+          });
+          var body = document.getElementById('products-table-body');
+          if (body) body.querySelectorAll('input[data-bulk-select-row]:checked').forEach(function(cb) { cb.checked = false; });
+          document.getElementById('products-bulk-actions').classList.add('d-none');
+          document.getElementById('products-bulk-replace').classList.remove('d-none');
+          var header = document.getElementById('checkbox-bulk-products-select');
+          if (header) { header.checked = false; header.removeAttribute('indeterminate'); }
+          return;
+        }
+        var id = ids[done + failed];
+        fetch('/admin/products/' + id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, credentials: 'include' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) done++; else failed++;
+            runNext();
+          })
+          .catch(function() { failed++; runNext(); });
+      }
+      runNext();
+    }
     // Infinite scroll implementation
     class ProductLoader {
       constructor() {
@@ -428,10 +473,12 @@ append scripts
       }
     }
     
-    // Initialize product loader when DOM is ready
+    // Initialize product loader and bulk actions when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
       console.log('DOM loaded, initializing ProductLoader...');
       window.productLoader = new ProductLoader();
+      var bulkRemoveBtn = document.getElementById('bulk-remove-btn');
+      if (bulkRemoveBtn) bulkRemoveBtn.addEventListener('click', bulkRemoveFromCatalogSelected);
       
       // Handle products per page dropdown
       const productsPerPageSelect = document.getElementById('products-per-page');

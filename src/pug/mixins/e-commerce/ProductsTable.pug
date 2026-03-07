@@ -2,7 +2,7 @@ mixin ProductTableRow(product, index, rowOptions={})
   tr.position-static(data-product-id=product._id.toString())
     td.fs-9.align-middle
       .form-check.mb-0.fs-8
-        input.form-check-input(type='checkbox' data-bulk-select-row!=data)
+        input.form-check-input(type='checkbox' data-bulk-select-row=JSON.stringify({ productId: product._id.toString() }))
     td.align-middle.white-space-nowrap.py-0
       a(href=`/api/products/${product._id}`).d-block.border.border-translucent.rounded-2
         img(src=`${product.image && product.image.url ? product.image.url : 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2'}` alt=`${product.name}` width=53)
@@ -87,6 +87,8 @@ mixin ProductTableRow(product, index, rowOptions={})
 
 
 mixin ProductTable(products, tableOptions={})
+  - var bulkActionsId = tableOptions.bulkSelectActionsId || 'products-bulk-actions'
+  - var bulkReplaceId = tableOptions.bulkSelectReplaceElementId || 'products-bulk-replace'
   .table-responsive.scrollbar.mx-n1.px-1
     table.table.fs-9.mb-0
       thead
@@ -97,6 +99,8 @@ mixin ProductTable(products, tableOptions={})
                 type='checkbox' 
                 data-bulk-select!={
                   body: "products-table-body",
+                  actions: bulkActionsId,
+                  replacedElement: bulkReplaceId
                 }
               )
           th.sort.white-space-nowrap.align-middle.fs-10(scope='col' style='width:70px;')

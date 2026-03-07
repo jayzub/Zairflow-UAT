@@ -23,9 +23,17 @@ block content
       p.text-body-secondary.mb-0
         | Products removed from the catalog are hidden from the store. You can restore them from the list below.
 
-    .d-flex.justify-content-between.align-items-center.mb-3
-      .text-body-secondary
-        | Showing #{productCount === 0 ? 0 : (currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} removed products
+    .d-flex.justify-content-between.align-items-center.mb-3.flex-wrap.gap-2
+      #products-bulk-replace
+        span.text-body-secondary
+          | Showing #{productCount === 0 ? 0 : (currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, productCount)} of #{productCount} removed products
+      #products-bulk-actions.d-none.d-flex.align-items-center.gap-2
+        button#bulk-restore-btn.btn.btn-phoenix-primary.btn-sm(type='button')
+          span.fas.fa-undo.me-1
+          | Restore selected
+        button#bulk-delete-btn.btn.btn-phoenix-danger.btn-sm(type='button')
+          span.fas.fa-trash-alt.me-1
+          | Delete selected
       if totalPages > 1
         nav(aria-label='Pagination')
           ul.pagination.pagination-sm.mb-0
@@ -43,7 +51,7 @@ block content
 
     .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.border-top.border-bottom.border-translucent.position-relative.top-1
       if products && products.length > 0
-        +ProductTable(products, { deletedPage: true })
+        +ProductTable(products, { deletedPage: true, bulkSelectActionsId: 'products-bulk-actions', bulkSelectReplaceElementId: 'products-bulk-replace' })
       else
         .text-center.py-8
           p.text-body-secondary.mb-2 No removed products.
@@ -51,6 +59,80 @@ block content
 
 append scripts
   script.
+    function getSelectedProductIds() {
+      var body = document.getElementById('products-table-body');
+      if (!body) return [];
+      var checkboxes = body.querySelectorAll('input[type="checkbox"][data-bulk-select-row]:checked');
+      return Array.prototype.map.call(checkboxes, function(cb) {
+        var tr = cb.closest('tr');
+        return tr && tr.getAttribute('data-product-id');
+      }).filter(Boolean);
+    }
+    function bulkRestoreSelected() {
+      var ids = getSelectedProductIds();
+      if (ids.length === 0) { alert('Select at least one product.'); return; }
+      var done = 0, failed = 0;
+      function runNext() {
+        if (done + failed >= ids.length) {
+          alert('Restored ' + done + ' product(s).' + (failed ? ' Failed: ' + failed + '.' : ''));
+          ids.forEach(function(id) {
+            var row = document.querySelector('[data-product-id="' + id + '"]');
+            if (row) row.remove();
+          });
+          var body = document.getElementById('products-table-body');
+          if (body) body.querySelectorAll('input[data-bulk-select-row]:checked').forEach(function(cb) { cb.checked = false; });
+          document.getElementById('products-bulk-actions').classList.add('d-none');
+          document.getElementById('products-bulk-replace').classList.remove('d-none');
+          var header = document.getElementById('checkbox-bulk-products-select');
+          if (header) { header.checked = false; header.removeAttribute('indeterminate'); }
+          return;
+        }
+        var id = ids[done + failed];
+        fetch('/admin/products/' + id + '/restore', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) done++; else failed++;
+            runNext();
+          })
+          .catch(function() { failed++; runNext(); });
+      }
+      runNext();
+    }
+    function bulkDeleteSelected() {
+      var ids = getSelectedProductIds();
+      if (ids.length === 0) { alert('Select at least one product.'); return; }
+      if (!confirm('Permanently delete ' + ids.length + ' product(s)? This cannot be undone.')) return;
+      var done = 0, failed = 0;
+      function runNext() {
+        if (done + failed >= ids.length) {
+          alert('Deleted ' + done + ' product(s).' + (failed ? ' Failed: ' + failed + '.' : ''));
+          ids.forEach(function(id) {
+            var row = document.querySelector('[data-product-id="' + id + '"]');
+            if (row) row.remove();
+          });
+          var body = document.getElementById('products-table-body');
+          if (body) body.querySelectorAll('input[data-bulk-select-row]:checked').forEach(function(cb) { cb.checked = false; });
+          document.getElementById('products-bulk-actions').classList.add('d-none');
+          document.getElementById('products-bulk-replace').classList.remove('d-none');
+          var header = document.getElementById('checkbox-bulk-products-select');
+          if (header) { header.checked = false; header.removeAttribute('indeterminate'); }
+          return;
+        }
+        var id = ids[done + failed];
+        fetch('/admin/products/delete/' + id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, credentials: 'include' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) done++; else failed++;
+            runNext();
+          })
+          .catch(function() { failed++; runNext(); });
+      }
+      runNext();
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('bulk-restore-btn') && document.getElementById('bulk-restore-btn').addEventListener('click', bulkRestoreSelected);
+      document.getElementById('bulk-delete-btn') && document.getElementById('bulk-delete-btn').addEventListener('click', bulkDeleteSelected);
+    });
     function restoreProduct(productId) {
       fetch('/admin/products/' + productId + '/restore', {
         method: 'PUT',
