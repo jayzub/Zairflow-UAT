@@ -162,60 +162,9 @@ mixin NavbarSearch
   +NavSearch({placeholder:'Search...',inputClass:'form-control-sm'}).d-none.d-lg-block(style='width:25rem')
 
 mixin NavSearch({placeholder,inputClass})
-  -
-    var recentlySearchedItems = [
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: '<span class="fa-solid fa-clock-rotate-left" data-fa-transform="shrink-2"></span> Store Macbook' },
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: ' <span class="fa-solid fa-clock-rotate-left" data-fa-transform="shrink-2"></span> MacBook Air - 13″'}
-    ]
-
-  -
-    var Products = [
-      {
-        url: `${CWD}${paths['e-commerce-fe-product-details']}`,
-        img: `${CWD}assets/img/products/60x60/3.png`,
-        file: true,
-        title: 'MacBook Air - 13″',
-        imgAttrs: { class: 'h-100 w-100 object-fit-cover rounded-3' },
-        text: '<span class="fw-medium text-body-tertiary text-opactity-85">8GB Memory - 1.6GHz - 128GB Storage</span>'
-      },
-      {
-        url: `${CWD}${paths['e-commerce-fe-product-details']}`,
-        img: `${CWD}assets/img/products/60x60/3.png`,
-        file: true,
-        title: 'MacBook Pro - 13″',
-        imgAttrs: { class: 'img-fluid' },
-        text: '<span class="fw-medium text-body-tertiary text-opactity-85">30 Sep at 12:30 PM</span>'
-      }
-    ]
-
-  -
-    var QuickLinks = [
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: '<span class="fa-solid fa-link text-body" data-fa-transform="shrink-2"></span> Support MacBook House' },
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: ' <span class="fa-solid fa-link text-body" data-fa-transform="shrink-2"></span> Store MacBook″'}
-    ]
-
-  -
-    var suggestionFiles = [
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: '<span class="fa-solid fa-file-zipper text-body" data-fa-transform="shrink-2"></span> Library MacBook folder.rar' },
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: ' <span class="fa-solid fa-file-lines text-body" data-fa-transform="shrink-2"></span> Feature MacBook extensions.txt'},
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: ' <span class="fa-solid fa-image text-body" data-fa-transform="shrink-2"></span> MacBook Pro_13.jpg'},
-    ]
-
-  -
-    var suggestionMembers = [
-      { url: `${CWD}${paths['members-page']}`, icon: {img: `team/40x40/10.webp`, size: 'l', status: 'online'}, title: 'Carry Anna', text: 'anna@technext.it',  },
-      { url: `${CWD}${paths['members-page']}`, icon: {img: `team/40x40/12.webp`, size: 'l'}, title: 'John Smith', text: 'smith@technext.it' },
-    ]
-
-  -
-    var RelatedSearch = [
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: '<span class="fa-brands fa-firefox-browser text-body" data-fa-transform="shrink-2"></span> Search in the Web MacBook' },
-      { url: `${CWD}${paths['e-commerce-fe-product-details']}`, text: ' <span class="fa-brands fa-chrome text-body" data-fa-transform="shrink-2"></span> Store MacBook″'}
-    ]  
-
   .search-box.navbar-top-search-box&attributes(attributes)(data-list!={valueNames: ['title']})
     form.position-relative(data-bs-toggle="search" data-bs-display="static")
-      input.form-control.search-input.fuzzy-search.rounded-pill(type='search' placeholder=placeholder, aria-label='Search' class=inputClass)
+      input#admin-global-search-input.form-control.search-input.fuzzy-search.rounded-pill(type='search' placeholder=placeholder, aria-label='Search' class=inputClass autocomplete='off')
       = '\n' 
       span.fas.fa-search.search-box-icon
       = '\n' 
@@ -224,28 +173,10 @@ mixin NavSearch({placeholder,inputClass})
       button.btn.btn-link.p-0(aria-label="Close")
     .dropdown-menu.border.start-0.py-0.overflow-hidden.w-100
       .scrollbar-overlay(style="max-height: 30rem;")
-        .list.pb-3
-          +SearchTotalResult({text: `24 <span class="text-body-quaternary">results</span>`})
-          hr.my-0
-          +SearchResultTitle({text: 'Recently Searched '})
-          +SearchedItems(recentlySearchedItems)
-          hr.my-0
-          +SearchResultTitle({text: 'Products'})
-          +SearchSuggestion(Products)
-          hr.my-0
-          +SearchResultTitle({text: 'Quick Links'})
-          +SearchedItems(QuickLinks)
-          hr.my-0
-          +SearchResultTitle({text: 'Files'})
-          +SearchedItems(suggestionFiles)
-          hr.my-0
-          +SearchResultTitle({text: 'Members'})
-          +SearchSuggestion(suggestionMembers)
-          hr.my-0
-          +SearchResultTitle({text: 'Related Searches'})
-          +SearchedItems(RelatedSearch)
+        #admin-search-dropdown-content.list.pb-3
+          //- Content is filled by admin search script when user types (no default placeholder)
         .text-center
-          p.fallback.fw-bold.fs-7.d-none No Result Found.
+          p#admin-search-fallback.fallback.fw-bold.fs-7.d-none No Result Found.
 
 mixin NavbarBrand(config)
   - var config = Object.assign({ image: true }, config)

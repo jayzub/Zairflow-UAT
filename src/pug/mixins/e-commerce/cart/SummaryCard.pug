@@ -1,9 +1,12 @@
-mixin CartSummaryCard
+mixin CartSummaryCard(cartScopeType, cartStoreId)
+  - var scopeType = typeof cartScopeType !== 'undefined' ? cartScopeType : 'marketplace';
+  - var storeId = typeof cartStoreId !== 'undefined' ? cartStoreId : '';
+  - var editCartHref = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
   .card
     .card-body
       .d-flex.flex-between-center.mb-3
         h3.card-title.mb-0 Summary
-        a.btn.btn-link.p-0(href="/cart") Edit cart
+        a.btn.btn-link.p-0(href=editCartHref) Edit cart
       div
         .d-flex.justify-content-between
           p.text-body.fw-semibold Items subtotal :

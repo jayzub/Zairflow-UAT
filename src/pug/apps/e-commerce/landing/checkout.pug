@@ -73,6 +73,22 @@ append scripts
       function itemPrice(item) {
         if (item.unitPrice != null && typeof item.unitPrice === 'number' && item.unitPrice > 0) return item.unitPrice;
         var product = item.product || {};
+        var opts = item.options || {};
+        var variants = product.variants;
+        if (variants && Array.isArray(variants) && variants.length > 0) {
+          var color = (opts.color != null && opts.color !== '') ? String(opts.color).trim() : '';
+          var size = (opts.size != null && opts.size !== '') ? String(opts.size).trim() : '';
+          var v = null;
+          if (color && size) v = variants.find(function(x) { return String(x.color || '').trim() === color && String(x.size || '').trim() === size; });
+          if (!v && color) v = variants.find(function(x) { return String(x.color || '').trim() === color; });
+          if (!v && size) v = variants.find(function(x) { return String(x.size || '').trim() === size; });
+          if (v) {
+            var vReg = parsePrice(v.price);
+            var vSale = parsePrice(v.salePrice);
+            if (vSale != null && vSale > 0 && (vReg == null || vSale < vReg)) return vSale;
+            return vReg != null ? vReg : 0;
+          }
+        }
         var reg = parsePrice(product.price);
         var sale = parsePrice(product.salePrice);
         if (sale != null && sale > 0 && (reg == null || sale < reg)) return sale;
@@ -126,7 +142,21 @@ append scripts
 
         items.forEach(function(item) {
           var price = itemPrice(item);
-          var originalPrice = (item.unitOriginalPrice != null && item.unitOriginalPrice >= 0) ? item.unitOriginalPrice : (item.product && parsePrice(item.product.price) != null ? parsePrice(item.product.price) : price);
+          var originalPrice = (item.unitOriginalPrice != null && item.unitOriginalPrice >= 0) ? item.unitOriginalPrice : (item.product && (function() {
+          var product = item.product;
+          var opts = item.options || {};
+          var variants = product.variants;
+          if (variants && Array.isArray(variants) && variants.length > 0) {
+            var color = (opts.color != null && opts.color !== '') ? String(opts.color).trim() : '';
+            var size = (opts.size != null && opts.size !== '') ? String(opts.size).trim() : '';
+            var v = null;
+            if (color && size) v = variants.find(function(x) { return String(x.color || '').trim() === color && String(x.size || '').trim() === size; });
+            if (!v && color) v = variants.find(function(x) { return String(x.color || '').trim() === color; });
+            if (!v && size) v = variants.find(function(x) { return String(x.size || '').trim() === size; });
+            if (v) { var r = parsePrice(v.price); return r != null ? r : price; }
+          }
+          return parsePrice(product.price) != null ? parsePrice(product.price) : price;
+        })());
           var qty = Math.max(1, parseInt(item.quantity, 10) || 1);
           var lineTotal = price * qty;
           var lineOriginal = originalPrice * qty;
@@ -400,6 +430,9 @@ append scripts
                   if (data && data.code === 'PRICE_CHANGED') msg = 'Some prices have changed. Please review your cart.';
                   throw new Error(msg);
                 }
+                if (r.status === 400 && data && data.code === 'PROMO_INVALID') {
+                  throw new Error((data && data.error) || 'Promo code expired or invalid. Please review your cart.');
+                }
                 throw new Error((data && data.error) || data.message || 'Failed to place order');
               });
             }).then(function(data) {
@@ -413,7 +446,8 @@ append scripts
               if (btn) { btn.disabled = false; btn.innerHTML = 'Place order'; }
               var message = err.message || 'Could not place order. Please try again.';
               alert(message);
-              if (message.indexOf('cart') !== -1 || message.indexOf('Cart') !== -1) {
+              var redirectToCart = message.indexOf('cart') !== -1 || message.indexOf('Cart') !== -1;
+              if (redirectToCart) {
                 var cartUrl = '/cart?scopeType=' + encodeURIComponent(scopeType) + (scopeType === 'store' && storeId ? '&storeId=' + encodeURIComponent(storeId) : '');
                 window.location.href = cartUrl;
               }

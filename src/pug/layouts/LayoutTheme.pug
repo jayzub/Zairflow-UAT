@@ -65,6 +65,138 @@ append layoutScripts
   script(src=`${CWD}vendors/feather-icons/feather.min.js`)
   script(src=`${CWD}vendors/dayjs/dayjs.min.js`)
   
+  //- Admin navbar global search: live product suggestions and count
+  script.
+    (function() {
+      function initAdminSearch() {
+        var input = document.getElementById('admin-global-search-input');
+        var container = document.getElementById('admin-search-dropdown-content');
+        var fallback = document.getElementById('admin-search-fallback');
+        if (!input || !container) return;
+        var debounceTimer;
+        var searchUrl = '/admin/products/search';
+        var RECENT_KEY = 'adminSearchRecent';
+        var recentMax = 5;
+        function getRecent() {
+          try {
+            var raw = localStorage.getItem(RECENT_KEY);
+            return raw ? JSON.parse(raw) : [];
+          } catch (e) { return []; }
+        }
+        function addRecent(label, url) {
+          var list = getRecent().filter(function(r) { return r.url !== url; });
+          list.unshift({ label: label, url: url });
+          list = list.slice(0, recentMax);
+          try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch (e) {}
+        }
+        function escapeHtml(s) {
+          var div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        }
+        function showRecentOnly() {
+          var rec = getRecent();
+          var parts = [];
+          parts.push('<h6 class="dropdown-header text-body-highlight fs-9 border-bottom border-translucent py-2 lh-sm">Recently Searched</h6>');
+          if (rec.length) {
+            rec.forEach(function(r) {
+              parts.push('<a href="' + escapeHtml(r.url) + '" class="dropdown-item py-2"><div class="d-flex align-items-center"><span class="fw-normal text-body-highlight title"><span class="fa-solid fa-clock-rotate-left me-2"></span>' + escapeHtml(r.label) + '</span></div></a>');
+            });
+          } else {
+            parts.push('<div class="dropdown-item py-2 text-body-tertiary small">No recent searches.</div>');
+          }
+          container.innerHTML = parts.join('');
+          if (fallback) fallback.classList.add('d-none');
+        }
+        function renderResults(totalCount, products, categories, vendors, showRecent, query) {
+          var parts = [];
+          if (showRecent) {
+            var rec = getRecent();
+            if (rec.length) {
+              parts.push('<h6 class="dropdown-header text-body-highlight fs-9 border-bottom border-translucent py-2 lh-sm">Recently Searched</h6>');
+              rec.forEach(function(r) {
+                parts.push('<a href="' + escapeHtml(r.url) + '" class="dropdown-item py-2"><div class="d-flex align-items-center"><span class="fw-normal text-body-highlight title"><span class="fa-solid fa-clock-rotate-left me-2"></span>' + escapeHtml(r.label) + '</span></div></a>');
+              });
+              parts.push('<hr class="my-0">');
+            }
+          }
+          parts.push('<h6 class="dropdown-header text-body-highlight fs-10 py-2">' + totalCount + ' <span class="text-body-quaternary">results</span></h6>');
+          parts.push('<hr class="my-0">');
+          parts.push('<h6 class="dropdown-header text-body-highlight fs-9 border-bottom border-translucent py-2 lh-sm">Products</h6>');
+          if (products && products.length) {
+            products.forEach(function(p) {
+              var sub = p.subtitle ? '<p class="fs-10 mb-0 d-flex text-body-tertiary">' + escapeHtml(p.subtitle) + '</p>' : '';
+              parts.push('<a href="' + escapeHtml(p.url) + '" class="dropdown-item py-2 d-flex align-items-center" data-product-id="' + escapeHtml(p.id) + '"><span class="file-thumbnail me-2"><img src="' + escapeHtml(p.imageUrl) + '" alt="" class="h-100 w-100 object-fit-cover rounded-3" style="width:60px;height:60px;object-fit:cover;"></span><div class="flex-1"><h6 class="mb-0 text-body-highlight title">' + escapeHtml(p.name) + '</h6>' + sub + '</div></a>');
+            });
+          } else {
+            parts.push('<div class="dropdown-item py-2 text-body-tertiary small">No products match your search.</div>');
+          }
+          if (categories && categories.length) {
+            parts.push('<hr class="my-0">');
+            parts.push('<h6 class="dropdown-header text-body-highlight fs-9 border-bottom border-translucent py-2 lh-sm">Categories</h6>');
+            categories.forEach(function(c) {
+              parts.push('<a href="' + escapeHtml(c.url) + '" class="dropdown-item py-2" data-category-id="' + escapeHtml(c.id) + '"><div class="d-flex align-items-center"><span class="fw-normal text-body-highlight title">' + escapeHtml(c.name) + '</span></div></a>');
+            });
+          }
+          if (vendors && vendors.length) {
+            parts.push('<hr class="my-0">');
+            parts.push('<h6 class="dropdown-header text-body-highlight fs-9 border-bottom border-translucent py-2 lh-sm">Vendors</h6>');
+            vendors.forEach(function(v) {
+              parts.push('<a href="' + escapeHtml(v.url) + '" class="dropdown-item py-2" data-vendor-id="' + escapeHtml(v.id) + '"><div class="d-flex align-items-center"><span class="fw-normal text-body-highlight title">' + escapeHtml(v.name) + '</span></div></a>');
+            });
+          }
+          container.innerHTML = parts.join('');
+          if (fallback) fallback.classList.add('d-none');
+        }
+        function showFallback() {
+          if (fallback) fallback.classList.remove('d-none');
+        }
+        function fetchSearch(q) {
+          if (!q || q.length < 2) {
+            container.innerHTML = '';
+            if (fallback) fallback.classList.add('d-none');
+            return;
+          }
+          fetch(searchUrl + '?q=' + encodeURIComponent(q) + '&limit=8', { credentials: 'include', headers: { 'Accept': 'application/json' } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+              if (data && data.success) {
+                var total = data.totalCount != null ? data.totalCount : 0;
+                var products = data.products || [];
+                var categories = data.categories || [];
+                var vendors = data.vendors || [];
+                renderResults(total, products, categories, vendors, false, q);
+              } else {
+                renderResults(0, [], [], [], false, q);
+              }
+            })
+            .catch(function() {
+              renderResults(0, [], [], [], false, q);
+            });
+        }
+        input.addEventListener('focus', function() {
+          if (input.value.trim().length < 2) showRecentOnly();
+        });
+        input.addEventListener('input', function() {
+          clearTimeout(debounceTimer);
+          var val = input.value.trim();
+          debounceTimer = setTimeout(function() {
+            if (val.length >= 2) fetchSearch(val);
+            else showRecentOnly();
+          }, 250);
+        });
+        container.addEventListener('click', function(e) {
+          var link = e.target.closest('a[data-product-id], a[data-category-id], a[data-vendor-id]');
+          if (link && link.getAttribute('href')) {
+            var titleEl = link.querySelector('.title');
+            addRecent(titleEl ? titleEl.textContent : link.textContent.trim(), link.getAttribute('href'));
+          }
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAdminSearch);
+      else initAdminSearch();
+    })();
+  
   //- Admin logout: clear server cookie (POST /admin/logout) then all admin-related client storage; redirect to sign-in.
   //- Reachable from: navbar ProfileDropdown "Sign out" (when navUser is set on admin pages) and explicit Logout buttons on admin-index, stores-list, create-store.
   script.

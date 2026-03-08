@@ -20,6 +20,7 @@ const { MAX_CSV_IMPORT_SIZE_BYTES } = require('../../config/importLimits');
 const {
     getAllProducts,
     getDeletedProductsPage,
+    getSearchSuggestions,
     addProductPage,
     createProduct,
     editProductPage,
@@ -69,6 +70,7 @@ const processUploadedFiles = (req, res, next) => {
 };
 
 // Admin product management pages and API endpoints (with store isolation)
+router.get('/products/search', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), getSearchSuggestions);
 router.get('/products', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), addStoreFilter, validateProductsListQuery, getAllProducts);
 router.get('/products/deleted', requireAuth, requirePermission('product:read'), checkUserStores, extractStore, requireStoreAccess('any'), getDeletedProductsPage);
 router.get('/products/add', requireAuth, requirePermission('product:create'), checkUserStores, extractStore, requireStoreAccess('any'), addProductPage);

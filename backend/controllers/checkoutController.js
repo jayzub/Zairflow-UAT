@@ -4,7 +4,7 @@ const Order = require('../models/order');
 const OrderItem = require('../models/orderItem');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
-const { findVariantByOptions, findVariantById, getAvailableStockForItem } = require('../helpers/variantHelpers');
+const { findVariantByOptions, findVariantById, getAvailableStockForItem, getEffectivePrice, parsePrice } = require('../helpers/variantHelpers');
 const Promotion = require('../models/promotion');
 const Customer = require('../models/customer');
 const crypto = require('crypto');
@@ -38,18 +38,6 @@ function computePromoDiscount(promo, subtotal) {
     }
     const fixed = Math.max(0, Number(promo.value) || 0);
     return Math.min(fixed, subtotal);
-}
-
-/**
- * Parse price from product schema (Decimal128, string, number, etc.).
- */
-function parsePrice(value) {
-    if (value == null) return null;
-    if (typeof value === 'number' && !Number.isNaN(value)) return value;
-    if (typeof value === 'string') return parseFloat(value) || null;
-    if (typeof value === 'object' && value.$numberDecimal != null) return parseFloat(value.$numberDecimal) || null;
-    if (typeof value.toString === 'function') return parseFloat(value.toString()) || null;
-    return null;
 }
 
 /**
@@ -223,7 +211,7 @@ const placeOrder = asyncHandler(async (req, res) => {
             const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
             const unitPrice = item.unitPrice != null && item.unitPrice > 0
                 ? item.unitPrice
-                : (product && (product.salePrice != null && product.salePrice > 0) ? Number(product.salePrice) : (product && product.price != null ? Number(product.price) : 0));
+                : getEffectivePrice(product, { variantId: item.variantId || null, options: item.options || {} });
             totalCartSubtotal += unitPrice * qty;
         }
     }
@@ -269,7 +257,7 @@ const placeOrder = asyncHandler(async (req, res) => {
             const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
             const unitPrice = item.unitPrice != null && item.unitPrice > 0
                 ? item.unitPrice
-                : (product && (product.salePrice != null && product.salePrice > 0) ? Number(product.salePrice) : (product && product.price != null ? Number(product.price) : 0));
+                : getEffectivePrice(product, { variantId: item.variantId || null, options: item.options || {} });
             const lineTotal = unitPrice * qty;
             subtotal += lineTotal;
 

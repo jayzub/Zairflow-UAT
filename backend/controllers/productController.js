@@ -5,6 +5,7 @@ const Vendor = require('../models/vendor');
 const BaseProduct = require('../models/products/baseProduct');
 const storeCache = require('../utils/cache');
 const { getSimilarProducts } = require('../helpers/productHelpers');
+const { getDisplayValues } = require('../helpers/variantHelpers');
 const { upload } = require('../config/multerConfig');
 const Review = require('../models/review');
 const { respondWithViewOrJson } = require('../helpers/respondWithViewOrJson');
@@ -176,10 +177,12 @@ exports.getProductById = asyncHandler(async (req, res) => {
         }
     }
 
-    // Prepare stock status
-    const inStock = productObj.countInStock > 0;
-    const stockStatus = inStock ? 'In stock' : 'Out of stock';
-    const stockLevel = productObj.countInStock > 10 ? 'high' : productObj.countInStock > 5 ? 'medium' : 'low';
+    // Prepare stock status (variant-aware: use variant stock when product has variants)
+    const displayValues = getDisplayValues(productObj);
+    const displayCountInStock = displayValues.countInStock;
+    const inStock = displayCountInStock > 0;
+    const stockStatus = displayCountInStock > 10 ? 'In stock' : displayCountInStock > 5 ? 'In stock' : displayCountInStock > 0 ? 'Low stock' : 'Out of stock';
+    const stockLevel = displayCountInStock > 10 ? 'high' : displayCountInStock > 5 ? 'medium' : 'low';
 
     // Prepare image gallery with variants
     const gallery = productObj.images.map(img => ({
@@ -399,7 +402,7 @@ exports.getProductById = asyncHandler(async (req, res) => {
             stockLevel,
             brand: productObj.brand,
             inStock,
-            countInStock: productObj.countInStock || 0,
+            countInStock: displayCountInStock,
             gallery,
             colorVariantImages,
             specificationSections, // Add the new specifications sections
@@ -416,6 +419,39 @@ exports.getProductById = asyncHandler(async (req, res) => {
     respondWithViewOrJson(req, res, 'landing/product-details', data);
 });
 
+// Get search suggestions for store products (as-you-type). Requires store context (subdomain).
+exports.getProductSuggestions = asyncHandler(async (req, res) => {
+    const store = req.store;
+    if (!store) {
+        return res.json({ suggestions: [] });
+    }
+    const q = (req.query.q || req.query.search || '').trim();
+    if (!q) {
+        return res.json({ suggestions: [] });
+    }
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, 20);
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escaped, 'i');
+    const filter = {
+        store: store._id,
+        isDeleted: { $ne: true },
+        isActive: true,
+        $or: [
+            { name: searchRegex },
+            { description: searchRegex },
+        ],
+    };
+    const pipeline = [
+        { $match: filter },
+        { $group: { _id: '$name', count: { $sum: 1 } } },
+        { $sort: { count: -1, _id: 1 } },
+        { $limit: limit },
+        { $project: { label: '$_id', count: 1, _id: 0 } },
+    ];
+    const suggestions = await BaseProduct.aggregate(pipeline);
+    res.json({ suggestions });
+});
+
 // Get products for a specific store
 exports.getStoreProducts = asyncHandler(async (req, res) => {
     const { storeSlug } = req.params;
@@ -423,9 +459,11 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const sort = req.query.sort || 'dateCreated';
     const order = req.query.order === 'asc' ? 1 : -1;
-    
-    // First, find the store
+
     const Store = require('../models/store');
+    const { getAllowedProductTypesForStore } = require('../helpers/productHelpers');
+
+    // First, find the store
     const store = await Store.findOne({ slug: storeSlug, isActive: true });
     
     if (!store) {
@@ -435,65 +473,115 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
         });
     }
     
-    // Build filter based on query parameters
-    const filter = { store: store._id };
-    
-    // Category filter
-    if (req.query.categories) {
-        filter.category = { $in: req.query.categories.split(',') };
+    // Build filter based on query parameters (variant-aware where applicable)
+    const filter = { store: store._id, isDeleted: { $ne: true }, isActive: true };
+
+    const toArray = (val) => {
+        if (val == null || val === '') return [];
+        if (Array.isArray(val)) return val.map(String).map(s => s.trim()).filter(Boolean);
+        return String(val).split(',').map(s => s.trim()).filter(Boolean);
+    };
+
+    const filterAnd = [];
+
+    const mongoose = require('mongoose');
+
+    const categoryIds = toArray(req.query.categories);
+    if (categoryIds.length) {
+        const objectIds = categoryIds.filter(id => mongoose.Types.ObjectId.isValid(id)).map(id => new mongoose.Types.ObjectId(id));
+        if (objectIds.length) filterAnd.push({ category: { $in: objectIds } });
     }
-    
-    // Brand filter
-    if (req.query.brands) {
-        filter.brand = { $in: req.query.brands.split(',') };
+
+    const brandNames = toArray(req.query.brands);
+    if (brandNames.length) filterAnd.push({ brand: { $in: brandNames } });
+
+    const minPrice = req.query.minPrice != null && req.query.minPrice !== '' ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null && req.query.maxPrice !== '' ? parseFloat(req.query.maxPrice) : null;
+    if (minPrice != null || maxPrice != null) {
+        const priceCond = {};
+        if (minPrice != null) priceCond.$gte = minPrice;
+        if (maxPrice != null) priceCond.$lte = maxPrice;
+        filterAnd.push({
+            $or: [
+                { price: priceCond },
+                { variants: { $elemMatch: { price: priceCond } } },
+            ],
+        });
     }
-    
-    // Price range filter
-    if (req.query.minPrice || req.query.maxPrice) {
-        filter.price = {};
-        if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
-        if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
+
+    const stockFilters = toArray(req.query.stock);
+    const hasInStock = stockFilters.includes('inStock');
+    const hasOutOfStock = stockFilters.includes('outOfStock');
+    if (hasInStock && !hasOutOfStock) {
+        // In stock = reverse of out-of-stock: (no variants AND product countInStock > 0) OR (has variants AND at least one variant has countInStock > 0)
+        filterAnd.push({
+            $nor: [
+                {
+                    $and: [
+                        { $or: [ { variants: { $exists: false } }, { variants: [] } ] },
+                        { $or: [ { countInStock: { $lte: 0 } }, { countInStock: { $exists: false } } ] },
+                    ],
+                },
+                {
+                    $and: [
+                        { variants: { $exists: true, $ne: [] } },
+                        { $nor: [ { 'variants.countInStock': { $gt: 0 } } ] },
+                    ],
+                },
+            ],
+        });
+    } else if (hasOutOfStock && !hasInStock) {
+        // Out of stock: (no variants AND product countInStock <= 0) OR (has variants AND all variants have countInStock <= 0)
+        filterAnd.push({
+            $or: [
+                {
+                    $and: [
+                        { $or: [ { variants: { $exists: false } }, { variants: [] } ] },
+                        { $or: [ { countInStock: { $lte: 0 } }, { countInStock: { $exists: false } } ] },
+                    ],
+                },
+                {
+                    $and: [
+                        { variants: { $exists: true, $ne: [] } },
+                        { $nor: [ { 'variants.countInStock': { $gt: 0 } } ] },
+                    ],
+                },
+            ],
+        });
     }
-    
-    // Stock filter
-    if (req.query.stock) {
-        const stockFilters = req.query.stock.split(',');
-        if (stockFilters.includes('inStock')) {
-            filter.countInStock = { $gt: 0 };
-        } else if (stockFilters.includes('outOfStock')) {
-            filter.countInStock = { $lte: 0 };
-        }
-    }
-    
-    // Rating filter
-    if (req.query.rating) {
+
+    if (req.query.rating != null && req.query.rating !== '') {
         const minRating = parseFloat(req.query.rating);
-        filter.rating = { $gte: minRating };
+        if (!isNaN(minRating)) filterAnd.push({ rating: { $gte: minRating } });
     }
-    
-    // Product type filter
-    if (req.query.productType) {
-        filter.productType = { $in: req.query.productType.split(',') };
-    }
-    
-    // Color filter
-    if (req.query.colors) {
-        const colors = req.query.colors.split(',');
-        filter.$or = [
-            { color: { $in: colors } },
-            { 'variants.color': { $in: colors } }
-        ];
-    }
-    
-    // Featured products filter
-    if (req.query.featured === 'true') {
-        filter.isFeatured = true;
-    }
-    
-    // Sale products filter
+
+    const productTypes = toArray(req.query.productType);
+    if (productTypes.length) filterAnd.push({ productType: { $in: productTypes } });
+
+    if (req.query.featured === 'true') filterAnd.push({ isFeatured: true });
+
     if (req.query.onSale === 'true') {
-        filter.salePrice = { $exists: true, $gt: 0 };
+        filterAnd.push({
+            $or: [
+                { salePrice: { $exists: true, $gt: 0 } },
+                { 'variants.salePrice': { $exists: true, $gt: 0 } },
+            ],
+        });
     }
+
+    const searchTerm = (req.query.search || req.query.q || '').trim();
+    if (searchTerm) {
+        const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchRegex = { $regex: escaped, $options: 'i' };
+        filterAnd.push({
+            $or: [
+                { name: searchRegex },
+                { description: searchRegex },
+            ],
+        });
+    }
+
+    if (filterAnd.length) filter.$and = filterAnd;
 
     // Check if this is an AJAX request
     const isAjaxRequest = req.xhr || 
@@ -555,11 +643,12 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
     ];
 
     // Get total count for pagination
-    const [productList, productCount, categories, brands] = await Promise.all([
+    const [productList, productCount, categories, brands, allowedProductTypes] = await Promise.all([
         BaseProduct.aggregate(aggregationPipeline),
         BaseProduct.countDocuments(filter),
         Category.find({ store: store._id }).select('name _id'),
-        BaseProduct.distinct('brand', { store: store._id })
+        BaseProduct.distinct('brand', { store: store._id }),
+        getAllowedProductTypesForStore(store._id)
     ]);
 
     // Pagination info
@@ -597,6 +686,7 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
     const transformedProducts = productList.map(product => {
         // Calculate price range from variants
         const priceInfo = calculatePriceRange(product);
+        const displayValues = getDisplayValues(product);
         
         // Calculate discount percentage (use min prices for calculation)
         // Only calculate if sale price is actually less than regular price
@@ -621,18 +711,23 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
         const mainImage = (product.image && product.image.url) ||
                           (product.images && product.images[0] && product.images[0].url) ||
                           '1.png';
+        // Stock label: same logic as PDP (getProductById) for consistent display
+        const displayCountInStock = displayValues.countInStock != null ? displayValues.countInStock : 0;
+        const stockLevel = displayCountInStock > 10 ? 'high' : displayCountInStock > 5 ? 'medium' : 'low';
+        const stockStatus = displayCountInStock > 10 ? 'In stock' : displayCountInStock > 5 ? 'In stock' : displayCountInStock > 0 ? 'Low stock' : 'Out of stock';
         return {
             _id: product._id,
             image: mainImage,
             name: product.name,
             star: Math.round(product.rating || 0),
             rated: product.numReviews || 0,
-            price: priceInfo.priceRange || priceInfo.minPrice || '0.00',
-            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || null,
+            price: priceInfo.priceRange || priceInfo.minPrice || priceInfo.price || '0.00',
+            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || priceInfo.salePrice || null,
             priceRange: priceInfo.priceRange,
             salePriceRange: priceInfo.salePriceRange,
             hasPriceRange: priceInfo.hasPriceRange,
             hasSalePriceRange: priceInfo.hasSalePriceRange,
+            maxDiscountPercentage: priceInfo.maxDiscountPercentage != null ? priceInfo.maxDiscountPercentage : null,
             minPrice: priceInfo.minPrice,
             maxPrice: priceInfo.maxPrice,
             minSalePrice: priceInfo.minSalePrice,
@@ -641,8 +736,10 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
             colors: availableColors.length,
             verified: product.isFeatured || false,
             wishListed: false, // This would be determined by user session
-            extra: product.countInStock > 0 ? 'In stock' : 'Out of stock',
-            extraClass: product.countInStock > 10 ? 'text-body-tertiary mb-2' : 'text-body-highlight fw-bold mb-2',
+            extra: displayCountInStock > 0 ? 'In stock' : 'Out of stock',
+            extraClass: displayCountInStock > 10 ? 'text-body-tertiary mb-2' : 'text-body-highlight fw-bold mb-2',
+            stockStatus,
+            stockLevel,
             dealEndTime: product.isFeatured ? 'Limited time' : null
         };
     });
@@ -664,22 +761,28 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
             hasPrevPage,
             productCount,
             limit,
+            pageRange: getPageRange(page, totalPages),
+            queryStringForPagination: (() => {
+                const q = { ...req.query };
+                delete q.page;
+                return new URLSearchParams(q).toString();
+            })(),
             store: {
                 name: store.name,
                 slug: store.slug,
                 description: store.description
             },
             currentFilters: {
-                categories: req.query.categories ? req.query.categories.split(',') : [],
-                brands: req.query.brands ? req.query.brands.split(',') : [],
-                colors: req.query.colors ? req.query.colors.split(',') : [],
+                categories: toArray(req.query.categories),
+                brands: toArray(req.query.brands),
                 minPrice: req.query.minPrice,
                 maxPrice: req.query.maxPrice,
-                stock: req.query.stock ? req.query.stock.split(',') : [],
+                stock: toArray(req.query.stock),
                 rating: req.query.rating,
-                productType: req.query.productType ? req.query.productType.split(',') : [],
+                productType: toArray(req.query.productType),
                 featured: req.query.featured === 'true',
-                onSale: req.query.onSale === 'true'
+                onSale: req.query.onSale === 'true',
+                search: (req.query.search || req.query.q || '').trim()
             },
             api: process.env.API_URL || '/api'
         });
@@ -702,6 +805,7 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
         products: Array.isArray(transformedProducts) ? transformedProducts : [],
         categories: categories.map(cat => ({ name: cat.name, _id: cat._id })),
         brands: brands.filter(Boolean),
+        allowedProductTypes: Array.isArray(allowedProductTypes) ? allowedProductTypes : [],
         colors: allColors,
         productCount,
         currentPage: page,
@@ -710,17 +814,22 @@ exports.getStoreProducts = asyncHandler(async (req, res) => {
         hasPrevPage,
         pageRange: getPageRange(page, totalPages),
         limit,
+        queryStringForPagination: (() => {
+            const q = { ...req.query };
+            delete q.page;
+            return new URLSearchParams(q).toString();
+        })(),
         currentFilters: {
-            categories: req.query.categories ? req.query.categories.split(',') : [],
-            brands: req.query.brands ? req.query.brands.split(',') : [],
-            colors: req.query.colors ? req.query.colors.split(',') : [],
+            categories: toArray(req.query.categories),
+            brands: toArray(req.query.brands),
             minPrice: req.query.minPrice,
             maxPrice: req.query.maxPrice,
-            stock: req.query.stock ? req.query.stock.split(',') : [],
+            stock: toArray(req.query.stock),
             rating: req.query.rating,
-            productType: req.query.productType ? req.query.productType.split(',') : [],
+            productType: toArray(req.query.productType),
             featured: req.query.featured === 'true',
-            onSale: req.query.onSale === 'true'
+            onSale: req.query.onSale === 'true',
+            search: (req.query.search || req.query.q || '').trim()
         },
         api: process.env.API_URL || '/api'
     };
@@ -922,6 +1031,7 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
     const transformedProducts = productList.map(product => {
         // Calculate price range from variants
         const priceInfo = calculatePriceRange(product);
+        const displayValues = getDisplayValues(product);
         
         // Calculate discount percentage (use min prices for calculation)
         // Only calculate if sale price is actually less than regular price
@@ -946,18 +1056,23 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
         const mainImage = (product.image && product.image.url) ||
                           (product.images && product.images[0] && product.images[0].url) ||
                           '1.png';
+        // Stock label: same logic as PDP for consistent display
+        const displayCountInStock = displayValues.countInStock != null ? displayValues.countInStock : 0;
+        const stockLevel = displayCountInStock > 10 ? 'high' : displayCountInStock > 5 ? 'medium' : 'low';
+        const stockStatus = displayCountInStock > 10 ? 'In stock' : displayCountInStock > 5 ? 'In stock' : displayCountInStock > 0 ? 'Low stock' : 'Out of stock';
         return {
             _id: product._id,
             image: mainImage,
             name: product.name,
             star: Math.round(product.rating || 0),
             rated: product.numReviews || 0,
-            price: priceInfo.priceRange || priceInfo.minPrice || '0.00',
-            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || null,
+            price: priceInfo.priceRange || priceInfo.minPrice || priceInfo.price || '0.00',
+            salePrice: priceInfo.salePriceRange || priceInfo.minSalePrice || priceInfo.salePrice || null,
             priceRange: priceInfo.priceRange,
             salePriceRange: priceInfo.salePriceRange,
             hasPriceRange: priceInfo.hasPriceRange,
             hasSalePriceRange: priceInfo.hasSalePriceRange,
+            maxDiscountPercentage: priceInfo.maxDiscountPercentage != null ? priceInfo.maxDiscountPercentage : null,
             minPrice: priceInfo.minPrice,
             maxPrice: priceInfo.maxPrice,
             minSalePrice: priceInfo.minSalePrice,
@@ -966,8 +1081,10 @@ exports.getAllProductsMarketplace = asyncHandler(async (req, res) => {
             colors: availableColors.length,
             verified: product.isFeatured || false,
             wishListed: false, // This would be determined by user session
-            extra: product.countInStock > 0 ? 'In stock' : 'Out of stock',
-            extraClass: product.countInStock > 10 ? 'text-body-tertiary mb-2' : 'text-body-highlight fw-bold mb-2',
+            extra: displayCountInStock > 0 ? 'In stock' : 'Out of stock',
+            extraClass: displayCountInStock > 10 ? 'text-body-tertiary mb-2' : 'text-body-highlight fw-bold mb-2',
+            stockStatus,
+            stockLevel,
             dealEndTime: product.isFeatured ? 'Limited time' : null,
             store: product.store ? {
                 name: product.store.name,

@@ -111,48 +111,48 @@ append scripts
 			const radioButtons = filterForm.querySelectorAll('input[type="radio"]');
 			const priceInputs = filterForm.querySelectorAll('input[name="minPrice"], input[name="maxPrice"]');
 			
-			// Function to build query string from form data
+			// Function to build query string from form data (multi-value params as comma-separated)
 			function buildQueryString() {
 				const params = new URLSearchParams();
-				
-				// Handle checkboxes
+				const byName = {};
 				checkboxes.forEach(checkbox => {
-					if (checkbox.checked) {
-						const name = checkbox.name;
-						const value = checkbox.value;
-						
-						if (params.has(name)) {
-							params.append(name, value);
-						} else {
-							params.set(name, value);
-						}
-					}
+					if (!checkbox.checked) return;
+					const name = checkbox.name;
+					const value = checkbox.value;
+					if (!byName[name]) byName[name] = [];
+					byName[name].push(value);
 				});
-				
-				// Handle radio buttons
+				Object.entries(byName).forEach(([name, values]) => {
+					params.set(name, values.join(','));
+				});
 				radioButtons.forEach(radio => {
-					if (radio.checked) {
-						params.set(radio.name, radio.value);
-					}
+					if (radio.checked) params.set(radio.name, radio.value);
 				});
-				
-				// Handle price inputs
-				const minPrice = document.querySelector('input[name="minPrice"]').value;
-				const maxPrice = document.querySelector('input[name="maxPrice"]').value;
-				
+				const minPriceEl = document.querySelector('input[name="minPrice"]');
+				const maxPriceEl = document.querySelector('input[name="maxPrice"]');
+				const minPrice = minPriceEl ? minPriceEl.value.trim() : '';
+				const maxPrice = maxPriceEl ? maxPriceEl.value.trim() : '';
 				if (minPrice) params.set('minPrice', minPrice);
 				if (maxPrice) params.set('maxPrice', maxPrice);
-				
 				return params.toString();
 			}
 			
-			// Function to update URL and reload page
+			// Function to update URL and optionally reload (legacy) or apply via AJAX
 			function applyFilters() {
 				const queryString = buildQueryString();
-				const currentUrl = window.location.pathname;
-				const newUrl = queryString ? `${currentUrl}?${queryString}` : currentUrl;
-				
-				window.location.href = newUrl;
+				const limit = new URLSearchParams(window.location.search).get('limit') || '24';
+				const params = new URLSearchParams(queryString);
+				params.set('page', '1');
+				params.set('limit', limit);
+				const fullQuery = params.toString();
+				const newUrl = fullQuery ? `${window.location.pathname}?${fullQuery}` : window.location.pathname;
+
+				if (!window.productLoader) {
+					window.location.href = newUrl;
+					return;
+				}
+
+				window.productLoader.applyFiltersAndUpdate(fullQuery, newUrl);
 			}
 			
 			// Add event listeners to checkboxes and radio buttons
@@ -175,16 +175,18 @@ append scripts
 				});
 			});
 			
-			// Handle pagination
-			const paginationLinks = document.querySelectorAll('.pagination .page-link');
+			// Handle pagination (preserve all current filters)
+			const paginationNav = document.querySelector('.pagination') && document.querySelector('.pagination').closest('nav');
+			const baseQuery = (paginationNav && paginationNav.getAttribute('data-query-base')) ? paginationNav.getAttribute('data-query-base') + '&' : '';
+			const paginationLinks = document.querySelectorAll('.pagination .page-link[data-page]');
 			paginationLinks.forEach(link => {
 				link.addEventListener('click', function(e) {
 					e.preventDefault();
 					const page = this.dataset.page;
 					if (page && !isNaN(page)) {
-						const currentUrl = new URL(window.location);
-						currentUrl.searchParams.set('page', page);
-						window.location.href = currentUrl.toString();
+						const limit = new URLSearchParams(window.location.search).get('limit') || '24';
+						const url = `${window.location.pathname}?${baseQuery}page=${page}&limit=${limit}`;
+						window.location.href = url;
 					}
 				});
 			});
@@ -223,6 +225,109 @@ append scripts
 				// Set up event listener for load more button
 				this.loadMoreBtn?.addEventListener('click', () => {
 					this.loadMore();
+				});
+			}
+
+			async applyFiltersAndUpdate(queryString, newUrl) {
+				if (this.isLoading) return;
+				this.isLoading = true;
+				this.showGridLoading();
+				try {
+					const url = `${window.location.pathname}?${queryString}`;
+					const response = await fetch(url, {
+						method: 'GET',
+						headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+					});
+					if (!response.ok) throw new Error('Network error');
+					const data = await response.json();
+					if (!data.success || !data.products) throw new Error('Invalid response');
+					this.replaceProducts(data.products);
+					this.currentPage = data.currentPage;
+					this.totalPages = data.totalPages;
+					this.hasNextPage = data.hasNextPage;
+					this.setShowingCount(data.products.length, data.productCount);
+					this.updatePaginationBar(data);
+					if (this.loadMoreBtn) {
+						this.loadMoreBtn.style.display = this.hasNextPage ? 'block' : 'none';
+						this.loadMoreBtn.dataset.nextPage = (data.currentPage || 1) + 1;
+					}
+					history.replaceState({ filters: queryString }, '', newUrl);
+				} catch (err) {
+					console.error('Filter error:', err);
+					window.location.href = newUrl;
+				} finally {
+					this.isLoading = false;
+					this.hideGridLoading();
+				}
+			}
+
+			showGridLoading() {
+				if (this.productsContainer) {
+					this.productsContainer.style.opacity = '0.5';
+					this.productsContainer.style.pointerEvents = 'none';
+				}
+			}
+
+			hideGridLoading() {
+				if (this.productsContainer) {
+					this.productsContainer.style.opacity = '';
+					this.productsContainer.style.pointerEvents = '';
+				}
+			}
+
+			setShowingCount(showing, total) {
+				const el = document.querySelector('.small.text-body-tertiary');
+				if (el) el.textContent = `Showing ${showing} of ${total} products`;
+			}
+
+			updatePaginationBar(data) {
+				const nav = document.querySelector('nav[aria-label="Product pagination"]');
+				if (!nav || !data.pageRange || !data.queryStringForPagination) return;
+				nav.setAttribute('data-query-base', data.queryStringForPagination);
+				const base = data.queryStringForPagination ? data.queryStringForPagination + '&' : '';
+				const limit = data.limit || 24;
+				const currentPage = data.currentPage || 1;
+				const totalPages = data.totalPages || 1;
+				const hasPrevPage = data.hasPrevPage || false;
+				const hasNextPage = data.hasNextPage || false;
+				let html = '<ul class="pagination mb-0">';
+				html += `<li class="page-item ${!hasPrevPage ? 'disabled' : ''}"><a class="page-link" href="?${base}page=${currentPage - 1}&limit=${limit}" aria-label="Previous" data-page="${currentPage - 1}" tabindex="${hasPrevPage ? 0 : -1}"><span class="fas fa-chevron-left"></span></a></li>`;
+				(data.pageRange || []).forEach(function(pageNum) {
+					if (pageNum === '...') {
+						html += '<li class="page-item disabled"><span class="page-link">…</span></li>';
+					} else {
+						html += `<li class="page-item ${pageNum === currentPage ? 'active' : ''}"><a class="page-link" href="?${base}page=${pageNum}&limit=${limit}" data-page="${pageNum}">${pageNum}</a></li>`;
+					}
+				});
+				html += `<li class="page-item ${!hasNextPage ? 'disabled' : ''}"><a class="page-link" href="?${base}page=${currentPage + 1}&limit=${limit}" aria-label="Next" data-page="${currentPage + 1}" tabindex="${hasNextPage ? 0 : -1}"><span class="fas fa-chevron-right"></span></a></li>`;
+				html += '</ul>';
+				nav.innerHTML = html;
+				nav.querySelectorAll('.page-link[data-page]').forEach(link => {
+					link.addEventListener('click', function(e) {
+						e.preventDefault();
+						const page = this.dataset.page;
+						if (page && !isNaN(page)) {
+							const params = new URLSearchParams(window.location.search);
+							params.set('page', page);
+							params.set('limit', limit);
+							window.location.href = `${window.location.pathname}?${params.toString()}`;
+						}
+					});
+				});
+			}
+
+			replaceProducts(products) {
+				if (!this.productsContainer) return;
+				this.productsContainer.innerHTML = '';
+				if (!products || products.length === 0) {
+					const col = document.createElement('div');
+					col.className = 'col-12';
+					col.innerHTML = '<div class="text-center py-8"><h4 class="text-body-secondary">No products found</h4><p class="text-body-quaternary">Try adjusting your filters or search criteria</p></div>';
+					this.productsContainer.appendChild(col);
+					return;
+				}
+				products.forEach(product => {
+					this.productsContainer.appendChild(this.createProductCard(product));
 				});
 			}
 			
@@ -327,7 +432,9 @@ append scripts
 								${product.star ? `<p class='fs-9'><span class='text-warning'>${'★'.repeat(product.star)}${'☆'.repeat(5 - product.star)}</span>${product.rated ? `<span class='text-body-quaternary fw-semibold ms-1'>(${product.rated} people rated)</span>` : ''}</p>` : ''}
 							</div>
 							<div>
-								${product.extra ? `<p class="fs-9 ${product.extraClass || ''}">${product.extra}</p>` : ''}
+								${(product.stockStatus != null && product.stockLevel != null)
+									? `<span class="badge badge-phoenix badge-phoenix-${product.stockStatus === 'Out of stock' ? 'danger' : (product.stockLevel === 'high' ? 'success' : 'warning')} fs-9 fw-semibold mb-2 d-inline-block">${product.stockStatus}</span>`
+									: (product.extra ? `<p class="fs-9 ${product.extraClass || ''}">${product.extra}</p>` : '')}
 								${product.extra2 ? `<p class="fs-9 ${product.extra2Class || ''}">${product.extra2}</p>` : ''}
 								${(() => {
 									const salePrice = product.salePrice ? parseFloat(product.salePrice.toString().split(' - ')[0]) : null;
@@ -443,6 +550,7 @@ block ecomContent
 				.phoenix-offcanvas-filter.bg-body.scrollbar.phoenix-offcanvas.phoenix-offcanvas-fixed#productFilterColumn(style='top: 92px' data-breakpoint='lg')
 					.d-flex.justify-content-between.align-items-center.mb-3
 						h3.mb-0 Filters
+						a.btn.btn-phoenix-secondary.btn-sm(href=typeof store !== 'undefined' && store && store.slug ? `/api/products?limit=24` : '#' role='button') Clear
 						button.btn.d-lg-none.p-0(data-phoenix-dismiss="offcanvas")
 							span.uil.uil-times.fs-8
 
@@ -457,24 +565,8 @@ block ecomContent
 								input.form-check-input.mt-0#inStockInput(type='checkbox' name='stock' value='inStock' checked=currentFilters && currentFilters.stock && currentFilters.stock.includes('inStock'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='inStockInput') In stock
 							.form-check.mb-0
-								input.form-check-input.mt-0#preBookInput(type='checkbox' name='stock' value='preBook')
-								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='preBookInput') Pre-book
-							.form-check.mb-0
 								input.form-check-input.mt-0#outOfStockInput(type='checkbox' name='stock' value='outOfStock' checked=currentFilters && currentFilters.stock && currentFilters.stock.includes('outOfStock'))
 								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='outOfStockInput') Out of stock
-
-					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseColorFamily' role='button' aria-expanded='true' aria-controls='collapseColorFamily')
-						.d-flex.align-items-center.justify-content-between.w-100
-							.fs-8.text-body-highlight Color family
-							span.fa-solid.fa-angle-down.toggle-icon.text-body-quaternary
-
-					.collapse.show#collapseColorFamily
-						.mb-2
-							if colors && colors.length > 0
-								each color in colors
-									.form-check.mb-0
-										input.form-check-input.mt-0(id=`color-${color}` type='checkbox' name='colors' value=color checked=currentFilters && currentFilters.colors && currentFilters.colors.includes(color))
-										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`color-${color}`)= color
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseBrands' role='button' aria-expanded='true' aria-controls='collapseBrands')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -545,15 +637,11 @@ block ecomContent
 
 					.collapse.show#collapseProductType
 						.mb-2
-							.form-check.mb-0
-								input.form-check-input.mt-0#electronicsInput(type='checkbox' name='productType' value='Electronics' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Electronics'))
-								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='electronicsInput') Electronics
-							.form-check.mb-0
-								input.form-check-input.mt-0#clothingInput(type='checkbox' name='productType' value='Clothing' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Clothing'))
-								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='clothingInput') Clothing
-							.form-check.mb-0
-								input.form-check-input.mt-0#furnitureInput(type='checkbox' name='productType' value='Furniture' checked=currentFilters && currentFilters.productType && currentFilters.productType.includes('Furniture'))
-								label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for='furnitureInput') Furniture
+							if allowedProductTypes && allowedProductTypes.length > 0
+								each productType in allowedProductTypes
+									.form-check.mb-0
+										input.form-check-input.mt-0(id=`productType-${productType}` type='checkbox' name='productType' value=productType checked=currentFilters && currentFilters.productType && currentFilters.productType.includes(productType))
+										label.form-check-label.d-block.lh-sm.fs-8.text-body.fw-normal.mb-0(for=`productType-${productType}`)= productType
 
 					a.btn.px-0.d-block.collapse-indicator(data-bs-toggle='collapse' href='#collapseSpecialOffers' role='button' aria-expanded='true' aria-controls='collapseSpecialOffers')
 						.d-flex.align-items-center.justify-content-between.w-100
@@ -599,10 +687,11 @@ block ecomContent
 				// Dynamic pagination bar
 				if (totalPages || 0) > 1
 					.d-flex.justify-content-center
-						nav(aria-label='Product pagination')
+						nav(aria-label='Product pagination' data-query-base=(typeof queryStringForPagination !== 'undefined' && queryStringForPagination ? queryStringForPagination : ''))
 							ul.pagination.mb-0
+								- var _qp = (typeof queryStringForPagination !== 'undefined' && queryStringForPagination) ? queryStringForPagination + '&' : ''
 								li.page-item(class=(hasPrevPage || false) ? '' : 'disabled')
-									a.page-link(href=`?page=${(currentPage || 1) - 1}&limit=${limit || 24}` aria-label='Previous' data-page=((currentPage || 1) - 1) tabindex=(hasPrevPage || false) ? 0 : -1)
+									a.page-link(href=`?${_qp}page=${(currentPage || 1) - 1}&limit=${limit || 24}` aria-label='Previous' data-page=((currentPage || 1) - 1) tabindex=(hasPrevPage || false) ? 0 : -1)
 										span.fas.fa-chevron-left
 								each pageNum in (pageRange || [])
 									if pageNum === '...'
@@ -610,9 +699,9 @@ block ecomContent
 											span.page-link &hellip;
 									else
 										li.page-item(class=pageNum === (currentPage || 1) ? 'active' : '')
-											a.page-link(href=`?page=${pageNum}&limit=${limit || 24}` data-page=pageNum) #{pageNum}
+											a.page-link(href=`?${_qp}page=${pageNum}&limit=${limit || 24}` data-page=pageNum) #{pageNum}
 								li.page-item(class=(hasNextPage || false) ? '' : 'disabled')
-									a.page-link(href=`?page=${(currentPage || 1) + 1}&limit=${limit || 24}` aria-label='Next' data-page=((currentPage || 1) + 1) tabindex=(hasNextPage || false) ? 0 : -1)
+									a.page-link(href=`?${_qp}page=${(currentPage || 1) + 1}&limit=${limit || 24}` aria-label='Next' data-page=((currentPage || 1) + 1) tabindex=(hasNextPage || false) ? 0 : -1)
 										span.fas.fa-chevron-right
 
 				// Load More Products button

@@ -29,8 +29,12 @@ mixin Product(product, options)
             if product.rated
               span.text-body-quaternary.fw-semibold.ms-1=`(${product.rated} people rated)`
       div
-        if product.extra
-          p.fs-9(class=product.extraClass)=product.extra 
+        // Stock label: same badge style as PDP (api/products/:id)
+        if product.stockStatus != null && product.stockLevel != null
+          - var badgeVariant = (product.stockStatus === 'Out of stock') ? 'danger' : (product.stockLevel === 'high' ? 'success' : 'warning');
+          span.badge.badge-phoenix(class=`badge-phoenix-${badgeVariant} fs-9 fw-semibold mb-2 d-inline-block`)= product.stockStatus
+        else if product.extra
+          p.fs-9(class=product.extraClass)= product.extra
         if product.extra2
           p.fs-9(class=product.extra2Class)=product.extra2
         // Price section

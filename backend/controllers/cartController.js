@@ -1,7 +1,13 @@
 const Cart = require('../models/cart');
 const Product = require('../models/products/baseProduct');
 const Store = require('../models/store');
-const { findVariantByOptions } = require('../helpers/variantHelpers');
+const {
+    findVariantByOptions,
+    getAvailableStockForItem,
+    getEffectivePrice,
+    getEffectiveOriginalPrice,
+    parsePrice
+} = require('../helpers/variantHelpers');
 const Promotion = require('../models/promotion');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
@@ -11,103 +17,27 @@ const DEFAULT_TAX_RATE = typeof process.env.DEFAULT_TAX_RATE !== 'undefined'
     : 0;
 
 /**
- * Parse price from API/schema (Decimal128, string, number, or { $numberDecimal }).
- */
-function parsePrice(value) {
-    if (value == null) return null;
-    if (typeof value === 'number' && !Number.isNaN(value)) return value;
-    if (typeof value === 'string') return parseFloat(value) || null;
-    if (typeof value === 'object' && value.$numberDecimal != null) return parseFloat(value.$numberDecimal) || null;
-    if (typeof value.toString === 'function') return parseFloat(value.toString()) || null;
-    return null;
-}
-
-/**
  * Resolve regular (list) unit price from product (and variant if options match). No sale applied.
+ * Uses variantHelpers so variant values are used when product has variants and options match.
  */
 function resolveUnitOriginalPrice(product, options = {}) {
-    if (!product) return null;
-    const reg = parsePrice(product.price);
-    const baseOriginal = reg != null ? reg : 0;
-
-    const variants = product.variants;
-    if (!variants || !Array.isArray(variants) || variants.length === 0) return baseOriginal;
-
-    const color = options.color ? String(options.color).trim() : '';
-    const size = options.size ? String(options.size).trim() : '';
-    let match = null;
-    if (color && size) {
-        match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
-    }
-    if (!match && color) {
-        match = variants.find(v => String(v.color || '').trim() === color);
-    }
-    if (!match && size) {
-        match = variants.find(v => String(v.size || '').trim() === size);
-    }
-    if (match) {
-        const vReg = parsePrice(match.price);
-        return vReg != null ? vReg : baseOriginal;
-    }
-    return baseOriginal;
+    return getEffectiveOriginalPrice(product, { options }) ?? 0;
 }
 
 /**
  * Get available stock for product (or matching variant when options provided). Phase 2.4.
+ * Uses variantHelpers so variant countInStock is used when product has variants.
  */
 function getAvailableStock(product, options = {}) {
-    if (!product) return 0;
-    const baseStock = typeof product.countInStock === 'number' ? Math.max(0, product.countInStock) : 0;
-    const variants = product.variants;
-    if (!variants || !Array.isArray(variants) || variants.length === 0) return baseStock;
-    const color = options.color ? String(options.color).trim() : '';
-    const size = options.size ? String(options.size).trim() : '';
-    let match = null;
-    if (color && size) {
-        match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
-    }
-    if (!match && color) {
-        match = variants.find(v => String(v.color || '').trim() === color);
-    }
-    if (!match && size) {
-        match = variants.find(v => String(v.size || '').trim() === size);
-    }
-    if (match && match.countInStock != null) {
-        return Math.max(0, parseInt(match.countInStock, 10) || 0);
-    }
-    return baseStock;
+    return getAvailableStockForItem(product, { options });
 }
 
 /**
  * Resolve effective unit price from product (and variant if options match).
+ * Uses variantHelpers so variant price/salePrice is used when product has variants.
  */
 function resolveUnitPrice(product, options = {}) {
-    if (!product) return null;
-    const reg = parsePrice(product.price);
-    const sale = parsePrice(product.salePrice);
-    const basePrice = (sale != null && sale > 0 && (reg == null || sale < reg)) ? sale : (reg != null ? reg : 0);
-
-    const variants = product.variants;
-    if (!variants || !Array.isArray(variants) || variants.length === 0) return basePrice;
-
-    const color = options.color ? String(options.color).trim() : '';
-    const size = options.size ? String(options.size).trim() : '';
-    let match = null;
-    if (color && size) {
-        match = variants.find(v => String(v.color || '').trim() === color && String(v.size || '').trim() === size);
-    }
-    if (!match && color) {
-        match = variants.find(v => String(v.color || '').trim() === color);
-    }
-    if (!match && size) {
-        match = variants.find(v => String(v.size || '').trim() === size);
-    }
-    if (match) {
-        const vReg = parsePrice(match.price);
-        const vSale = parsePrice(match.salePrice);
-        return (vSale != null && vSale > 0 && (vReg == null || vSale < vReg)) ? vSale : (vReg != null ? vReg : basePrice);
-    }
-    return basePrice;
+    return getEffectivePrice(product, { options }) ?? 0;
 }
 
 /**

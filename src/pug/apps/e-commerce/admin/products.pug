@@ -54,7 +54,7 @@ block content
     #products-container
       .mb-4
         .d-flex.flex-wrap.gap-3
-          +Search({placeholder: 'Search products'})
+          +Search({placeholder: 'Search products', inputId: 'products-search-input', value: querySearch || ''})
           .scrollbar.overflow-hidden-y
             .btn-group.position-static(role='group')
               .btn-group.position-static.text-nowrap
@@ -397,14 +397,138 @@ append scripts
           tbody.appendChild(row);
         });
       }
+
+      async applyFiltersAndUpdate(urlOrHref) {
+        if (this.isLoading) return;
+        const url = urlOrHref.startsWith('http') ? urlOrHref : (urlOrHref.startsWith('/') ? window.location.origin + urlOrHref : window.location.pathname + '?' + urlOrHref);
+        this.isLoading = true;
+        this.showLoading();
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include'
+          });
+          if (!response.ok) throw new Error('Network error');
+          const data = await response.json();
+          if (!data.success) throw new Error(data.message || 'Invalid response');
+          this.replaceProducts(data.products || []);
+          this.currentPage = data.currentPage || 1;
+          this.totalPages = data.totalPages || 1;
+          this.hasNextPage = data.hasNextPage || false;
+          this.setShowingCount(data.productCount, data.limit);
+          this.updatePaginationBar(data);
+          if (this.loadMoreContainer) {
+            this.loadMoreContainer.classList.toggle('d-none', !this.hasNextPage);
+          }
+          if (this.loadMoreBtn) this.loadMoreBtn.dataset.nextPage = this.currentPage + 1;
+          history.replaceState({}, '', url);
+        } catch (err) {
+          console.error('Filter error:', err);
+          window.location.href = url;
+        } finally {
+          this.isLoading = false;
+          this.hideLoading();
+        }
+      }
+
+      setShowingCount(productCount, limit) {
+        const el = document.getElementById('products-bulk-replace');
+        if (!el) return;
+        const start = (this.currentPage - 1) * (limit || 10) + 1;
+        const end = Math.min(this.currentPage * (limit || 10), productCount || 0);
+        const span = el.querySelector('span.text-body-secondary');
+        if (span) {
+          span.textContent = 'Showing ' + start + ' to ' + end + ' of ' + (productCount || 0) + ' products';
+        } else {
+          el.innerHTML = '<span class="text-body-secondary">Showing ' + start + ' to ' + end + ' of ' + (productCount || 0) + ' products</span>';
+        }
+      }
+
+      updatePaginationBar(data) {
+        const limit = data.limit || 10;
+        const currentPage = data.currentPage || 1;
+        const totalPages = data.totalPages || 1;
+        const hasPrevPage = data.hasPrevPage || false;
+        const hasNextPage = data.hasNextPage || false;
+        const adminBase = window.location.pathname.split('?')[0] || '/admin/products';
+        const base = (data.queryStringForPagination != null && data.queryStringForPagination !== '') ? (data.queryStringForPagination + '&') : '';
+        let nav = document.querySelector('nav[aria-label="Product pagination"]');
+        if (!nav && totalPages > 1) {
+          nav = document.createElement('nav');
+          nav.setAttribute('aria-label', 'Product pagination');
+          nav.className = 'mt-4';
+          const loadMore = document.getElementById('load-more-container');
+          if (loadMore && loadMore.parentNode) loadMore.parentNode.insertBefore(nav, loadMore.nextSibling);
+          else document.getElementById('products-container')?.appendChild(nav);
+        }
+        if (!nav) return;
+        nav.classList.toggle('d-none', totalPages <= 1);
+        const pageRange = data.pageRange || (totalPages >= 1 ? [1] : []);
+        let html = '<ul class="pagination justify-content-center">';
+        html += '<li class="page-item ' + (hasPrevPage ? '' : 'disabled') + '"><a class="page-link" href="' + (hasPrevPage ? adminBase + '?' + base + 'page=' + (currentPage - 1) : '#') + '" aria-label="Previous" data-page="' + (currentPage - 1) + '"><span aria-hidden="true">&laquo;</span></a></li>';
+        pageRange.forEach(function(pageNum) {
+          if (pageNum === '...') {
+            html += '<li class="page-item disabled"><span class="page-link">&hellip;</span></li>';
+          } else {
+            html += '<li class="page-item ' + (pageNum === currentPage ? 'active' : '') + '"><a class="page-link" href="' + adminBase + '?' + base + 'page=' + pageNum + '" data-page="' + pageNum + '">' + pageNum + '</a></li>';
+          }
+        });
+        html += '<li class="page-item ' + (hasNextPage ? '' : 'disabled') + '"><a class="page-link" href="' + (hasNextPage ? adminBase + '?' + base + 'page=' + (currentPage + 1) : '#') + '" aria-label="Next" data-page="' + (currentPage + 1) + '"><span aria-hidden="true">&raquo;</span></a></li>';
+        html += '</ul>';
+        nav.innerHTML = html;
+        nav.querySelectorAll('.page-link[data-page]').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = link.getAttribute('data-page');
+            if (page && !link.closest('.page-item.disabled')) {
+              const u = new URL(window.location);
+              u.searchParams.set('page', page);
+              this.applyFiltersAndUpdate(u.toString());
+            }
+          });
+        });
+      }
+
+      replaceProducts(products) {
+        const tbody = document.getElementById('products-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!products || products.length === 0) {
+          const colCount = 10;
+          tbody.innerHTML = '<tr><td colspan="' + colCount + '" class="text-center py-4 text-body-secondary">No products available</td></tr>';
+          return;
+        }
+        products.forEach(product => {
+          tbody.appendChild(this.createProductRow(product));
+        });
+      }
       
       createProductRow(product) {
         const row = document.createElement('tr');
         row.className = 'position-static';
         row.setAttribute('data-product-id', product._id);
         
-        // Format price display
-        const priceDisplay = product.price ? `$${product.price}` : '$0.00';
+        // Price display (match admin ProductTableRow: range + discount or single + sale)
+        let priceHtml = '';
+        const isPriceRange = !!(product.hasPriceRange || (product.priceRange && String(product.priceRange).includes(' - ')));
+        const hasDiscount = product.maxDiscountPercentage != null && product.maxDiscountPercentage !== undefined;
+        const displayRegular = product.priceRange || product.price;
+        if (displayRegular) {
+          priceHtml = '<div class="d-flex flex-column align-items-end">';
+          if (isPriceRange && hasDiscount) {
+            priceHtml += '<span class="text-body-quaternary fs-9">$' + displayRegular + '</span>';
+            priceHtml += '<span class="text-success fw-bold fs-9">up to ' + product.maxDiscountPercentage + '% off</span>';
+          } else if (!isPriceRange && product.salePrice && parseFloat(product.salePrice) < parseFloat(product.price)) {
+            priceHtml += '<span class="text-body-quaternary fs-9">$' + displayRegular + '</span>';
+            priceHtml += '<span class="text-success fw-bold">$' + product.salePrice + '</span>';
+          } else {
+            priceHtml += '<span>$' + displayRegular + '</span>';
+          }
+          priceHtml += '</div>';
+        } else {
+          priceHtml = '<span class="text-body-quaternary">N/A</span>';
+        }
         
         // Format category
         const categoryDisplay = product.category && product.category.length > 0 
@@ -447,7 +571,7 @@ append scripts
           <td class="product align-middle ps-4">
             <a class="fw-semibold line-clamp-3 mb-0" href="/api/products/${product._id}">${product.name}</a>
           </td>
-          <td class="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">${priceDisplay}</td>
+          <td class="price align-middle white-space-nowrap text-end fw-bold text-body-tertiary ps-4">${priceHtml}</td>
           <td class="category align-middle white-space-nowrap text-body-quaternary fs-9 ps-4 fw-semibold">
             ${categoryDisplay}
           </td>
@@ -506,6 +630,54 @@ append scripts
       window.productLoader = new ProductLoader();
       var bulkRemoveBtn = document.getElementById('bulk-remove-btn');
       if (bulkRemoveBtn) bulkRemoveBtn.addEventListener('click', bulkRemoveFromCatalogSelected);
+      
+      // AJAX filter: intercept filter links (tabs, category, vendor) so list updates without full reload
+      const container = document.getElementById('products-container');
+      if (container) {
+        container.addEventListener('click', (e) => {
+          const link = e.target.closest('a[href*="/admin/products"]');
+          if (!link || link.getAttribute('target') === '_blank' || link.hasAttribute('data-no-ajax')) return;
+          const href = link.getAttribute('href');
+          if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+          try {
+            const u = new URL(href, window.location.origin);
+            const listPath = window.location.pathname.split('?')[0];
+            if (u.pathname !== listPath) return;
+            e.preventDefault();
+            window.productLoader.applyFiltersAndUpdate(href);
+          } catch (_) {}
+        });
+      }
+      const moreFiltersForm = document.getElementById('more-filters-form');
+      if (moreFiltersForm) {
+        moreFiltersForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const action = form.getAttribute('action') || window.location.pathname;
+          const params = new URLSearchParams(new FormData(form));
+          const url = action + (params.toString() ? '?' + params.toString() : '');
+          window.productLoader.applyFiltersAndUpdate(url);
+        });
+      }
+      
+      // Live search: apply search as user types (debounced)
+      const searchInput = document.getElementById('products-search-input');
+      if (searchInput) {
+        const searchForm = searchInput.closest('form');
+        if (searchForm) searchForm.addEventListener('submit', (e) => e.preventDefault());
+        let searchDebounce;
+        searchInput.addEventListener('input', () => {
+          clearTimeout(searchDebounce);
+          searchDebounce = setTimeout(() => {
+            const u = new URL(window.location);
+            const val = searchInput.value.trim();
+            if (val) u.searchParams.set('search', val);
+            else u.searchParams.delete('search');
+            u.searchParams.set('page', '1');
+            window.productLoader.applyFiltersAndUpdate(u.toString());
+          }, 300);
+        });
+      }
       
       // Handle products per page dropdown
       const productsPerPageSelect = document.getElementById('products-per-page');

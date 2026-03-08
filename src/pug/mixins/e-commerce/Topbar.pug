@@ -30,4 +30,7 @@ mixin Topbar
                 span.text-body-tertiary(data-feather='user' style="height:20px;width:20px;")
               +ProfileDropdown.mt-2
         .col-12.col-md-6
-          +Search({placeholder: 'Search', inputClass: 'form-control-sm'}).ecommerce-search-box.w-100
+          .position-relative.ecommerce-search-wrapper
+            +Search({placeholder: 'Search', inputClass: 'form-control-sm', inputId: 'customer-product-search-input'}).ecommerce-search-box.w-100
+            #search-suggestions-dropdown.search-suggestions-dropdown.list-group.shadow-sm.border.rounded.d-none(style='position:absolute;top:100%;left:0;right:0;margin-top:0.25rem;max-height:20rem;overflow-y:auto;min-width:100%;z-index:1060;')
+              .list-group-item.text-body-tertiary.py-2.small No suggestions

@@ -36,10 +36,10 @@ mixin SuggestedFilter(items)
         .flex-1.fs-9.title=item.text
     = '\n'
 
-mixin Search({placeholder,inputClass})
+mixin Search({placeholder,inputClass,inputId,value})
   .search-box&attributes(attributes)
-    form.position-relative
-      input.form-control.search-input.search(type='search' class=inputClass placeholder=placeholder, aria-label='Search')
+    form.position-relative(role='search')
+      input.form-control.search-input.search(type='search' class=inputClass placeholder=placeholder, aria-label='Search' id=inputId value=value)
       = '\n'
       span.fas.fa-search.search-box-icon
       = '\n'

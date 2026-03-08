@@ -333,7 +333,9 @@ append scripts
 								${product.star ? `<p class='fs-9'><span class='text-warning'>${'★'.repeat(product.star)}${'☆'.repeat(5 - product.star)}</span>${product.rated ? `<span class='text-body-quaternary fw-semibold ms-1'>(${product.rated} people rated)</span>` : ''}</p>` : ''}
 							</div>
 							<div>
-								${product.extra ? `<p class="fs-9 ${product.extraClass || ''}">${product.extra}</p>` : ''}
+								${(product.stockStatus != null && product.stockLevel != null)
+									? `<span class="badge badge-phoenix badge-phoenix-${product.stockStatus === 'Out of stock' ? 'danger' : (product.stockLevel === 'high' ? 'success' : 'warning')} fs-9 fw-semibold mb-2 d-inline-block">${product.stockStatus}</span>`
+									: (product.extra ? `<p class="fs-9 ${product.extraClass || ''}">${product.extra}</p>` : '')}
 								${product.extra2 ? `<p class="fs-9 ${product.extra2Class || ''}">${product.extra2}</p>` : ''}
 								${(() => {
 									const salePrice = product.salePrice ? parseFloat(product.salePrice.toString().split(' - ')[0]) : null;

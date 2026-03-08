@@ -58,6 +58,13 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
                 hasNextPage: result.hasNextPage,
                 hasPrevPage: result.hasPrevPage,
                 productCount: result.productCount,
+                limit: result.limit,
+                pageRange: result.pageRange,
+                queryStringForPagination: (() => {
+                    const q = { ...req.query };
+                    delete q.page;
+                    return new URLSearchParams(q).toString();
+                })(),
                 api: result.api
             });
         } else {
@@ -70,6 +77,30 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
             success: false,
             message: 'Error fetching products',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Admin: Global search suggestions for navbar (products, categories, vendors)
+exports.getSearchSuggestions = asyncHandler(async (req, res) => {
+    try {
+        const result = await adminProductsService.searchForNav(req);
+        return res.json({
+            success: true,
+            totalCount: result.totalCount,
+            products: result.products || [],
+            categories: result.categories || [],
+            vendors: result.vendors || []
+        });
+    } catch (error) {
+        console.error('Error in getSearchSuggestions:', error);
+        return res.status(500).json({
+            success: false,
+            totalCount: 0,
+            products: [],
+            categories: [],
+            vendors: [],
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });

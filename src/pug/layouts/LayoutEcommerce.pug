@@ -194,6 +194,99 @@ append layoutScripts
       }
     })();
 
+//- Product search suggestions (as-you-type) on store
+append layoutScripts
+  script.
+    (function() {
+      function initSearchSuggestions() {
+        var searchInput = document.getElementById('customer-product-search-input');
+        var dropdown = document.getElementById('search-suggestions-dropdown');
+        if (!searchInput || !dropdown) return;
+        var debounceTimer;
+        var productsBaseUrl = '/api/products';
+        function escapeHtml(s) {
+          var div = document.createElement('div');
+          div.textContent = s;
+          return div.innerHTML;
+        }
+        function boldMatch(label, q) {
+          if (!q) return escapeHtml(label);
+          var i = label.toLowerCase().indexOf(q.toLowerCase());
+          if (i === -1) return escapeHtml(label);
+          return escapeHtml(label.slice(0, i)) + '<strong class="text-body-highlight">' + escapeHtml(label.slice(i, i + q.length)) + '</strong>' + escapeHtml(label.slice(i + q.length));
+        }
+        function showSuggestions(suggestions, query) {
+          if (!suggestions || suggestions.length === 0) {
+            dropdown.innerHTML = '<div class="list-group-item text-body-tertiary py-2 small">No suggestions</div>';
+          } else {
+            dropdown.innerHTML = suggestions.map(function(s) {
+              var href = productsBaseUrl + '?search=' + encodeURIComponent(s.label);
+              return '<a class="list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center text-decoration-none" href="' + href + '">' +
+                '<span>' + boldMatch(s.label, query) + '</span>' +
+                '<span class="text-body-tertiary fs-9 ms-2">' + (s.count != null ? Number(s.count).toLocaleString() : '') + '</span></a>';
+            }).join('');
+          }
+          dropdown.classList.remove('d-none');
+          dropdown.style.display = 'block';
+        }
+        function hideSuggestions() {
+          dropdown.classList.add('d-none');
+          dropdown.style.display = 'none';
+        }
+        function fetchSuggestions(q) {
+          if (!q || q.length < 2) {
+            hideSuggestions();
+            return;
+          }
+          fetch(productsBaseUrl + '/suggestions?q=' + encodeURIComponent(q) + '&limit=10', { credentials: 'same-origin' })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+              if (data && Array.isArray(data.suggestions)) showSuggestions(data.suggestions, q);
+              else showSuggestions([]);
+            })
+            .catch(function() { hideSuggestions(); });
+        }
+        searchInput.addEventListener('input', function() {
+          clearTimeout(debounceTimer);
+          var val = searchInput.value.trim();
+          debounceTimer = setTimeout(function() {
+            if (val.length >= 2) fetchSuggestions(val);
+            else hideSuggestions();
+          }, 200);
+        });
+        searchInput.addEventListener('focus', function() {
+          var val = searchInput.value.trim();
+          if (val.length >= 2) fetchSuggestions(val);
+        });
+        searchInput.addEventListener('blur', function() {
+          setTimeout(function() {
+            if (!dropdown.contains(document.activeElement)) hideSuggestions();
+          }, 200);
+        });
+        document.addEventListener('click', function(e) {
+          if (!dropdown.contains(e.target) && e.target !== searchInput) hideSuggestions();
+        });
+        var form = searchInput.closest('form');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var val = searchInput.value.trim();
+            if (val) window.location.href = productsBaseUrl + '?search=' + encodeURIComponent(val);
+          });
+        }
+        (function syncFromUrl() {
+          var params = new URLSearchParams(window.location.search);
+          var searchParam = params.get('search') || params.get('q');
+          if (searchParam && searchInput.value !== searchParam) searchInput.value = searchParam;
+        })();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSearchSuggestions);
+      } else {
+        initSearchSuggestions();
+      }
+    })();
+
 block mainContent
   +Section(null,'container-small').py-0
     +Topbar

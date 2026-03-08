@@ -1,6 +1,7 @@
 mixin EditProductDescription(options = {})
   - const productTypes = options.productTypes || []
   - const product = options.product || {}
+  - const hasVariantsDefault = !!(product.variants && Array.isArray(product.variants) && product.variants.length > 0)
   .mb-4
     h4.mb-3 Product Title
     input.form-control.mb-5(type='text' name="name" placeholder='Write title here...' required value=product.name)
@@ -13,20 +14,30 @@ mixin EditProductDescription(options = {})
         option(value=type.value selected=product.productType === type.value)= type.label
 
   .mb-4
+    h4.mb-3 Does this product have variants?
+    .form-check
+      input.form-check-input#hasVariantsNo(type='radio' name='hasVariants' value='no' checked=!hasVariantsDefault)
+      label.form-check-label(for='hasVariantsNo') No
+    .form-check
+      input.form-check-input#hasVariantsYes(type='radio' name='hasVariants' value='yes' checked=hasVariantsDefault)
+      label.form-check-label(for='hasVariantsYes') Yes
+    small.form-text.text-muted Choose "No" for a single option; choose "Yes" to add size/color variants with their own price and stock.
+
+  .mb-4#productStockInformationSection(style=hasVariantsDefault ? 'display:none;' : '')
     h4.mb-3 Stock Information
     .row.g-3
       .col-12.col-sm-6
         label.form-label.text-body-tertiary.small(for='productCountInStock') Stock quantity
         input.form-control#productCountInStock(type='number' name="countInStock" placeholder='Count in stock' min="0" value=product.countInStock || 0)
-        small.form-text.text-muted When using variants, set stock on each variant; product stock is optional (fallback).
+        small.form-text.text-muted Set stock for this product.
       .col-12.col-sm-6
         label.form-label.text-body-tertiary.small(for='productPrice') Price
         input.form-control#productPrice(type='number' name="price" placeholder='Price' min="0" step="0.01" value=product.price ? product.price.toString() : '')
-        small.form-text.text-muted When using variants, set price on each variant; product price is optional (fallback for listing).
+        small.form-text.text-muted List price for this product.
       .col-12.col-sm-6
         label.form-label.text-body-tertiary.small(for='productSalePrice') Sale price (optional)
         input.form-control#productSalePrice(type='number' name="salePrice" placeholder='Sale price' min="0" step="0.01" value=product.salePrice ? product.salePrice.toString() : '')
-        small.form-text.text-muted With variants, use sale price on each variant instead.
+        small.form-text.text-muted Optional sale price.
   
   .mb-6
     h4.mb-3 Product Description

@@ -36,6 +36,33 @@ const BaseProduct = require('../../models/products/baseProduct');
 const { mapCsvRowToProductData } = require('../../helpers/csvProductMapper');
 const { parse } = require('csv-parse/sync');
 
+/** Fields that are single Date in product schemas; form may send them as arrays. */
+const SINGLE_DATE_FIELDS = ['expiryDate', 'publicationDate'];
+
+function normalizeProductDateFields(data) {
+  if (!data || typeof data !== 'object') return;
+  for (const key of SINGLE_DATE_FIELDS) {
+    if (!(key in data)) continue;
+    const val = data[key];
+    if (Array.isArray(val)) {
+      const first = val[0];
+      data[key] = first != null && first !== '' ? new Date(first) : undefined;
+    } else if (val != null && val !== '') {
+      data[key] = val instanceof Date ? val : new Date(val);
+    }
+  }
+}
+
+/** Return a single Date for schema fields that expect one value (form may send array). */
+function toSingleDate(val) {
+  if (val == null || val === '') return undefined;
+  if (Array.isArray(val)) {
+    const first = val[0];
+    return first != null && first !== '' ? new Date(first) : undefined;
+  }
+  return val instanceof Date ? val : new Date(val);
+}
+
 function isAjaxRequestFromReq(req) {
   return (
     req.xhr ||
@@ -118,12 +145,102 @@ async function listProducts({ req, limit, page, sort, order }) {
     queryMinPrice: req.query.minPrice != null && req.query.minPrice !== '' ? String(req.query.minPrice) : '',
     queryMaxPrice: req.query.maxPrice != null && req.query.maxPrice !== '' ? String(req.query.maxPrice) : '',
     queryProductType: req.query.productType || '',
+    querySearch: (req.query.search || req.query.q || '').trim(),
     pageRange: getPageRange(page, totalPages),
     api: process.env.API_URL || '/api',
   };
 
   await storeCache.set(cacheKey, result);
   return { ok: true, fromCache: false, isAjax, result };
+}
+
+/** Search products, categories, and vendors for navbar global search. Returns { totalCount, products, categories, vendors }. */
+async function searchForNav(req) {
+  const q = (req.query.q || req.query.search || '').trim();
+  const limitProducts = Math.min(parseInt(req.query.limit, 10) || 8, 20);
+  const limitCategories = 5;
+  const limitVendors = 5;
+  if (!q) {
+    return { totalCount: 0, products: [], categories: [], vendors: [] };
+  }
+  const storeId = req.store && req.store._id ? req.store._id : null;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const searchRegex = new RegExp(escaped, 'i');
+
+  const productFilter = buildProductFilter({ ...req, query: { ...req.query, search: q, q } });
+  const productPipeline = [
+    { $match: productFilter },
+    { $sort: { dateCreated: -1, _id: 1 } },
+    { $limit: limitProducts },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'category',
+        foreignField: '_id',
+        as: 'category'
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        image: 1,
+        dateCreated: 1,
+        productType: 1,
+        category: 1
+      }
+    }
+  ];
+
+  const Category = require('../../models/category');
+  const Vendor = require('../../models/vendor');
+  const categoryFilter = { name: searchRegex, isActive: true };
+  if (storeId) categoryFilter.store = storeId;
+  const vendorFilter = { name: searchRegex, isActive: true };
+  if (storeId) vendorFilter.store = storeId;
+
+  const [productResult, productCount, categories, vendors] = await Promise.all([
+    productRepository.aggregate(productPipeline),
+    productRepository.count(productFilter),
+    Category.find(categoryFilter).select('name _id').sort({ name: 1 }).limit(limitCategories).lean(),
+    Vendor.find(vendorFilter).select('name _id').sort({ name: 1 }).limit(limitVendors).lean()
+  ]);
+
+  const adminBaseProducts = '/admin/products';
+  const productsForNav = productResult.map((p) => {
+    const img = p.image && p.image.url ? p.image.url : 'https://res.cloudinary.com/dciyc3p3k/image/upload/v1736790957/products/product-Product-0-95f1d3e2';
+    const catName = (p.category && p.category[0] && p.category[0].name) ? p.category[0].name : '';
+    const subtitle = p.dateCreated
+      ? new Date(p.dateCreated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : catName;
+    return {
+      id: p._id.toString(),
+      name: p.name || 'Product',
+      imageUrl: img,
+      subtitle: subtitle || '',
+      url: `${adminBaseProducts}/edit/${p._id}`
+    };
+  });
+
+  const categoriesForNav = (categories || []).map((c) => ({
+    id: c._id.toString(),
+    name: c.name || 'Category',
+    url: `/admin/categories/edit/${c._id}`
+  }));
+
+  const vendorsForNav = (vendors || []).map((v) => ({
+    id: v._id.toString(),
+    name: v.name || 'Vendor',
+    url: `/admin/vendors/edit/${v._id}`
+  }));
+
+  const totalCount = productCount + (categoriesForNav.length) + (vendorsForNav.length);
+  return {
+    totalCount,
+    products: productsForNav,
+    categories: categoriesForNav,
+    vendors: vendorsForNav
+  };
 }
 
 function buildDeletedProductFilter(req) {
@@ -203,6 +320,8 @@ async function createProduct({ req }) {
       ? body.category
       : parseField(body.category)
     : [];
+  // Dedupe by string id so we don't store the same category twice
+  const categoryIds = [...new Set((categories || []).map((c) => String(c)).filter(Boolean))];
 
   const tags = body.tags ? (Array.isArray(body.tags) ? body.tags : parseField(body.tags)) : [];
 
@@ -256,8 +375,8 @@ async function createProduct({ req }) {
     return { ok: false, status: 400, payload: { success: false, message: storeValidation.message } };
   }
 
-  if (categories && categories.length > 0) {
-    for (const categoryId of categories) {
+  if (categoryIds && categoryIds.length > 0) {
+    for (const categoryId of categoryIds) {
       if (!isValidObjectId(categoryId, mongoose)) {
         return { ok: false, status: 400, payload: { success: false, message: `Invalid category ID ${categoryId}` } };
       }
@@ -267,7 +386,7 @@ async function createProduct({ req }) {
       }
     }
 
-    const compatibility = await validateProductCategoryCompatibility(body.productType, categories, storeId);
+    const compatibility = await validateProductCategoryCompatibility(body.productType, categoryIds, storeId);
     if (!compatibility.valid) {
       return { ok: false, status: 400, payload: { success: false, message: compatibility.message } };
     }
@@ -275,10 +394,11 @@ async function createProduct({ req }) {
 
   const ProductModel = productTypeModelMap[body.productType] || BaseProduct;
 
+  const createImages = mergeImages([], req.files || []);
   const productData = {
     ...body,
     store: storeId,
-    category: categories,
+    category: categoryIds,
     tags,
     materialComposition,
     care,
@@ -296,8 +416,13 @@ async function createProduct({ req }) {
     volume,
   };
 
+  productData.images = createImages;
+  productData.image = createImages[0] || {};
+
   // Preserve existing controller behavior (init nested fields)
   initProductFields(productData);
+
+  normalizeProductDateFields(productData);
 
   const product = new ProductModel(productData);
   await product.save();
@@ -327,6 +452,7 @@ async function updateProduct({ req, productId }) {
   if (body.description) body.description = sanitizeHtml(body.description, sanitizeOptions);
 
   const parsed = parseUpdateFields(body);
+  parsed.categories = [...new Set((parsed.categories || []).map((c) => String(c)).filter(Boolean))];
   const price = body.price
     ? mongoose.Types.Decimal128.fromString(body.price.toString())
     : mongoose.Types.Decimal128.fromString('0');
@@ -401,7 +527,7 @@ async function updateProduct({ req, productId }) {
         format: body.format,
         genre: parsed.genre || [],
         pages: body.pages,
-        publicationDate: body.publicationDate,
+        publicationDate: toSingleDate(body.publicationDate),
         ...variantUpdate,
       });
       break;
@@ -410,7 +536,7 @@ async function updateProduct({ req, productId }) {
         brand: body.brand,
         ingredients: parsed.ingredients || [],
         nutritionalInfo: parsed.nutritionalInfo,
-        expiryDate: body.expiryDate,
+        expiryDate: toSingleDate(body.expiryDate),
         allergens: parsed.allergens || [],
         ...variantUpdate,
       });
@@ -438,7 +564,7 @@ async function updateProduct({ req, productId }) {
         skinType: body.skinType,
         ingredients: parsed.ingredients || [],
         volume: parsed.volume,
-        expiryDate: body.expiryDate,
+        expiryDate: toSingleDate(body.expiryDate),
         ...variantUpdate,
       });
       break;
@@ -760,6 +886,7 @@ async function bulkImportProducts({ req, file }) {
 module.exports = {
   listProducts,
   listDeletedProducts,
+  searchForNav,
   getAddProductPageData,
   createProduct,
   getEditProductPageData,

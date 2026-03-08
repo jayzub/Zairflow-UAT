@@ -35,10 +35,10 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 
 ## 4. Customer flows (cart & checkout)
 
-- [ ] **4.1** **High risk.** Run full manual flow: PDP → Add to cart → Cart → Checkout → Place order. Fix any bugs (variant availability, promo apply/remove, tax/shipping vs order totals).
+- [x] **4.1** **High risk.** Run full manual flow: PDP → Add to cart → Cart → Checkout → Place order. Fix any bugs (variant availability, promo apply/remove, tax/shipping vs order totals).
 - [ ] **4.2** **High risk.** Payment: either implement Stripe server-side charge (create/confirm PaymentIntent in place-order, set `paymentStatus: 'paid'` only on success) or treat MVP as **COD/offline only** and hide or clearly label card option until gateway is wired.
 - [ ] **4.3** If card is shown but not charged: ensure confirmation and order history copy does not say “Payment received” for card orders; use “Payment pending” or equivalent when `paymentStatus === 'pending'`.
-- [ ] **4.4** Confirm 409 handling (out-of-stock, price change) and frontend redirect/messaging work as documented in `PROCESS_FLOW_ADD_TO_CART_TO_CHECKOUT.md`.
+- [x] **4.4** Confirm 409 handling (out-of-stock, price change) and frontend redirect/messaging work as documented in `PROCESS_FLOW_ADD_TO_CART_TO_CHECKOUT.md`.
 
 ---
 

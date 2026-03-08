@@ -4,6 +4,7 @@ const multer = require('multer');
 const {
     getStoreProducts,
     getAllProductsMarketplace,
+    getProductSuggestions,
     testAjax,
     getProductById
 } = require('../controllers/productController');
@@ -26,6 +27,8 @@ router.get('/', extractStoreOptional, (req, res, next) => {
   }
   next(); // no store context -> 404
 });
+// Search suggestions (as-you-type). Must be before /:id.
+router.get('/suggestions', extractStoreOptional, getProductSuggestions);
 // When accessed via store subdomain, scope product lookup to that store.
 router.get('/:id', extractStoreOptional, getProductById);
 

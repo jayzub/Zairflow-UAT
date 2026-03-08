@@ -2,6 +2,7 @@ const express = require('express');
 const customerPagesController = require('../controllers/customerPagesController');
 const { extractStore, extractStoreOptional } = require('../middleware/storeIsolation');
 const { optionalCustomerAuth, requireCustomerAuth } = require('../middleware/jwt');
+const { getProductById } = require('../controllers/productController');
 
 const router = express.Router();
 
@@ -10,6 +11,9 @@ router.use(optionalCustomerAuth);
 
 // Customer-facing homepage (server-rendered Pug)
 router.get('/home', extractStore, customerPagesController.renderCustomerHomepage);
+
+// Product detail page (PDP) - customer-facing URL /products/:id
+router.get('/products/:id', extractStoreOptional, getProductById);
 
 // Customer profile page (requires login; store optional for breadcrumb/context)
 router.get('/profile', requireCustomerAuth, extractStoreOptional, customerPagesController.renderCustomerProfile);

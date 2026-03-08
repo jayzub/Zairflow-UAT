@@ -472,6 +472,20 @@ append scripts
       // Call the function when page loads
       populateProductTypes();
       
+      // Toggle Stock Information vs Variants based on "Has variants?" (Yes/No)
+      function toggleHasVariantsSections() {
+        const hasVariantsYes = document.getElementById('hasVariantsYes');
+        const stockSection = document.getElementById('productStockInformationSection');
+        const variantsSection = document.getElementById('productVariantsSection');
+        if (!hasVariantsYes || !stockSection || !variantsSection) return;
+        const useVariants = hasVariantsYes.checked;
+        stockSection.style.display = useVariants ? 'none' : '';
+        variantsSection.style.display = useVariants ? '' : 'none';
+      }
+      document.getElementById('hasVariantsNo')?.addEventListener('change', toggleHasVariantsSections);
+      document.getElementById('hasVariantsYes')?.addEventListener('change', toggleHasVariantsSections);
+      toggleHasVariantsSections();
+      
       // Initialize category dropdown after DOM is ready (edit page: do not call updateCategoryDropdown on load - categories are already server-rendered)
       function waitForChoicesAndInit() {
         if (typeof Choices === 'undefined') {
@@ -605,6 +619,7 @@ append scripts
 
         const productType = this.querySelector('[name="productType"]')?.value;
         const name = this.querySelector('[name="name"]')?.value?.trim();
+        const hasVariants = document.getElementById('hasVariantsYes')?.checked === true;
         const productPrice = (this.querySelector('[name="price"]')?.value || '').trim();
         const productCountInStock = (this.querySelector('[name="countInStock"]')?.value || '').trim();
         const variantItems = this.querySelectorAll('.variant-item');
@@ -621,13 +636,20 @@ append scripts
           alert('Please fill in Product Type and Name.');
           return;
         }
-        if (!productPrice && !hasVariantWithPrice) {
-          alert('Please set either a product Price or add at least one variant with a price.');
-          return;
-        }
-        if (productCountInStock === '' && !hasVariantWithStock) {
-          alert('Please set either a product Stock quantity or add at least one variant with stock quantity.');
-          return;
+        if (hasVariants) {
+          if (!hasVariantWithPrice || !hasVariantWithStock) {
+            alert('With variants, add at least one variant with Price and Stock quantity.');
+            return;
+          }
+        } else {
+          if (!productPrice || parseFloat(productPrice) <= 0) {
+            alert('Please set a product Price.');
+            return;
+          }
+          if (productCountInStock === '') {
+            alert('Please set Stock quantity.');
+            return;
+          }
         }
 
         const formData = new FormData(this);
@@ -663,11 +685,12 @@ append scripts
           cleanedFormData.append('description', description);
 
           const productPriceVal = formData.get('price');
-          cleanedFormData.append('price', (productPriceVal && productPriceVal.toString().trim() !== '') ? productPriceVal : '0');
+          const hasVariants = document.getElementById('hasVariantsYes')?.checked === true;
+          cleanedFormData.append('price', (hasVariants || !productPriceVal || productPriceVal.toString().trim() === '') ? '0' : productPriceVal);
           cleanedFormData.append('productType', formData.get('productType'));
 
           const productCountInStockVal = formData.get('countInStock');
-          cleanedFormData.append('countInStock', (productCountInStockVal !== null && productCountInStockVal.toString().trim() !== '') ? productCountInStockVal.toString().trim() : '0');
+          cleanedFormData.append('countInStock', (hasVariants || productCountInStockVal === null || productCountInStockVal.toString().trim() === '') ? '0' : productCountInStockVal.toString().trim());
           
           // Add optional fields
           const optionalFields = ['salePrice', 'vendor', 'brand'];

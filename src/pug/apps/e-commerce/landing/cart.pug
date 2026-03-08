@@ -26,7 +26,7 @@ block ecomContent
       .col-12.col-lg-8
         +CartTable([])
       .col-12.col-lg-4
-        +CartSummaryCard
+        +CartSummaryCard(cartScopeType, cartStoreId)
 
 append scripts
   script.
@@ -65,6 +65,22 @@ append scripts
       function itemPrice(item) {
         if (item.unitPrice != null && typeof item.unitPrice === 'number' && item.unitPrice > 0) return item.unitPrice;
         var product = item.product || {};
+        var opts = item.options || {};
+        var variants = product.variants;
+        if (variants && Array.isArray(variants) && variants.length > 0) {
+          var color = (opts.color != null && opts.color !== '') ? String(opts.color).trim() : '';
+          var size = (opts.size != null && opts.size !== '') ? String(opts.size).trim() : '';
+          var v = null;
+          if (color && size) v = variants.find(function(x) { return String(x.color || '').trim() === color && String(x.size || '').trim() === size; });
+          if (!v && color) v = variants.find(function(x) { return String(x.color || '').trim() === color; });
+          if (!v && size) v = variants.find(function(x) { return String(x.size || '').trim() === size; });
+          if (v) {
+            var vReg = parsePrice(v.price);
+            var vSale = parsePrice(v.salePrice);
+            if (vSale != null && vSale > 0 && (vReg == null || vSale < vReg)) return vSale;
+            return vReg != null ? vReg : 0;
+          }
+        }
         var reg = parsePrice(product.price);
         var sale = parsePrice(product.salePrice);
         if (sale != null && sale > 0 && (reg == null || sale < reg)) return sale;
@@ -74,6 +90,17 @@ append scripts
       function itemOriginalPrice(item) {
         if (item.unitOriginalPrice != null && typeof item.unitOriginalPrice === 'number' && item.unitOriginalPrice >= 0) return item.unitOriginalPrice;
         var product = item.product || {};
+        var opts = item.options || {};
+        var variants = product.variants;
+        if (variants && Array.isArray(variants) && variants.length > 0) {
+          var color = (opts.color != null && opts.color !== '') ? String(opts.color).trim() : '';
+          var size = (opts.size != null && opts.size !== '') ? String(opts.size).trim() : '';
+          var v = null;
+          if (color && size) v = variants.find(function(x) { return String(x.color || '').trim() === color && String(x.size || '').trim() === size; });
+          if (!v && color) v = variants.find(function(x) { return String(x.color || '').trim() === color; });
+          if (!v && size) v = variants.find(function(x) { return String(x.size || '').trim() === size; });
+          if (v) { var vReg = parsePrice(v.price); return vReg != null ? vReg : 0; }
+        }
         return parsePrice(product.price) != null ? parsePrice(product.price) : itemPrice(item);
       }
 
@@ -115,10 +142,10 @@ append scripts
           row.setAttribute('data-item-id', item._id);
           row.innerHTML =
             '<td class="align-middle white-space-nowrap py-0">' +
-              '<a href="/api/products/' + (product._id || '') + '" class="d-block border border-translucent rounded-2">' +
+              '<a href="/products/' + (product._id || '') + '" class="d-block border border-translucent rounded-2">' +
               '<img src="' + (imgUrl || '') + '" alt="" width="53" onerror="this.style.display=\'none\'">' +
               '</a></td>' +
-            '<td class="products align-middle"><a class="fw-semibold mb-0 line-clamp-2" href="/api/products/' + (product._id || '') + '">' + name + '</a></td>' +
+            '<td class="products align-middle"><a class="fw-semibold mb-0 line-clamp-2" href="/products/' + (product._id || '') + '">' + name + '</a></td>' +
             '<td class="color align-middle white-space-nowrap fs-9 text-body">' + color + '</td>' +
             '<td class="size align-middle white-space-nowrap text-body-tertiary fs-9 fw-semibold">' + size + '</td>' +
             '<td class="price align-middle fs-9 text-end">' + priceCell + '</td>' +

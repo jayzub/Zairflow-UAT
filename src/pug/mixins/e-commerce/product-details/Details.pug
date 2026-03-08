@@ -114,7 +114,8 @@ mixin Details
               p.text-warning.fw-bolder.fs-6.mb-0(data-product-discount style='display: none;')
 
           if product && product.stockLevel
-            p(class=`text-${product.stockLevel === 'high' ? 'success' : product.stockLevel === 'medium' ? 'warning' : 'danger'} fw-semibold fs-7 mb-2` data-product-stock-status)= product.stockStatus
+            - var badgeVariant = (product.stockStatus === 'Out of stock') ? 'danger' : (product.stockLevel === 'high' ? 'success' : 'warning');
+            span.badge.badge-phoenix(class=`badge-phoenix-${badgeVariant} fw-semibold fs-7 mb-2 d-inline-block` data-product-stock-status)= product.stockStatus
           
           if product && product.description
             p.mb-2.text-body-secondary!= product.description
@@ -459,7 +460,8 @@ append scripts
         if (stockStatusElement) {
           const stockInfo = getStockInfo(displayCountInStock);
           stockStatusElement.textContent = stockInfo.status;
-          stockStatusElement.className = `text-${stockInfo.className} fw-semibold fs-7 mb-2`;
+          const badgeVariant = stockInfo.status === 'Out of stock' ? 'danger' : (stockInfo.level === 'high' ? 'success' : 'warning');
+          stockStatusElement.className = `badge badge-phoenix badge-phoenix-${badgeVariant} fw-semibold fs-7 mb-2 d-inline-block`;
         }
         // Disable Add to Cart when out of stock (Phase 2.1)
         const addToCartBtnEl = document.getElementById('addToCartBtn');

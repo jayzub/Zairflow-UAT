@@ -8,6 +8,7 @@ const Customer = require('../models/customer');
 const Order = require('../models/order');
 const Review = require('../models/review');
 const Store = require('../models/store');
+const { getDisplayValues } = require('../helpers/variantHelpers');
 const { asyncHandler } = require('../middleware/asyncHandler');
 
 // Map order status to UI badge (ProfileOrderTable)
@@ -84,14 +85,14 @@ const renderCustomerHomepage = asyncHandler(async (req, res) => {
     })
       .sort({ dateCreated: -1, _id: 1 })
       .limit(12)
-      .select('name image price salePrice rating numReviews countInStock')
+      .select('name image price salePrice rating numReviews countInStock variants')
       .lean(),
   ]);
 
   // Normalize product shape for `src/pug/mixins/e-commerce/homepage/common.pug`
+  // Use variant-aware display values: when product has variants, use variant-derived price/stock
   const topDeals = (topDealsRaw || []).map((p) => {
-    const price = p.price?.toString ? p.price.toString() : p.price;
-    const salePrice = p.salePrice?.toString ? p.salePrice.toString() : p.salePrice;
+    const { price, salePrice, countInStock } = getDisplayValues(p);
     const star = typeof p.rating === 'number' ? Math.max(0, Math.min(5, Math.round(p.rating))) : undefined;
     const rated = typeof p.numReviews === 'number' ? p.numReviews : undefined;
 
@@ -99,11 +100,11 @@ const renderCustomerHomepage = asyncHandler(async (req, res) => {
       _id: p._id,
       name: p.name,
       image: p.image?.url || null,
-      price,
-      salePrice,
+      price: price != null ? price : 0,
+      salePrice: salePrice != null ? salePrice : null,
       star,
       rated,
-      inStock: (p.countInStock || 0) > 0,
+      inStock: (countInStock || 0) > 0,
     };
   });
 
@@ -137,7 +138,7 @@ const renderCustomerProfile = asyncHandler(async (req, res) => {
       .limit(50)
       .lean(),
     Customer.findById(customer._id)
-      .populate({ path: 'wishlist.product', select: 'name image price salePrice' })
+      .populate({ path: 'wishlist.product', select: 'name image price salePrice variants' })
       .populate({ path: 'wishlist.store', select: 'name slug' })
       .lean(),
   ]);
@@ -155,8 +156,8 @@ const renderCustomerProfile = asyncHandler(async (req, res) => {
   const wishlistCount = (customerWithWishlist && customerWithWishlist.wishlist && customerWithWishlist.wishlist.length) || 0;
   const profileWishlistTableData = (customerWithWishlist?.wishlist || []).slice(0, 20).map((item) => {
     const product = item.product || {};
-    const price = product.salePrice != null ? product.salePrice : product.price;
-    const priceStr = price != null ? `$${Number(price).toFixed(0)}` : '';
+    const { price: displayPrice } = getDisplayValues(product);
+    const priceStr = displayPrice != null ? `$${Number(displayPrice).toFixed(0)}` : '';
     return {
       product: product.name || 'Product',
       productImage: (product.image && product.image.url) || '/products/1.png',

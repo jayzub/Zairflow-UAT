@@ -1,4 +1,5 @@
 const BaseProduct = require('../models/products/baseProduct');
+const { getDisplayValues } = require('./variantHelpers');
 
 exports.getRelatedProducts = async (currentProductId, categoryId, storeId = null) => {
     try {
@@ -242,6 +243,18 @@ exports.buildProductFilter = (req) => {
         const types = req.query.productType.split(',').map(s => s.trim()).filter(Boolean);
         if (types.length) filter.productType = { $in: types };
     }
+    const searchTerm = (req.query.search || req.query.q || '').trim();
+    if (searchTerm) {
+        const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const searchRegex = { $regex: escaped, $options: 'i' };
+        filter.$and = filter.$and || [];
+        filter.$and.push({
+            $or: [
+                { name: searchRegex },
+                { description: searchRegex },
+            ],
+        });
+    }
     return filter;
 };
 
@@ -426,9 +439,13 @@ exports.calculatePriceRange = (product) => {
 
 exports.serializeProducts = (productList) => productList.map(product => {
     const priceInfo = exports.calculatePriceRange(product);
+    const display = getDisplayValues(product);
     return {
         ...product,
-        ...priceInfo
+        ...priceInfo,
+        displayPrice: display.price,
+        displaySalePrice: display.salePrice,
+        displayCountInStock: display.countInStock
     };
 });
 

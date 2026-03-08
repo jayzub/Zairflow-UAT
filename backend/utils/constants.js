@@ -5,6 +5,7 @@ exports.FILE_TYPE_MAP = {
     'image/jpg': 'jpg',
     'image/gif': 'gif',
     'image/webp': 'webp',
+    'image/avif': 'avif',
 };
 
 // Pagination and sorting defaults
