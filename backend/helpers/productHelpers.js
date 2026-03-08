@@ -151,22 +151,101 @@ exports.getSimilarProducts = async ({
     }
 };
 
-// Helper to build product filter from request (excludes soft-deleted products)
-exports.buildProductFilter = (req) => {
-    let filter = { isActive: true, isDeleted: { $ne: true } };
+// Base filter for admin product list (store + not deleted); used for counts and list
+function getBaseListFilter(req) {
+    const base = { isDeleted: { $ne: true } };
     if (!req.user.isPlatformAdmin && req.store) {
-        filter.store = req.store._id;
+        base.store = req.store._id;
     }
+    return base;
+}
+
+// Product or any variant has a discount (salePrice > 0 and salePrice < price). Used for filter and count.
+exports.discountExpr = {
+    $or: [
+        { $and: [{ $gt: ['$salePrice', 0] }, { $lt: ['$salePrice', '$price'] }] },
+        {
+            $gt: [
+                {
+                    $size: {
+                        $filter: {
+                            input: { $ifNull: ['$variants', []] },
+                            as: 'v',
+                            cond: {
+                                $and: [
+                                    { $gt: ['$$v.salePrice', 0] },
+                                    { $lt: ['$$v.salePrice', '$$v.price'] }
+                                ]
+                            }
+                        }
+                    }
+                },
+                0
+            ]
+        }
+    ]
+};
+
+// Helper to build product filter from request (excludes soft-deleted products)
+// Supports query.filter: all | published | drafts | discount | featured
+// Supports query.categories (comma-separated IDs) and query.vendor (single ID)
+exports.buildProductFilter = (req) => {
+    const mongoose = require('mongoose');
+    const filter = { ...getBaseListFilter(req) };
+    const filterType = (req.query.filter || 'all').toLowerCase();
+
+    switch (filterType) {
+        case 'published':
+            filter.isActive = true;
+            break;
+        case 'drafts':
+            filter.isActive = false;
+            break;
+        case 'featured':
+            filter.isFeatured = true;
+            break;
+        case 'discount':
+            filter.$expr = exports.discountExpr;
+            break;
+        default:
+            // 'all' or unknown: no extra status filter
+            break;
+    }
+
     if (req.query.categories) {
-        filter.category = { $in: req.query.categories.split(',') };
+        const rawIds = req.query.categories.split(',').map(s => s.trim()).filter(Boolean);
+        const objectIds = rawIds
+            .filter(id => mongoose.Types.ObjectId.isValid(id))
+            .map(id => new mongoose.Types.ObjectId(id));
+        if (objectIds.length) filter.category = { $in: objectIds };
     }
-    if (req.query.minPrice || req.query.maxPrice) {
-        filter.price = {};
-        if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
-        if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
+    if (req.query.vendor) {
+        const vendorId = req.query.vendor.trim();
+        if (mongoose.Types.ObjectId.isValid(vendorId)) filter.vendor = new mongoose.Types.ObjectId(vendorId);
+    }
+    // Price range: match product-level price or any variant price (optional min/max)
+    const minPrice = req.query.minPrice != null && req.query.minPrice !== '' ? parseFloat(req.query.minPrice) : null;
+    const maxPrice = req.query.maxPrice != null && req.query.maxPrice !== '' ? parseFloat(req.query.maxPrice) : null;
+    if (minPrice != null || maxPrice != null) {
+        const priceCond = {};
+        if (minPrice != null) priceCond.$gte = minPrice;
+        if (maxPrice != null) priceCond.$lte = maxPrice;
+        filter.$and = filter.$and || [];
+        filter.$and.push({
+            $or: [
+                { price: priceCond },
+                { variants: { $elemMatch: { price: priceCond } } },
+            ],
+        });
+    }
+    if (req.query.productType) {
+        const types = req.query.productType.split(',').map(s => s.trim()).filter(Boolean);
+        if (types.length) filter.productType = { $in: types };
     }
     return filter;
 };
+
+exports.getBaseListFilter = getBaseListFilter;
 
 // Helper to build aggregation pipeline
 exports.buildAggregationPipeline = (filter, sort, order, skip, limit) => [

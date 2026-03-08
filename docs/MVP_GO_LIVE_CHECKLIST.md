@@ -25,10 +25,10 @@ A short, ordered task list to get Griffin to a safe MVP launch. Work through ite
 
 ## 3. Admin UI
 
-- [ ] **3.1** Products list: implement basic category/vendor filters (query params + backend) or hide non-functional filter dropdowns for MVP.
-- [ ] **3.2** Products list: implement “Export” (CSV/Excel) or remove/disable the button for MVP.
-- [ ] **3.3** Products import: add a “View products” / “Back to products list” CTA after import results.
-- [ ] **3.4** Products import: show **max file size and max rows** in the UI, matching backend limits.
+- [x] **3.1** Products list: implement basic category/vendor filters (query params + backend) or hide non-functional filter dropdowns for MVP.
+- [x] **3.2** Products list: implement “Export” (CSV/Excel) or remove/disable the button for MVP.
+- [x] **3.3** Products import: add a “View products” / “Back to products list” CTA after import results.
+- [x] **3.4** Products import: show **max file size and max rows** in the UI, matching backend limits.
 - [ ] **3.5** Admin sign-up: only expose if registration policy is defined; otherwise restrict to invite/CLI-created admins and hide public sign-up.
 
 ---

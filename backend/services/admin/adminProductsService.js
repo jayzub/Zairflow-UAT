@@ -12,6 +12,7 @@ const { sanitizeOptions } = require('../../helpers/sanitizeOptions');
 const {
   buildAggregationPipeline,
   buildProductFilter,
+  getBaseListFilter,
   convertVariantPrices,
   fetchCategoriesAndVendors,
   fetchProductWithRelated,
@@ -59,29 +60,64 @@ async function listProducts({ req, limit, page, sort, order }) {
   const storeId = req.store?._id;
   const categoryFilter =
     !req.user.isPlatformAdmin && req.store ? { store: storeId, isActive: true } : { isActive: true };
+  const base = getBaseListFilter(req);
+  const { discountExpr } = require('../../helpers/productHelpers');
+  const discountFilter = { ...base, $expr: discountExpr };
 
-  const [productList, productCount, featuredProductsCount, categories] = await Promise.all([
+  const [
+    productList,
+    productCount,
+    allCount,
+    publishedCount,
+    draftsCount,
+    onDiscountCount,
+    featuredCount,
+    categories,
+    vendors,
+    allowedProductTypes,
+  ] = await Promise.all([
     productRepository.aggregate(aggregationPipeline),
     productRepository.count(filter),
-    productRepository.count({ ...filter, isFeatured: true }),
-    // keep this query in repo layer
+    productRepository.count(base),
+    productRepository.count({ ...base, isActive: true }),
+    productRepository.count({ ...base, isActive: false }),
+    productRepository.count(discountFilter),
+    productRepository.count({ ...base, isFeatured: true }),
     require('../../models/category').find(categoryFilter),
+    storeId ? require('../../models/vendor').find({ store: storeId, isActive: true }).select('name _id').lean() : Promise.resolve([]),
+    getAllowedProductTypesForStore(storeId).then(types => types || []),
   ]);
 
   const totalPages = Math.ceil(productCount / limit);
   const serializedProducts = serializeProducts(productList);
+  const currentFilter = (req.query.filter || 'all').toLowerCase();
 
   const result = {
     pageTitle: 'Product List',
     products: serializedProducts,
     categories: categories.map((cat) => cat.toObject()),
+    vendors: vendors || [],
+    allowedProductTypes: Array.isArray(allowedProductTypes) ? allowedProductTypes : [],
     currentPage: page,
     totalPages,
     hasNextPage: page < totalPages,
     hasPrevPage: page > 1,
     productCount,
     limit,
-    featuredProductsCount,
+    featuredProductsCount: featuredCount,
+    filterCounts: {
+      all: allCount,
+      published: publishedCount,
+      drafts: draftsCount,
+      onDiscount: onDiscountCount,
+      featured: featuredCount,
+    },
+    currentFilter: ['all', 'published', 'drafts', 'discount', 'featured'].includes(currentFilter) ? currentFilter : 'all',
+    queryCategories: req.query.categories || '',
+    queryVendor: req.query.vendor || '',
+    queryMinPrice: req.query.minPrice != null && req.query.minPrice !== '' ? String(req.query.minPrice) : '',
+    queryMaxPrice: req.query.maxPrice != null && req.query.maxPrice !== '' ? String(req.query.maxPrice) : '',
+    queryProductType: req.query.productType || '',
     pageRange: getPageRange(page, totalPages),
     api: process.env.API_URL || '/api',
   };

@@ -26,27 +26,30 @@ block content
     .row.g-3.mb-4
       .col-auto
         h2.mb-0 #{pageTitle}
+    - var _base = `/${adminUrl}/products`
+    - var _limit = limit || 10
+    - function _query(f, cats, vend) { var q = 'filter=' + f + '&limit=' + _limit; if (cats) q += '&categories=' + cats; if (vend) q += '&vendor=' + vend; return q; }
     ul.nav.nav-links.mb-3.mb-lg-2.mx-n3
       li.nav-item
-        a.nav-link.active(aria-current='page' href='#')
-          span All 
-          span.text-body-tertiary.fw-semibold (#{productCount})
+        a.nav-link(class=(currentFilter === 'all' ? 'active' : '') href=`${_base}?${_query('all', '', '')}` aria-current=(currentFilter === 'all' ? 'page' : undefined))
+          span All
+          span.text-body-tertiary.fw-semibold (#{filterCounts ? filterCounts.all : productCount})
       li.nav-item
-        a.nav-link(href='#')
-          span Published 
-          span.text-body-tertiary.fw-semibold (#{productCount})
+        a.nav-link(class=(currentFilter === 'published' ? 'active' : '') href=`${_base}?${_query('published', queryCategories, queryVendor)}` aria-current=(currentFilter === 'published' ? 'page' : undefined))
+          span Published
+          span.text-body-tertiary.fw-semibold (#{filterCounts ? filterCounts.published : 0})
       li.nav-item
-        a.nav-link(href='#')
-          span Drafts 
-          span.text-body-tertiary.fw-semibold (17)
+        a.nav-link(class=(currentFilter === 'drafts' ? 'active' : '') href=`${_base}?${_query('drafts', queryCategories, queryVendor)}` aria-current=(currentFilter === 'drafts' ? 'page' : undefined))
+          span Drafts
+          span.text-body-tertiary.fw-semibold (#{filterCounts ? filterCounts.drafts : 0})
       li.nav-item
-        a.nav-link(href='#')
-          span On discount 
-          span.text-body-tertiary.fw-semibold (810)
+        a.nav-link(class=(currentFilter === 'discount' ? 'active' : '') href=`${_base}?${_query('discount', queryCategories, queryVendor)}` aria-current=(currentFilter === 'discount' ? 'page' : undefined))
+          span On discount
+          span.text-body-tertiary.fw-semibold (#{filterCounts ? filterCounts.onDiscount : 0})
       li.nav-item
-        a.nav-link(href='#')
-          span Is featured 
-          span.text-body-tertiary.fw-semibold (#{featuredProductsCount})
+        a.nav-link(class=(currentFilter === 'featured' ? 'active' : '') href=`${_base}?${_query('featured', queryCategories, queryVendor)}` aria-current=(currentFilter === 'featured' ? 'page' : undefined))
+          span Is featured
+          span.text-body-tertiary.fw-semibold (#{filterCounts ? filterCounts.featured : featuredProductsCount})
 
     #products-container
       .mb-4
@@ -55,36 +58,63 @@ block content
           .scrollbar.overflow-hidden-y
             .btn-group.position-static(role='group')
               .btn-group.position-static.text-nowrap
-                button.btn.btn-phoenix-secondary.px-7.flex-shrink-0(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent") 
+                button.btn.btn-phoenix-secondary.px-7.flex-shrink-0(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent")
                   | Category
                   span.fas.fa-angle-down.ms-2
                 ul.dropdown-menu
+                  li
+                    a.dropdown-item(href=`${_base}?${_query(currentFilter, '', queryVendor)}`) All categories
                   if categories && categories.length > 0
-                    each category in categories	
+                    li
+                      hr.dropdown-divider
+                    each category in categories
                       li
-                        a.dropdown-item(href='#') #{category.name}
-                  li
-                    hr.dropdown-divider
-                  li
-                    a.dropdown-item(href='#') Separated link
+                        a.dropdown-item(href=`${_base}?${_query(currentFilter, category._id ? String(category._id) : '', queryVendor)}`) #{category.name}
               .btn-group.position-static.text-nowrap
-                button.btn.btn-sm.btn-phoenix-secondary.px-7.flex-shrink-0(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent") 
+                button.btn.btn-sm.btn-phoenix-secondary.px-7.flex-shrink-0(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent")
                   | Vendor
                   span.fas.fa-angle-down.ms-2
                 ul.dropdown-menu
                   li
-                    a.dropdown-item(href='#') Action
-                  li
-                    a.dropdown-item(href='#') Another action
-                  li
-                    a.dropdown-item(href='#') Something else here
-                  li
-                    hr.dropdown-divider
-                  li
-                    a.dropdown-item(href='#') Separated link
-              button.btn.btn-sm.btn-phoenix-secondary.px-7.flex-shrink-0 More filters
+                    a.dropdown-item(href=`${_base}?${_query(currentFilter, queryCategories, '')}`) All vendors
+                  if vendors && vendors.length > 0
+                    li
+                      hr.dropdown-divider
+                    each vendor in vendors
+                      li
+                        a.dropdown-item(href=`${_base}?${_query(currentFilter, queryCategories, vendor._id ? String(vendor._id) : '')}`) #{vendor.name}
+              .btn-group.position-static.text-nowrap
+                button.btn.btn-sm.btn-phoenix-secondary.px-7.flex-shrink-0(type='button' data-bs-toggle='dropdown' data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent")
+                  | More filters
+                  span.fas.fa-angle-down.ms-2
+                .dropdown-menu.dropdown-menu-end.p-3(style='min-width: 280px')
+                  form#more-filters-form(action=_base method='get')
+                    input(type='hidden' name='filter' value=currentFilter || 'all')
+                    input(type='hidden' name='limit' value=_limit)
+                    if queryCategories
+                      input(type='hidden' name='categories' value=queryCategories)
+                    if queryVendor
+                      input(type='hidden' name='vendor' value=queryVendor)
+                    .mb-3
+                      label.form-label.small Price range
+                      .row.g-2
+                        .col-6
+                          input.form-control.form-control-sm(type='number' name='minPrice' placeholder='Min' min='0' step='0.01' value=queryMinPrice || '')
+                        .col-6
+                          input.form-control.form-control-sm(type='number' name='maxPrice' placeholder='Max' min='0' step='0.01' value=queryMaxPrice || '')
+                    .mb-3
+                      label.form-label.small Product type
+                      select.form-select.form-select-sm(name='productType')
+                        option(value='' selected=!queryProductType) All types
+                        if allowedProductTypes && allowedProductTypes.length
+                          each pt in allowedProductTypes
+                            - var ptVal = typeof pt === 'string' ? pt : (pt.value || pt.name || pt)
+                            option(value=ptVal selected=queryProductType === ptVal) #{typeof pt === 'string' ? pt : (pt.label || pt.name || pt.value || pt)}
+                    .d-flex.justify-content-between.gap-2
+                      a.btn.btn-phoenix-secondary.btn-sm(href=`${_base}?${_query(currentFilter, queryCategories, queryVendor)}`) Clear
+                      button.btn.btn-phoenix-primary.btn-sm(type='submit') Apply
           .ms-xxl-auto
-            button.btn.btn-link.text-body.me-4.px-0
+            button.btn.btn-link.text-body.me-4.px-0.disabled(disabled type='button' title='Export not available for MVP')
               span.fa-solid.fa-file-export.fs-9.me-2
               | Export
             a.btn.btn-primary#addBtn(href=`/${adminUrl}/products/add`)
@@ -138,11 +168,12 @@ block content
           //   | Debug Test
 
         // Pagination bar
+        - function _pageUrl(p) { var q = 'filter=' + (currentFilter || 'all') + '&limit=' + _limit + '&page=' + p; if (queryCategories) q += '&categories=' + queryCategories; if (queryVendor) q += '&vendor=' + queryVendor; if (typeof queryMinPrice === 'string' && queryMinPrice) q += '&minPrice=' + encodeURIComponent(queryMinPrice); if (typeof queryMaxPrice === 'string' && queryMaxPrice) q += '&maxPrice=' + encodeURIComponent(queryMaxPrice); if (typeof queryProductType === 'string' && queryProductType) q += '&productType=' + encodeURIComponent(queryProductType); return _base + '?' + q; }
         if totalPages > 1
           nav.mt-4(aria-label='Product pagination')
             ul.pagination.justify-content-center
               li.page-item(class=hasPrevPage ? '' : 'disabled')
-                a.page-link(href=`?page=${currentPage - 1}&limit=${limit}` aria-label='Previous')
+                a.page-link(href=hasPrevPage ? _pageUrl(currentPage - 1) : '#' aria-label='Previous')
                   span(aria-hidden='true') &laquo;
               each pageNum in pageRange
                 if pageNum === '...'
@@ -150,9 +181,9 @@ block content
                     span.page-link &hellip;
                 else
                   li.page-item(class=pageNum === currentPage ? 'active' : '')
-                    a.page-link(href=`?page=${pageNum}&limit=${limit}`) #{pageNum}
+                    a.page-link(href=_pageUrl(pageNum)) #{pageNum}
               li.page-item(class=hasNextPage ? '' : 'disabled')
-                a.page-link(href=`?page=${currentPage + 1}&limit=${limit}` aria-label='Next')
+                a.page-link(href=hasNextPage ? _pageUrl(currentPage + 1) : '#' aria-label='Next')
                   span(aria-hidden='true') &raquo;
 
 append scripts
@@ -274,15 +305,11 @@ append scripts
         this.showLoading();
         
         try {
-          // Build the URL with page parameter
-          const baseUrl = window.location.pathname;
-          const url = new URL(baseUrl, window.location.origin);
-          
-          // Add page parameter for next page
+          // Build the URL preserving filter, limit, categories, vendor; set page to next
+          const url = new URL(window.location.pathname, window.location.origin);
+          if (window.location.search) url.search = window.location.search;
           const nextPage = this.currentPage + 1;
           url.searchParams.set('page', nextPage);
-          
-          // Add timestamp to prevent caching
           url.searchParams.set('_t', Date.now());
           
           console.log('Loading more products from:', url.toString());

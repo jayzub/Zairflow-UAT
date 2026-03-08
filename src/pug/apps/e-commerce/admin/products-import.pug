@@ -28,8 +28,8 @@ block content
               required
             )
             .form-text Upload a CSV file with product data. First row must be headers.
-            .form-text.text-body-tertiary.mt-1
-              | Max file size: #{typeof importMaxSize !== 'undefined' ? importMaxSize : '5MB'}. Max data rows: #{typeof importMaxRows !== 'undefined' ? importMaxRows : '500'}.
+            .form-text.text-body-tertiary.mt-1.fw-semibold
+              | Limits: max file size #{typeof importMaxSize !== 'undefined' ? importMaxSize : '5MB'}, max data rows #{typeof importMaxRows !== 'undefined' ? importMaxRows : '500'}.
           .mb-3
             a.btn.btn-link.px-0(href=`/${adminUrl || 'admin'}/products/import/template` download)
               span.fas.fa-download.me-2
@@ -43,6 +43,9 @@ block content
         h5.mb-0 Import results
       .card-body
         #resultsSummary.mb-4
+        a.btn.btn-phoenix-primary.mb-4(href=`/${adminUrl || 'admin'}/products`)
+          span.fas.fa-list.me-2
+          | View products
         #resultsErrors.d-none
           .d-flex.justify-content-between.align-items-center.mb-2
             h6.text-danger.mb-0 Failed rows

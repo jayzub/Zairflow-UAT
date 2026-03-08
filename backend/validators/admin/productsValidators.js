@@ -37,6 +37,12 @@ const validateProductsListQuery = [
   query('limit').optional().isInt({ min: 1, max: 200 }).withMessage('limit must be between 1 and 200'),
   query('sort').optional().isString(),
   query('order').optional().isIn(['asc', 'desc']).withMessage('order must be asc or desc'),
+  query('filter').optional().isIn(['all', 'published', 'drafts', 'discount', 'featured']).withMessage('filter must be all, published, drafts, discount, or featured'),
+  query('categories').optional().isString(),
+  query('vendor').optional().isMongoId().withMessage('vendor must be a valid ID'),
+  query('minPrice').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('minPrice must be a non-negative number'),
+  query('maxPrice').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('maxPrice must be a non-negative number'),
+  query('productType').optional().isString(),
   validateRequest,
 ];
 
