@@ -8,6 +8,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const mongoSanitize = require('express-mongo-sanitize');
+const compression = require('compression');
 const createError = require('http-errors');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -49,6 +50,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 app.use(morgan('tiny'));
+app.use(compression());
 app.use(mongoSanitize());
 // Support _method in query (for multipart POST) or body (for urlencoded)
 app.use(methodOverride(function (req) {

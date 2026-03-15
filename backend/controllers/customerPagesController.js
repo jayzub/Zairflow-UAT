@@ -206,7 +206,7 @@ const renderCustomerProfile = asyncHandler(async (req, res) => {
     ? new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : '';
 
-  return res.render('landing/profile', {
+  return res.render('landing/customer/profile', {
     store,
     customer,
     isCustomerStorefront: true,
