@@ -1,102 +1,87 @@
 extends ../../../layouts/LayoutTheme
 
-block wrapperContent
-  .container-fluid.px-0
-    .row.g-0
-      .col-12
-        .bg-body-emphasis.px-4.py-3
-          .row.align-items-center
-            .col
-              h4.mb-0 Admin Index
-            .col-auto
-              button.btn.btn-outline-danger.btn-sm#logoutBtn
-                i.fas.fa-sign-out-alt.me-2
-                | Logout
-    
-    .row.g-0
-      .col-12
-        .p-4
-          .row.g-4
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-primary.mb-2
-                    i.fas.fa-shopping-cart
-                  h5.card-title Products
-                  p.card-text.text-muted Manage your products
-                  a.btn.btn-primary.btn-sm(href='/admin/products') View Products
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-success.mb-2
-                    i.fas.fa-users
-                  h5.card-title Customers
-                  p.card-text.text-muted View customer information
-                  a.btn.btn-success.btn-sm(href='/admin/customers') View Customers
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-warning.mb-2
-                    i.fas.fa-shopping-bag
-                  h5.card-title Orders
-                  p.card-text.text-muted Manage orders
-                  a.btn.btn-warning.btn-sm(href='/admin/orders') View Orders
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-info.mb-2
-                    i.fas.fa-store
-                  h5.card-title Store
-                  p.card-text.text-muted Manage your store
-                  a.btn.btn-info.btn-sm(href='/admin/stores/list') View Store
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-danger.mb-2
-                    i.fas.fa-tags
-                  h5.card-title Categories
-                  p.card-text.text-muted Manage product categories
-                  a.btn.btn-danger.btn-sm(href='/admin/categories') View Categories
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.mb-2(style='color: #20c997;')
-                    i.fas.fa-truck
-                  h5.card-title Vendors
-                  p.card-text.text-muted Manage suppliers and vendors
-                  a.btn.btn-sm(href='/admin/vendors' style='background-color: #20c997; color: white;') View Vendors
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-secondary.mb-2
-                    i.fas.fa-chart-line
-                  h5.card-title Admin Dashboard
-                  p.card-text.text-muted View analytics and statistics
-                  a.btn.btn-secondary.btn-sm(href='/admin/dashboard') View Dashboard
-            
-            .col-md-6.col-lg-3
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-purple.mb-2(style='color: #6f42c1;')
-                    i.fas.fa-puzzle-piece
-                  h5.card-title Custom Product Types
-                  p.card-text.text-muted Manage custom product types
-                  a.btn.btn-sm(href='/admin/custom-product-types' style='background-color: #6f42c1; color: white;') View Custom Product Types
-            
-            .col-md-6.col-lg-3#createAdminCard
-              .card.border-0.shadow-sm
-                .card-body.text-center
-                  .fs-1.text-warning.mb-2
-                    i.fas.fa-user-plus
-                  h5.card-title Admins
-                  p.card-text.text-muted Manage store administrators
-                  a.btn.btn-warning.btn-sm(href='/admin/create-admin') View Admins
+block content
+  .mb-9
+    .row.align-items-center.mb-4
+      .col
+        h2.mb-0 Admin
+      .col-auto
+        a.btn.btn-phoenix-secondary.btn-sm(href='/admin/dashboard')
+          i.fas.fa-chart-line.me-2
+          | Dashboard
+    .row.g-4
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-primary.mb-2
+              i.fas.fa-shopping-cart
+            h5.card-title Products
+            p.card-text.text-muted Manage your products
+            a.btn.btn-primary.btn-sm(href='/admin/products') View Products
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-success.mb-2
+              i.fas.fa-users
+            h5.card-title Customers
+            p.card-text.text-muted View customer information
+            a.btn.btn-success.btn-sm(href='/admin/customers') View Customers
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-warning.mb-2
+              i.fas.fa-shopping-bag
+            h5.card-title Orders
+            p.card-text.text-muted Manage orders
+            a.btn.btn-warning.btn-sm(href='/admin/orders') View Orders
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-info.mb-2
+              i.fas.fa-store
+            h5.card-title Store
+            p.card-text.text-muted Manage your store
+            a.btn.btn-info.btn-sm(href='/admin/stores/list') View Store
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-danger.mb-2
+              i.fas.fa-tags
+            h5.card-title Categories
+            p.card-text.text-muted Manage product categories
+            a.btn.btn-danger.btn-sm(href='/admin/categories') View Categories
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.mb-2(style='color: #20c997;')
+              i.fas.fa-truck
+            h5.card-title Vendors
+            p.card-text.text-muted Manage suppliers and vendors
+            a.btn.btn-sm(href='/admin/vendors' style='background-color: #20c997; color: white;') View Vendors
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-secondary.mb-2
+              i.fas.fa-chart-line
+            h5.card-title Admin Dashboard
+            p.card-text.text-muted View analytics and statistics
+            a.btn.btn-secondary.btn-sm(href='/admin/dashboard') View Dashboard
+      .col-md-6.col-lg-3
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-purple.mb-2(style='color: #6f42c1;')
+              i.fas.fa-puzzle-piece
+            h5.card-title Custom Product Types
+            p.card-text.text-muted Manage custom product types
+            a.btn.btn-sm(href='/admin/custom-product-types' style='background-color: #6f42c1; color: white;') View Custom Product Types
+      .col-md-6.col-lg-3#createAdminCard
+        .card.border-0.shadow-sm
+          .card-body.text-center
+            .fs-1.text-warning.mb-2
+              i.fas.fa-user-plus
+            h5.card-title Admins
+            p.card-text.text-muted Manage store administrators
+            a.btn.btn-warning.btn-sm(href='/admin/create-admin') View Admins
 
 block append scripts
   script.
@@ -167,23 +152,5 @@ block append scripts
         checkUserStores();
         checkUserPermissions();
       })();
-
-      // Handle logout: clear server cookie then all admin client storage
-      document.getElementById('logoutBtn').addEventListener('click', function() {
-        function clearAdminStorage() {
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminUser');
-          localStorage.removeItem('userEmail');
-          localStorage.removeItem('userRole');
-        }
-        fetch('/admin/logout', { method: 'POST', credentials: 'include' })
-          .then(function() {
-            clearAdminStorage();
-            window.location.href = '/admin/auth/sign-in';
-          })
-          .catch(function() {
-            clearAdminStorage();
-            window.location.href = '/admin/auth/sign-in';
-          });
-      });
+      // Logout is handled by the navbar Profile dropdown (Sign out); LayoutTheme has a global listener for #signOutBtn.
     }); 

@@ -644,6 +644,13 @@ exports.mergeImages = (existingImages, newFiles) => {
     return [...(existingImages || []), ...newImages];
 };
 
+// Map request "status" (draft | published) to schema field isActive for products
+function statusToIsActive(body) {
+    if (body.isActive !== undefined && typeof body.isActive === 'boolean') return body.isActive;
+    const status = (body.status || 'draft').toLowerCase();
+    return status === 'published' || status === 'publish';
+}
+
 // Helper to prepare update data
 exports.prepareUpdateData = (body, parsed, images, price, salePrice) => {
     return {
@@ -658,7 +665,7 @@ exports.prepareUpdateData = (body, parsed, images, price, salePrice) => {
         price: price,
         salePrice: salePrice,
         countInStock: parseInt(body.countInStock) || 0,
-        status: body.status || 'draft',
+        isActive: statusToIsActive(body),
         isFeatured: body.isFeatured === 'true' || body.isFeatured === true
     };
 };

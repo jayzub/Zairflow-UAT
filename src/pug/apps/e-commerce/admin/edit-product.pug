@@ -611,8 +611,24 @@ append scripts
       });
 
 
-      // Form submission handler
+      // Action buttons: Discard, Save draft, Publish/Update
       const form = document.getElementById('productForm');
+      const discardBtn = document.getElementById('discardBtn');
+      const saveDraftBtn = document.getElementById('saveDraftBtn');
+      const publishBtn = document.getElementById('publishBtn');
+
+      discardBtn?.addEventListener('click', function() {
+        if (confirm('Discard changes and return to the products list?')) {
+          window.location.href = '/admin/products';
+        }
+      });
+
+      saveDraftBtn?.addEventListener('click', async function() {
+        const formData = new FormData(form);
+        formData.append('status', 'draft');
+        await submitForm(formData);
+      });
+
       form?.addEventListener('submit', async function(e) {
         e.preventDefault();
         console.log('Form submission started');
@@ -653,17 +669,23 @@ append scripts
         }
 
         const formData = new FormData(this);
+        formData.append('status', 'published');
         await submitForm(formData);
       });
 
-      // Form submission helper function
+      // Form submission helper function (formData should already have status: 'draft' or 'published')
       async function submitForm(formData) {
+        const status = formData.get('status') || (productData.isActive ? 'published' : 'draft');
+        const isPublish = status === 'published' || status === 'publish';
+        const activeBtn = isPublish ? publishBtn : saveDraftBtn;
+        const otherBtn = isPublish ? saveDraftBtn : publishBtn;
+
         try {
-          const updateBtn = document.querySelector('button[type="submit"]');
-          const originalText = updateBtn.innerHTML;
-          
-          updateBtn.disabled = true;
-          updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+          if (activeBtn) {
+            activeBtn.disabled = true;
+            activeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + (isPublish ? 'Updating...' : 'Saving draft...');
+          }
+          if (otherBtn) otherBtn.disabled = true;
 
           const cleanedFormData = new FormData();
 
@@ -688,6 +710,7 @@ append scripts
           const hasVariants = document.getElementById('hasVariantsYes')?.checked === true;
           cleanedFormData.append('price', (hasVariants || !productPriceVal || productPriceVal.toString().trim() === '') ? '0' : productPriceVal);
           cleanedFormData.append('productType', formData.get('productType'));
+          cleanedFormData.append('status', status);
 
           const productCountInStockVal = formData.get('countInStock');
           cleanedFormData.append('countInStock', (hasVariants || productCountInStockVal === null || productCountInStockVal.toString().trim() === '') ? '0' : productCountInStockVal.toString().trim());
@@ -837,9 +860,14 @@ append scripts
           console.error('Error details:', error);
           alert('Error updating product: ' + error.message);
         } finally {
-          const updateBtn = document.querySelector('button[type="submit"]');
-          updateBtn.disabled = false;
-          updateBtn.innerHTML = 'Update Product';
+          if (saveDraftBtn) {
+            saveDraftBtn.disabled = false;
+            saveDraftBtn.innerHTML = 'Save draft';
+          }
+          if (publishBtn) {
+            publishBtn.disabled = false;
+            publishBtn.innerHTML = productData.isActive ? 'Update product' : 'Publish product';
+          }
         }
       }
 
@@ -898,11 +926,21 @@ block content
   form.mb-9#productForm(action=`/admin/products/${product._id}?_method=PUT` method="POST" enctype="multipart/form-data")
     .row.g-3.flex-between-end.mb-5
       .col-auto
-        h2.mb-2 #{pageTitle}
+        h2.mb-2.d-flex.align-items-center.gap-2
+          | #{pageTitle}
+          if product.isActive
+            span.badge.badge-phoenix.badge-phoenix-success.fs-8 Published
+          else
+            span.badge.badge-phoenix.badge-phoenix-warning.fs-8 Draft
         h5.text-body-tertiary.fw-semibold Update Product
       .col-auto
-        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' onclick="window.location.href='/admin/products/'") Cancel
-        button.btn.btn-primary.mb-2.mb-sm-0(type='submit') Update Product
+        button.btn.btn-phoenix-secondary.me-2.mb-2.mb-sm-0(type='button' id='discardBtn') Discard
+        button.btn.btn-phoenix-primary.me-2.mb-2.mb-sm-0(type='button' id='saveDraftBtn') Save draft
+        button.btn.btn-primary.mb-2.mb-sm-0(type='submit' id='publishBtn')
+          if product.isActive
+            | Update product
+          else
+            | Publish product
     .row.g-5
       .col-12.col-xl-8
         +EditProductDescription({ productTypes, product })

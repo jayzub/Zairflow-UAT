@@ -1,0 +1,273 @@
+extends ../../../layouts/LayoutTheme
+include ../../../mixins/dashboard/common
+
+block content
+  .mb-9
+    nav.mb-3(aria-label='breadcrumb')
+      ol.breadcrumb.mb-0
+        li.breadcrumb-item
+          a(href='/admin') Dashboard
+        li.breadcrumb-item.active(aria-current='page') Profile
+    .row.align-items-center.justify-content-between.g-3.mb-4
+      .col-auto
+        h2.mb-0 Profile
+      .col-auto
+        button.btn.btn-phoenix-primary(type='button' data-action='change-password')
+          span.fas.fa-key.me-2
+          | Change password
+    .row.g-3.mb-6
+      .col-12.col-lg-8
+        .card.h-100
+          .card-body
+            .border-bottom.border-dashed.pb-4
+              .row.align-items-center.g-3.g-sm-5.text-center.text-sm-start
+                .col-12.col-sm-auto
+                  .avatar.avatar-5xl
+                    span.avatar-name.rounded-circle.bg-primary-subtle.text-primary.fs-4#adminProfileInitial A
+                .col-12.col-sm-auto.flex-1
+                  h3#adminProfileName.mb-1 —
+                  p.text-body-secondary.mb-0
+                    span#adminProfileEmail —
+                  p.text-body-tertiary.small.mb-0
+                    span#adminProfileRole —
+                    span#adminProfileJoined.ms-1
+            .d-flex.flex-between-center.pt-4
+              .text-center
+                h6.mb-2.text-body-secondary Role
+                h4.fs-7.text-body-highlight.mb-0#adminProfileRoleStat —
+              .text-center
+                h6.mb-2.text-body-secondary Member since
+                h4.fs-7.text-body-highlight.mb-0#adminProfileJoinedStat —
+      .col-12.col-lg-4
+        .card.h-100(data-admin-contact-card)
+          .card-body
+            .border-bottom.border-dashed
+              .d-flex.align-items-center.justify-content-between.flex-wrap.gap-2
+                h4.mb-3.mb-0 Contact
+            .pt-4.mb-4
+              .row.flex-between-center.mb-2
+                .col-auto
+                  h5.text-body-highlight.mb-0 Email
+                .col-auto
+                  a.lh-1#adminContactEmail(href='#') —
+            .border-top.border-dashed.pt-4
+              .row.flex-between-center
+                .col-auto
+                  h5.text-body-highlight.mb-0 Phone
+                .col-auto
+                  span#adminContactPhone.text-body-secondary —
+    div
+      .scrollbar
+        ul#adminProfileTab.nav.nav-underline.fs-9.flex-nowrap.mb-3.pb-1(role='tablist')
+          li.nav-item.me-3
+            a#personal-info-tab.nav-link.text-nowrap.active(data-bs-toggle='tab' href='#tab-admin-personal-info' role='tab' aria-controls='tab-admin-personal-info' aria-selected='true')
+              span.fas.fa-user.me-2
+              | Personal info
+      #adminProfileTabContent.tab-content
+        #tab-admin-personal-info.tab-pane.fade.show.active(role='tabpanel' aria-labelledby='personal-info-tab')
+          form#adminProfileForm
+            .row.gx-3.gy-4.mb-5
+              .col-12.col-lg-6
+                label.form-label.text-body-highlight.fs-8.ps-0(for='adminFullName') Full name
+                input#adminFullName.form-control(type='text' name='name' placeholder='Full name')
+              .col-12.col-lg-6
+                label.form-label.text-body-highlight.fs-8.ps-0(for='adminEmail') Email
+                input#adminEmail.form-control(type='email' name='email' placeholder='Email' readonly)
+              .col-12.col-lg-6
+                label.form-label.text-body-highlight.fs-8.ps-0(for='adminPhone') Phone
+                input#adminPhone.form-control(type='text' name='phone' placeholder='+1234567890')
+              .col-12.col-lg-6
+                label.form-label.text-body-highlight.fs-8.ps-0(for='adminPosition') Position
+                input#adminPosition.form-control(type='text' name='position' placeholder='Position')
+              .col-12.col-lg-6
+                label.form-label.text-body-highlight.fs-8.ps-0(for='adminDepartment') Department
+                input#adminDepartment.form-control(type='text' name='department' placeholder='Department')
+            .text-end
+              button.btn.btn-primary.px-7(type='submit') Save changes
+
+    //- Change password modal
+    #changePasswordModal.modal.fade(tabindex='-1' aria-labelledby='changePasswordModalLabel' aria-hidden='true')
+      .modal-dialog.modal-dialog-centered
+        .modal-content
+          .modal-header
+            h5#changePasswordModalLabel.modal-title Change password
+            button.btn.btn-close.p-1(type='button' data-bs-dismiss='modal' aria-label='Close')
+          .modal-body
+            form#changePasswordForm
+              .mb-3
+                label.form-label(for='currentPassword') Current password
+                .form-icon-container(data-password)
+                  input#currentPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Current password' data-password-input required)
+                  span.fas.fa-key.text-body.fs-9.form-icon
+                  button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                    span.uil.uil-eye.show
+                    span.uil.uil-eye-slash.hide
+              .mb-3
+                label.form-label(for='newPasswordChange') New password
+                .form-icon-container(data-password)
+                  input#newPasswordChange.form-control.form-icon-input.pe-6(type='password' placeholder='New password' data-password-input required minlength='6')
+                  span.fas.fa-key.text-body.fs-9.form-icon
+                  button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                    span.uil.uil-eye.show
+                    span.uil.uil-eye-slash.hide
+              .mb-3
+                label.form-label(for='confirmPasswordChange') Confirm new password
+                .form-icon-container(data-password)
+                  input#confirmPasswordChange.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm new password' data-password-input required minlength='6')
+                  span.fas.fa-key.text-body.fs-9.form-icon
+                  button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                    span.uil.uil-eye.show
+                    span.uil.uil-eye-slash.hide
+              .alert.alert-danger.d-none#changePasswordError(role='alert')
+              .alert.alert-success.d-none#changePasswordSuccess(role='alert')
+          .modal-footer
+            button.btn.btn-phoenix-secondary(type='button' data-bs-dismiss='modal') Cancel
+            button.btn.btn-phoenix-primary(type='submit' form='changePasswordForm') Change password
+
+append scripts
+  script.
+    (function() {
+      function ensureCredentials(opts) {
+        opts = opts || {};
+        opts.credentials = 'include';
+        opts.headers = opts.headers || {};
+        opts.headers['Accept'] = 'application/json';
+        opts.headers['X-Requested-With'] = 'XMLHttpRequest';
+        opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
+        return opts;
+      }
+
+      function formatRole(role) {
+        if (!role) return '—';
+        return String(role).replace(/_/g, ' ');
+      }
+
+      function setProfileFromUser(user) {
+        if (!user) return;
+        var name = user.name || user.firstName && user.lastName ? (user.firstName + ' ' + user.lastName).trim() : user.email || '—';
+        var email = user.email || '—';
+        var role = formatRole(user.role);
+        var joined = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—';
+        var initial = name !== '—' && name.charAt(0) ? name.charAt(0).toUpperCase() : 'A';
+
+        document.getElementById('adminProfileInitial').textContent = initial;
+        document.getElementById('adminProfileName').textContent = name;
+        document.getElementById('adminProfileEmail').textContent = email;
+        document.getElementById('adminProfileRole').textContent = role;
+        document.getElementById('adminProfileJoined').textContent = 'Joined ' + joined;
+        document.getElementById('adminProfileRoleStat').textContent = role;
+        document.getElementById('adminProfileJoinedStat').textContent = joined;
+        document.getElementById('adminContactEmail').textContent = email;
+        document.getElementById('adminContactEmail').setAttribute('href', 'mailto:' + email);
+        document.getElementById('adminContactPhone').textContent = user.phone || '—';
+
+        document.getElementById('adminFullName').value = name;
+        document.getElementById('adminEmail').value = email;
+        document.getElementById('adminPhone').value = user.phone || '';
+        document.getElementById('adminPosition').value = user.position || '';
+        document.getElementById('adminDepartment').value = user.department || '';
+      }
+
+      // Load profile
+      fetch('/admin/me', ensureCredentials())
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('Unauthorized')); })
+        .then(function(res) {
+          if (res && res.data) setProfileFromUser(res.data);
+        })
+        .catch(function() {
+          window.location.href = '/admin/auth/sign-in';
+        });
+
+      // Profile form submit
+      var profileForm = document.getElementById('adminProfileForm');
+      if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var payload = {
+            name: (document.getElementById('adminFullName') || {}).value || '',
+            phone: (document.getElementById('adminPhone') || {}).value || '',
+            position: (document.getElementById('adminPosition') || {}).value || '',
+            department: (document.getElementById('adminDepartment') || {}).value || ''
+          };
+          var btn = profileForm.querySelector('button[type="submit"]');
+          if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+          fetch('/admin/me', ensureCredentials({ method: 'PUT', body: JSON.stringify(payload) }))
+            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            .then(function(result) {
+              if (result.ok && result.data && result.data.data) setProfileFromUser(result.data.data);
+              if (result.ok) alert('Profile updated successfully.');
+              else alert(result.data && result.data.message ? result.data.message : 'Failed to update profile.');
+            })
+            .catch(function() { alert('Failed to update profile.'); })
+            .finally(function() {
+              if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
+            });
+        });
+      }
+
+      // Change password button -> open modal
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-action="change-password"]')) {
+          var modalEl = document.getElementById('changePasswordModal');
+          var modal = modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal ? new bootstrap.Modal(modalEl) : null;
+          if (modal) modal.show();
+          var errEl = document.getElementById('changePasswordError');
+          var okEl = document.getElementById('changePasswordSuccess');
+          if (errEl) { errEl.classList.add('d-none'); errEl.textContent = ''; }
+          if (okEl) { okEl.classList.add('d-none'); okEl.textContent = ''; }
+          var form = document.getElementById('changePasswordForm');
+          if (form) form.reset();
+        }
+      });
+
+      // Change password form submit
+      var changePasswordForm = document.getElementById('changePasswordForm');
+      if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var currentPassword = (document.getElementById('currentPassword') || {}).value || '';
+          var newPassword = (document.getElementById('newPasswordChange') || {}).value || '';
+          var confirmPassword = (document.getElementById('confirmPasswordChange') || {}).value || '';
+          var errEl = document.getElementById('changePasswordError');
+          var okEl = document.getElementById('changePasswordSuccess');
+          if (errEl) { errEl.classList.add('d-none'); errEl.textContent = ''; }
+          if (okEl) okEl.classList.add('d-none');
+          if (newPassword !== confirmPassword) {
+            if (errEl) { errEl.textContent = 'New password and confirmation do not match.'; errEl.classList.remove('d-none'); }
+            return;
+          }
+          if (newPassword.length < 6) {
+            if (errEl) { errEl.textContent = 'New password must be at least 6 characters.'; errEl.classList.remove('d-none'); }
+            return;
+          }
+          var btn = changePasswordForm.querySelector('button[type="submit"]');
+          if (btn) btn.disabled = true;
+          fetch('/admin/change-password', ensureCredentials({
+            method: 'POST',
+            body: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword })
+          }))
+            .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+            .then(function(result) {
+              if (result.ok) {
+                if (okEl) { okEl.textContent = result.data && result.data.message ? result.data.message : 'Password changed successfully.'; okEl.classList.remove('d-none'); }
+                if (errEl) errEl.classList.add('d-none');
+                changePasswordForm.reset();
+                setTimeout(function() {
+                  var modalEl = document.getElementById('changePasswordModal');
+                  var modal = modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal ? bootstrap.Modal.getInstance(modalEl) : null;
+                  if (modal) modal.hide();
+                }, 1500);
+              } else {
+                if (errEl) { errEl.textContent = (result.data && result.data.message) || 'Failed to change password.'; errEl.classList.remove('d-none'); }
+                if (okEl) okEl.classList.add('d-none');
+              }
+            })
+            .catch(function() {
+              if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.classList.remove('d-none'); }
+            })
+            .finally(function() {
+              if (btn) btn.disabled = false;
+            });
+        });
+      }
+    })();

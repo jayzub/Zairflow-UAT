@@ -19,4 +19,9 @@ router.get('/dashboard', requireAuth, requirePermission('analytics:read'), check
 // Admin dashboard API endpoint for statistics
 router.get('/dashboard/stats', requireAuth, requirePermission('analytics:read'), checkUserStores, extractStore, requireStoreAccess('any'), getDashboardStats);
 
+// Admin profile page (any authenticated admin)
+router.get('/profile', requireAuth, (req, res) => {
+  res.render('admin/profile');
+});
+
 module.exports = router; 

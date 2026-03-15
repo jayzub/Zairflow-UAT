@@ -28,57 +28,50 @@ append styles
   link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.css`, rel='stylesheet')
   link(href=`${CWD}vendors/leaflet.markercluster/MarkerCluster.Default.css`, rel='stylesheet')
 
-block wrapperContent
-  .container-fluid.px-0
-    .row.g-0
-      .col-12
-        .bg-body-emphasis.px-4.py-3
-          .row.align-items-center
-            .col
-              h4.mb-0 Admin Dashboard
-            .col-auto
-              a.btn.btn-outline-primary.btn-sm(href='/admin/')
-                i.fas.fa-arrow-left.me-2
-                | Back to Admin Index
-    
-    .row.g-0
-      .col-12
-        .p-4
-          .pb-5
-            .row.g-4
-              .col-12.col-xxl-6
-                .mb-8
-                  h2.mb-2 Ecommerce Dashboard
-                  h5.text-body-tertiary.fw-semibold Here's what's going on at your business right now
-                +Stats
+block content
+  .mb-9
+    .row.align-items-center.mb-4
+      .col
+        h2.mb-0 Admin Dashboard
+      .col-auto
+        a.btn.btn-outline-primary.btn-sm(href='/admin/')
+          i.fas.fa-arrow-left.me-2
+          | Back to Admin Index
+    .pb-5
+      .row.g-4
+        .col-12.col-xxl-6
+          .mb-8
+            h2.mb-2 Ecommerce Dashboard
+            h5.text-body-tertiary.fw-semibold Here's what's going on at your business right now
+          +Stats
 
-                hr.bg-body-secondary.mb-6.mt-4
-                +TotalSalesChart
-              .col-12.col-xxl-6
-                .row.g-3
-                  .col-12.col-md-6
-                    +TotalOrders
-                  .col-12.col-md-6
-                    +NewCustomers
-                  .col-12.col-md-6
-                    +TopCoupons
-                  .col-12.col-md-6
-                    +PayingCustomer
-            .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-7.border-y
-              +LatestReviews
-            .row.gx-6
-              .col-12.col-xl-6
-                +TopRegionsTable
-              .col-12.col-xl-6
-                .mx-n4.mx-lg-n6.ms-xl-0.h-100
-                  .h-100.w-100
-                    #map.h-100.bg-body-emphasis(style="min-height: 300px;")
-            .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-6.pb-9.border-top
-              .row.g-6
-                .col-12.col-xl-6
-                  +ProjectionVsActual
-                .col-12.col-xl-6
-                  +ReturningCustomerRate
+          hr.bg-body-secondary.mb-6.mt-4
+          +TotalSalesChart
+        .col-12.col-xxl-6
+          .row.g-3
+            .col-12.col-md-6
+              +TotalOrders
+            .col-12.col-md-6
+              +NewCustomers
+            .col-12.col-md-6
+              +TopCoupons
+            .col-12.col-md-6
+              +PayingCustomer
+      .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-7.border-y
+        +LatestReviews
+      .row.gx-6
+        .col-12.col-xl-6
+          +TopRegionsTable
+        .col-12.col-xl-6
+          .mx-n4.mx-lg-n6.ms-xl-0.h-100
+            .h-100.w-100
+              #map.h-100.bg-body-emphasis(style="min-height: 300px;")
+      .mx-n4.px-4.mx-lg-n6.px-lg-6.bg-body-emphasis.pt-6.pb-9.border-top
+        .row.g-6
+          .col-12.col-xl-6
+            +ProjectionVsActual
+          .col-12.col-xl-6
+            +ReturningCustomerRate
 
 block append scripts
   script.

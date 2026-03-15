@@ -419,6 +419,11 @@ async function createProduct({ req }) {
   productData.images = createImages;
   productData.image = createImages[0] || {};
 
+  // Map status (draft | published) to isActive: draft => false, published => true
+  const status = (body.status || 'draft').toLowerCase();
+  productData.isActive = status === 'published' || status === 'publish';
+  if (body.isActive !== undefined && typeof body.isActive === 'boolean') productData.isActive = body.isActive;
+
   // Preserve existing controller behavior (init nested fields)
   initProductFields(productData);
 

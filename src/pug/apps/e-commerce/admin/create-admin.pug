@@ -1,141 +1,119 @@
 extends ../../../layouts/LayoutTheme
-include ../../../layouts/LayoutSimpleAuth
 
-block wrapperContent
-  +LayoutBasic({logo:false, columnClass:'col-xl-8 col-xxl-6'})
-    .text-center.mb-6.mx-auto
-      img.mb-7.d-dark-none(src=`${CWD}assets/img/spot-illustrations/1.png` alt='phoenix')
-      img.mb-7.d-light-none(src=`${CWD}assets/img/spot-illustrations/dark_1.png` alt='phoenix')
-      .mb-6
-        h4.text-body-highlight Create Store Admin
-        p.text-body-tertiary Add a new administrator to your store
-      
-      .position-relative
-        hr.bg-body-secondary.mt-5.mb-4
-        .divider-content-center.bg-body-emphasis Admin Information
-      
-      form#createAdminForm
-        //- Basic Admin Information
-        .mb-4
-          h5.text-body-highlight.mb-3 Basic Information
-          
-          .row.g-3.mb-3
-            .col-sm-6
-              label.form-label(for='firstName') First Name *
-              input#firstName.form-control(type='text' placeholder='John' required)
-            .col-sm-6
-              label.form-label(for='lastName') Last Name *
-              input#lastName.form-control(type='text' placeholder='Doe' required)
-          
-          .mb-3
-            label.form-label(for='email') Email Address *
-            .form-icon-container
-              input#email.form-control.form-icon-input(type='email' placeholder='admin@mystore.com' required)
-              span.fas.fa-envelope.text-body.fs-9.form-icon
-            .form-text This will be their login email
-        
-          .mb-3
-            label.form-label(for='phone') Phone Number *
-            .form-icon-container
-              input#phone.form-control.form-icon-input(type='tel' placeholder='+1234567890' required)
-              span.fas.fa-phone.text-body.fs-9.form-icon
-        
-        //- Admin Details
-        .mb-4
-          h5.text-body-highlight.mb-3 Admin Details
-          
-          .mb-3
-            label.form-label(for='position') Position
-            input#position.form-control(type='text' placeholder='Store Manager')
-            .form-text Their job title or position
-        
-          .mb-3
-            label.form-label(for='department') Department
-            input#department.form-control(type='text' placeholder='Sales')
-            .form-text Their department or area of responsibility
-        
-        //- Security
-        .mb-4
-          h5.text-body-highlight.mb-3 Security
-          
-          .mb-3
-            label.form-label(for='password') Password *
-            .form-icon-container(data-password)
-              input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input required)
-              span.fas.fa-key.text-body.fs-9.form-icon
-              button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
-                span.uil.uil-eye.show
-                span.uil.uil-eye-slash.hide
-            .form-text Minimum 6 characters with uppercase, lowercase, and number
-        
-          .mb-3
-            label.form-label(for='confirmPassword') Confirm Password *
-            .form-icon-container(data-password)
-              input#confirmPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm Password' data-password-input required)
-              span.fas.fa-key.text-body.fs-9.form-icon
-              button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
-                span.uil.uil-eye.show
-                span.uil.uil-eye-slash.hide
-        
-        //- Permissions
-        .mb-4
-          h5.text-body-highlight.mb-3 Permissions
-          p.text-body-tertiary.mb-3 Store admins can manage products, orders, customers, and categories. They cannot modify store settings or add other admins.
-          
-          .row.g-3.mb-3
-            .col-sm-6
-              .form-check
-                input#manageProducts.form-check-input(type='checkbox' checked disabled)
-                label.form-check-label(for='manageProducts')
-                  | Manage Products
-                  .form-text Create, edit, and delete products
-            .col-sm-6
-              .form-check
-                input#manageOrders.form-check-input(type='checkbox' checked disabled)
-                label.form-check-label(for='manageOrders')
-                  | Manage Orders
-                  .form-text Process and manage customer orders
-          
-          .row.g-3.mb-3
-            .col-sm-6
-              .form-check
-                input#manageCustomers.form-check-input(type='checkbox' checked disabled)
-                label.form-check-label(for='manageCustomers')
-                  | Manage Customers
-                  .form-text View and manage customer data
-            .col-sm-6
-              .form-check
-                input#manageCategories.form-check-input(type='checkbox' checked disabled)
-                label.form-check-label(for='manageCategories')
-                  | Manage Categories
-                  .form-text Create and manage product categories
-        
-        //- Terms and Submit
-        .mb-3
-          .form-check
-            input#terms.form-check-input(type='checkbox' required)
-            label.form-check-label(for='terms')
-              | I agree to create this admin account and they will receive an email invitation
-        
-        button.btn.btn-primary.w-100.mb-3(type='submit') Create Store Admin
-        
-        //- Loading spinner (hidden by default)
-        .text-center.mb-3.d-none#loadingSpinner
-          .spinner-border.spinner-border-sm.text-primary.me-2(role='status')
-          span Creating admin account...
-        
-        //- Error message container
-        .alert.alert-danger.d-none#errorMessage(role='alert')
-          span#errorText
-        
-        //- Success message container
-        .alert.alert-success.d-none#successMessage(role='alert')
-          span#successText
-      
-      .d-grid.mt-4
-        a.btn.btn-outline-primary(href='/admin/')
+block content
+  .mb-9
+    .row.align-items-center.mb-4
+      .col
+        h2.mb-0 Create Store Admin
+      .col-auto
+        a.btn.btn-outline-primary.btn-sm(href='/admin/')
           span.fas.fa-angle-left.me-2
           | Back to Admin Index
+    .row.justify-content-center
+      .col-12.col-lg-10.col-xl-8
+        .card.border-0.shadow-sm
+          .card-body.p-4.p-lg-5
+            p.text-body-tertiary.mb-4 Add a new administrator to your store
+            .position-relative.mb-4
+              hr.bg-body-secondary.mt-0.mb-4
+              .divider-content-center.bg-body-emphasis Admin Information
+            form#createAdminForm
+              //- Basic Admin Information
+              .mb-4
+                h5.text-body-highlight.mb-3 Basic Information
+                .row.g-3.mb-3
+                  .col-sm-6
+                    label.form-label(for='firstName') First Name *
+                    input#firstName.form-control(type='text' placeholder='John' required)
+                  .col-sm-6
+                    label.form-label(for='lastName') Last Name *
+                    input#lastName.form-control(type='text' placeholder='Doe' required)
+                .mb-3
+                  label.form-label(for='email') Email Address *
+                  .form-icon-container
+                    input#email.form-control.form-icon-input(type='email' placeholder='admin@mystore.com' required)
+                    span.fas.fa-envelope.text-body.fs-9.form-icon
+                  .form-text This will be their login email
+                .mb-3
+                  label.form-label(for='phone') Phone Number *
+                  .form-icon-container
+                    input#phone.form-control.form-icon-input(type='tel' placeholder='+1234567890' required)
+                    span.fas.fa-phone.text-body.fs-9.form-icon
+              //- Admin Details
+              .mb-4
+                h5.text-body-highlight.mb-3 Admin Details
+                .mb-3
+                  label.form-label(for='position') Position
+                  input#position.form-control(type='text' placeholder='Store Manager')
+                  .form-text Their job title or position
+                .mb-3
+                  label.form-label(for='department') Department
+                  input#department.form-control(type='text' placeholder='Sales')
+                  .form-text Their department or area of responsibility
+              //- Security
+              .mb-4
+                h5.text-body-highlight.mb-3 Security
+                .mb-3
+                  label.form-label(for='password') Password *
+                  .form-icon-container(data-password)
+                    input#password.form-control.form-icon-input.pe-6(type='password' placeholder='Password' data-password-input required)
+                    span.fas.fa-key.text-body.fs-9.form-icon
+                    button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                      span.uil.uil-eye.show
+                      span.uil.uil-eye-slash.hide
+                  .form-text Minimum 6 characters with uppercase, lowercase, and number
+                .mb-3
+                  label.form-label(for='confirmPassword') Confirm Password *
+                  .form-icon-container(data-password)
+                    input#confirmPassword.form-control.form-icon-input.pe-6(type='password' placeholder='Confirm Password' data-password-input required)
+                    span.fas.fa-key.text-body.fs-9.form-icon
+                    button.btn.px-3.py-0.h-100.position-absolute.top-0.end-0.fs-7.text-body-tertiary(type='button' data-password-toggle)
+                      span.uil.uil-eye.show
+                      span.uil.uil-eye-slash.hide
+              //- Permissions
+              .mb-4
+                h5.text-body-highlight.mb-3 Permissions
+                p.text-body-tertiary.mb-3 Store admins can manage products, orders, customers, and categories. They cannot modify store settings or add other admins.
+                .row.g-3.mb-3
+                  .col-sm-6
+                    .form-check
+                      input#manageProducts.form-check-input(type='checkbox' checked disabled)
+                      label.form-check-label(for='manageProducts')
+                        | Manage Products
+                        .form-text Create, edit, and delete products
+                  .col-sm-6
+                    .form-check
+                      input#manageOrders.form-check-input(type='checkbox' checked disabled)
+                      label.form-check-label(for='manageOrders')
+                        | Manage Orders
+                        .form-text Process and manage customer orders
+                .row.g-3.mb-3
+                  .col-sm-6
+                    .form-check
+                      input#manageCustomers.form-check-input(type='checkbox' checked disabled)
+                      label.form-check-label(for='manageCustomers')
+                        | Manage Customers
+                        .form-text View and manage customer data
+                  .col-sm-6
+                    .form-check
+                      input#manageCategories.form-check-input(type='checkbox' checked disabled)
+                      label.form-check-label(for='manageCategories')
+                        | Manage Categories
+                        .form-text Create and manage product categories
+              //- Terms and Submit
+              .mb-3
+                .form-check
+                  input#terms.form-check-input(type='checkbox' required)
+                  label.form-check-label(for='terms')
+                    | I agree to create this admin account and they will receive an email invitation
+              button.btn.btn-primary.w-100.mb-3(type='submit') Create Store Admin
+              .text-center.mb-3.d-none#loadingSpinner
+                .spinner-border.spinner-border-sm.text-primary.me-2(role='status')
+                span Creating admin account...
+              .alert.alert-danger.d-none#errorMessage(role='alert')
+                span#errorText
+              .alert.alert-success.d-none#successMessage(role='alert')
+                span#successText
 
 block append scripts
   script.

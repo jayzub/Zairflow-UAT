@@ -1,43 +1,33 @@
 extends ../../../layouts/LayoutTheme
 
-block wrapperContent
-  .container-fluid.px-0
-    .row.g-0
+block content
+  .mb-9
+    .row.align-items-center.mb-4
+      .col
+        h2.mb-0 My Stores
+      .col-auto
+        a.btn.btn-primary.btn-sm(href='/admin/create-store')
+          i.fas.fa-plus.me-2
+          | Create New Store
+    .row
       .col-12
-        .bg-body-emphasis.px-4.py-3
-          .row.align-items-center
-            .col
-              h4.mb-0 My Stores
-            .col-auto
-              a.btn.btn-primary.btn-sm(href='/admin/create-store')
-                i.fas.fa-plus.me-2
-                | Create New Store
-              button.btn.btn-outline-danger.btn-sm.ms-2#logoutBtn
-                i.fas.fa-sign-out-alt.me-2
-                | Logout
-    
-    .row.g-0
-      .col-12
-        .p-4
-          .row
-            .col-12
-              .card.border-0.shadow-sm
-                .card-header.bg-transparent
-                  h5.mb-0 Store Management
-                .card-body
-                  #storesList
-                    .text-center.py-5
-                      .spinner-border.text-primary(role='status')
-                        span.visually-hidden Loading...
-                  #noStoresMessage.d-none
-                    .text-center.py-5
-                      .fs-1.text-muted.mb-3
-                        i.fas.fa-store
-                      h4.text-muted No Stores Found
-                      p.text-muted You don't have any stores yet. Create your first store to get started.
-                      a.btn.btn-primary(href='/admin/create-store')
-                        i.fas.fa-plus.me-2
-                        | Create Your First Store
+        .card.border-0.shadow-sm
+          .card-header.bg-transparent
+            h5.mb-0 Store Management
+          .card-body
+            #storesList
+              .text-center.py-5
+                .spinner-border.text-primary(role='status')
+                  span.visually-hidden Loading...
+            #noStoresMessage.d-none
+              .text-center.py-5
+                .fs-1.text-muted.mb-3
+                  i.fas.fa-store
+                h4.text-muted No Stores Found
+                p.text-muted You don't have any stores yet. Create your first store to get started.
+                a.btn.btn-primary(href='/admin/create-store')
+                  i.fas.fa-plus.me-2
+                  | Create Your First Store
 
 block append scripts
   script.
@@ -120,24 +110,7 @@ block append scripts
 
         loadStores();
 
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-          function clearAdminStorage() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('userRole');
-          }
-          fetch('/admin/logout', { method: 'POST', credentials: 'include' })
-            .then(function() {
-              clearAdminStorage();
-              window.location.href = '/admin/auth/sign-in';
-            })
-            .catch(function() {
-              clearAdminStorage();
-              window.location.href = '/admin/auth/sign-in';
-            });
-        });
-
+        // Logout is handled by the navbar Profile dropdown (Sign out).
         window.viewStoreAnalytics = function(storeId) {
           window.location.href = '/admin/stores/' + storeId + '/analytics';
         };
