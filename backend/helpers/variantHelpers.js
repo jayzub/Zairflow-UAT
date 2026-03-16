@@ -77,7 +77,8 @@ function findVariantById(product, variantId) {
 
 /**
  * Get available stock for a cart/checkout item. Prefers variantId when present for consistency with
- * order creation and inventory deduction; falls back to options-based lookup (legacy or no variant).
+ * order creation and inventory deduction; falls back to options-based lookup when variantId fails
+ * (e.g. legacy variants without _id) or when no variantId is set.
  *
  * @param {Object} product - Product document with optional variants array
  * @param {{ variantId?: ObjectId|string, options?: { color?: string, size?: string } }} opts
@@ -85,16 +86,32 @@ function findVariantById(product, variantId) {
  */
 function getAvailableStockForItem(product, opts = {}) {
     if (!product) return 0;
-    const { variantId, options = {} } = opts;
-    if (variantId) {
-        const v = findVariantById(product, variantId);
-        if (v && v.countInStock != null) return Math.max(0, parseInt(v.countInStock, 10) || 0);
+    let { variantId, options = {} } = opts;
+    // Normalize options (cart may store undefined or mixed types)
+    if (options && typeof options === 'object' && !Array.isArray(options)) {
+        options = {
+            color: options.color != null ? String(options.color).trim() : '',
+            size: options.size != null ? String(options.size).trim() : ''
+        };
+    } else {
+        options = { color: '', size: '' };
+    }
+    const hasVariants = product.variants && Array.isArray(product.variants) && product.variants.length > 0;
+
+    if (hasVariants) {
+        // Try variantId first when provided
+        if (variantId) {
+            const vById = findVariantById(product, variantId);
+            if (vById && vById.countInStock != null) return Math.max(0, parseInt(vById.countInStock, 10) || 0);
+        }
+        // Fall back to options (handles legacy variants without _id, or missing variantId)
+        const byOptions = findVariantByOptions(product, options);
+        if (byOptions && byOptions.variant && byOptions.variant.countInStock != null) {
+            return Math.max(0, parseInt(byOptions.variant.countInStock, 10) || 0);
+        }
         return 0;
     }
-    const result = findVariantByOptions(product, options);
-    if (result && result.variant && result.variant.countInStock != null) {
-        return Math.max(0, parseInt(result.variant.countInStock, 10) || 0);
-    }
+
     const baseStock = typeof product.countInStock === 'number' ? Math.max(0, product.countInStock) : 0;
     return baseStock;
 }

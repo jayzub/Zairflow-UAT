@@ -52,6 +52,8 @@ function getCartContext(req) {
 
 /**
  * Load cart for customer + scope (no create).
+ * Product is populated without select so discriminator fields (e.g. variants) are always present;
+ * otherwise variant products can get base-model-only data and fail availability checks.
  */
 async function getCartForCheckout(customerId, scopeType, storeId = null) {
     const filter = { customer: customerId, scopeType };
@@ -62,7 +64,7 @@ async function getCartForCheckout(customerId, scopeType, storeId = null) {
         filter.store = null;
     }
     return Cart.findOne(filter)
-        .populate([{ path: 'items.product', select: 'name price salePrice store countInStock variants' }, { path: 'items.store', select: '_id' }]);
+        .populate([{ path: 'items.product' }, { path: 'items.store', select: '_id' }]);
 }
 
 /**
@@ -275,12 +277,14 @@ const placeOrder = asyncHandler(async (req, res) => {
                 const variants = product.variants;
                 const hasVariants = variants && Array.isArray(variants) && variants.length > 0;
                 let variantToDeduct = null;
+                // Use discriminator model (HealthBeauty, Clothing, etc.) for variant updates; base Product schema has no variants path
+                const ProductModel = (product.constructor && product.constructor.modelName) ? product.constructor : Product;
 
                 if (hasVariants) {
                     if (item.variantId) {
                         variantToDeduct = findVariantById(product, item.variantId);
                     }
-                    if (!variantToDeduct && (item.options?.color || item.options?.size)) {
+                    if (!variantToDeduct) {
                         const res = findVariantByOptions(product, item.options || {});
                         variantToDeduct = res ? res.variant : null;
                     }
@@ -288,7 +292,7 @@ const placeOrder = asyncHandler(async (req, res) => {
 
                 if (variantToDeduct) {
                     if (variantToDeduct._id) {
-                        await Product.findByIdAndUpdate(product._id, {
+                        await ProductModel.findByIdAndUpdate(product._id, {
                             $inc: { 'variants.$[elem].countInStock': -qty }
                         }, {
                             arrayFilters: [{ 'elem._id': new mongoose.Types.ObjectId(variantToDeduct._id) }]
@@ -296,7 +300,7 @@ const placeOrder = asyncHandler(async (req, res) => {
                     } else {
                         const idx = variants.findIndex((v) => v === variantToDeduct);
                         if (idx >= 0) {
-                            await Product.findByIdAndUpdate(product._id, {
+                            await ProductModel.findByIdAndUpdate(product._id, {
                                 $inc: { [`variants.${idx}.countInStock`]: -qty }
                             });
                         }
