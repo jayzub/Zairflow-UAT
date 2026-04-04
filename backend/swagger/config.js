@@ -27,12 +27,12 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Griffin E-commerce API',
+      title: 'Zairflow E-commerce API',
       version: '1.0.0',
       description: 'Multi-tenant e-commerce platform API documentation',
       contact: {
         name: 'API Support',
-        email: 'support@griffin.com'
+        email: 'support@zairflow.com'
       },
       license: {
         name: 'MIT',
@@ -45,7 +45,7 @@ const options = {
         description: 'Development server'
       },
       {
-        url: 'https://api.griffin.com',
+        url: 'https://api.zairflow.com',
         description: 'Production server'
       }
     ],

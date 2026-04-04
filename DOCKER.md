@@ -1,6 +1,6 @@
 # Docker Setup
 
-This guide explains how to run the Griffin e-commerce platform using Docker.
+This guide explains how to run the Zairflow e-commerce platform using Docker.
 
 ## Prerequisites
 
