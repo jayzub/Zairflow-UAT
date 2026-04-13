@@ -1,0 +1,197 @@
+include ../navbars/ToggleThemeBtn
+
+mixin ZairflowStitchLanding
+	header(class='fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-20')
+		.flex.justify-between.items-center.max-w-7xl.mx-auto.px-8.h-full
+			a.text-2xl.font-black.text-blue-600(class='dark:text-blue-500 tracking-tighter font-headline no-underline' href='/') Zairflow
+			nav.hidden(class='md:flex items-center space-x-10')
+				a.font-manrope.font-bold.text-sm(class='tracking-tight text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 pb-1 no-underline' href='#platform') Platform
+				a.font-manrope.font-bold.text-sm(class='tracking-tight text-slate-600 dark:text-slate-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-300 no-underline' href='#features') Solutions
+				a.font-manrope.font-bold.text-sm(class='tracking-tight text-slate-600 dark:text-slate-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-300 no-underline' href='#developers') Developers
+				a.font-manrope.font-bold.text-sm(class='tracking-tight text-slate-600 dark:text-slate-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-300 no-underline' href='#pricing') Pricing
+			.flex.items-center(class='space-x-4 md:space-x-6')
+				+ToggleThemeBtn('themeControlToggleZairflow').d-flex.align-items-center
+				a.font-manrope.font-bold.text-sm(href='/admin/auth/sign-in' class='tracking-tight text-slate-600 dark:text-slate-400 font-medium hover:text-blue-700 scale-95 active:opacity-80 transition-all no-underline') Sign In
+				a.font-manrope.font-bold.text-sm(href='/admin/auth/sign-up' class='inline-block bg-gradient-to-r from-primary-container to-primary text-on-primary-container px-6 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 scale-95 active:opacity-80 transition-all no-underline') Get Started
+
+	.pt-32
+		section#platform.max-w-7xl.mx-auto(class='px-8 pb-24 grid lg:grid-cols-2 gap-16 items-center')
+			.space-y-8
+				h1.text-6xl(class='md:text-7xl font-extrabold font-headline leading-[1.1] tracking-tighter text-on-surface dark:text-slate-100')
+					| The Ultimate 
+					span.text-primary Multi-Tenant
+					|  E-Commerce Powerhouse.
+				p(class='text-xl text-on-surface-variant dark:text-slate-400 leading-relaxed max-w-xl')
+					| Launch, scale, and manage multiple storefronts with integrated banking and developer-first APIs. Built for enterprise complexity, designed for speed.
+				.flex.flex-col(class='sm:flex-row gap-4 pt-4')
+					a.text-center.bg-gradient-to-r.from-primary-container.to-primary.text-on-primary-container(href='/admin/auth/sign-up' class='px-8 py-4 rounded-xl font-headline font-bold text-lg shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all no-underline') Start Building Now
+					a.text-center.px-8.py-4.rounded-xl.font-headline.font-bold.text-lg(href='/api-docs' class='border border-outline-variant/30 dark:border-slate-600 text-on-surface dark:text-slate-100 hover:bg-surface-container-low dark:hover:bg-slate-800 transition-all no-underline') View Developer Docs
+			.relative.group
+				.absolute(class='-inset-4 bg-primary/5 rounded-[2rem] blur-3xl group-hover:bg-primary/10 transition-all duration-700')
+				.relative.rounded-2xl.overflow-hidden(class='shadow-2xl bg-surface-container-lowest dark:bg-slate-900 border border-white/50 dark:border-slate-700/60')
+					img.w-full.object-cover(class='aspect-video' alt='Dashboard mockup' src='https://lh3.googleusercontent.com/aida-public/AB6AXuA7RmAYR5_aJuBSZ-bvBHpihn6FRG-J_25xiSRfKW-fjkAyvY-TTTGiUqoes3MOHYXrlIyCFZkpSXDs-Hw7UwY37HuanyY_n54ZwszYTdcSzIfIHl76JgkipDAXbtPtkhh5hp-EYHqz6mxp13dhQ--hA8FVOfjnzDnICVKBjIKdJZ-lECbbBlwg89G2DK3WxZkrBPX7RJ5dMq6Rp0cLdyn5H_QQkot85gzhTFoix6xGhiYMCTFgblJYPAVOdK00_s6-mXXSDtxODg')
+
+		section(class='bg-surface-container-low dark:bg-slate-900 py-16')
+			.max-w-7xl.mx-auto.px-8
+				p.text-center.font-headline.font-bold.text-xs(class='tracking-[0.2em] text-slate-400 dark:text-slate-500 uppercase mb-10') Trusted by 10,000+ scaling brands
+				.flex.flex-wrap.justify-center(class='gap-12 md:gap-24 opacity-50 grayscale hover:grayscale-0 transition-all duration-500')
+					img.h-8.object-contain(alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuBlXEcROl5Uuhe2SbFoYHHyLLM2DOAb-yOMDrJD7WTupjuTjpslw7ZoNkDeIZYkAvnelTKwD06v9XK33rfcZ-6eFRkvtUveI9TDPANeh7-Y8mkTOAAsPT8eHK3u1wnXB-FdyU9vyCw0itS1hTFIID8eUodN-35ytJ7f-OX9cXhJM2rHz0rwRxvYnk7xNUy7bqNKcRaicK4Y3LJ3RpQFkHSVP0uMQ-60rJcKFNZQwH0uCGwOnlLmiPgnI4MkkOqo3SP_lbwNmw6yog')
+					img.h-8.object-contain(alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuB2OhHlXJstlumQD1qCHPUf2ZC3kJakioDpU9JtPAwCYDGp5cwbAAzWX1FDRJiVVqbAEDoG9_rNpETiO6GKJkarZt366bew0Upwwb11ucRrccbEGkDn8OnFvFW4yW01-JWMJee_ZQIp6D7zDsd_MMeS6Mlba9FO9U0tYS9KGKO_IS2iOUn9-FocKME91hsMO1zyWSLAYWhXDEx3I8euFjPgU6OnKpYD4V1pCGSrBOEN4dx_A6UuZO-XSThvMnUbfTEnTtnSHgSJqw')
+					img.h-8.object-contain(alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuDG08Q9bqlL7l1x2hXyFrg-NwrV6PBxHMXFeuBdDC-E-wk5dWV0vhoZUyELfBfzLINQOuFmdMX41B-WZ0GXBnpOwulnZH5AyxPaoOljnSj0D5VqskK8RNaDFl29sU_vxOYuD3u876cjR2d7HIZ3KWeKOK3eahrEFJgVUQcb_OQukrXdrG5v5gA7Zkq3JnKdtlnaJOQ8WH8aZgL9ND_qVelI8L-yvNWUo1kIPypjy4Q_oONlLYlOr3614Y9_q07qjYVQue1hrL8UzQ')
+					img.h-8.object-contain(alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuDNVmNRCn2ad_k11OwxqVJ0lqEzsJQevDdL7766ObBwaaGB9UesWmb5OY3b3R1EHLIZL74JYnp_ZUN6cWAG0M9CAhJ5SIVTcz3bQ0FK0hdVfMsB2ObC3fK8hUcO8k_TaCglT-IZeAEOzKD8ns97qHp2bqHZC29zv1odC0uqmUCCL8QfzwJ4O-1PbEfAqoadj8OWCi4ivG5EQrtSwPFUOGPpUkGx9NOl_FbA_hJA6dOhYZga-ZPk26R3MoI8tN-t4l0Z-LoRD8UlHg')
+					img.h-8.object-contain(alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuB1X-TUMytQD_IZS2K2Xhfs4xNxai4wGX-lYIld8-gHayKiGZ1tRR4Ih7aDJtJB2GBE9Os-3Qs98nDsNfw7XHwTu9gi6e3OhNoQ1XqUxlB3-6hkSlZ2ROLUH-0_pEhoaMKNIxS4I_slwyka8FxG1lVGk7ADzDxFGj2c3NQGlzKfqUhoTuDwSUpiYtRFK1-UK3TCqPTuOc_WJmMEdr1LTaPUDnsL0FunNYpGl2SBguFBlN1PZLWsSCwlH1S4PToeXiNbRkVXXLXdag')
+
+		section#features.max-w-7xl.mx-auto(class='px-8 py-32')
+			.mb-16
+				h2.text-4xl.font-extrabold.font-headline(class='tracking-tight mb-4 text-on-surface dark:text-slate-100') Engineered for Massive Scale
+				p(class='text-on-surface-variant dark:text-slate-400 text-lg') One platform to orchestrate your entire commerce empire.
+			.grid.grid-cols-1(class='md:grid-cols-3 lg:grid-cols-4 gap-6')
+				div(class='md:col-span-2 lg:col-span-2 p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col justify-between overflow-hidden relative border border-white/40 dark:border-slate-700/50')
+					.relative.z-10
+						span.material-symbols-outlined.text-primary(class='text-4xl mb-6') storefront
+						h3.text-2xl.font-bold.font-headline(class='mb-4 text-on-surface dark:text-slate-100') Multi-Store Management
+						p(class='text-on-surface-variant dark:text-slate-400 leading-relaxed') Centralize inventory, customer data, and sales across hundreds of individual storefronts from a single command center.
+					img.absolute.bottom-0.right-0.w-1_2(class='opacity-10 -rotate-12 translate-y-10 pointer-events-none' alt='' src='https://lh3.googleusercontent.com/aida-public/AB6AXuBfFAakyMnUd6quOmMvCHk_U2orMCzmphQPtSttAFN2dQi3JM7zP4VMdmVtrp-AFz46V4jHoHLKlJIZzHaM1ZrC6mT1Yj45djztHTIl2ZYlK09H9eEXg7R4O6x-7Jvqai03Xc-TQht5bskUeNEAGCP7HfeBZZosfAA_b7fc5aBsHoHyXjWsi0suoehygukVmtwI8vkWQzKnJMEa2kvf5YDAx7DJJuaKjpjD671CPFln7NbLlXUuKBX-1MpB5VG9ir4f8ePpbfJX8g')
+				div(class='p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 border border-white/40 dark:border-slate-700/50')
+					span.material-symbols-outlined.text-primary(class='text-4xl mb-6') account_balance
+					h3.text-xl.font-bold.font-headline(class='mb-3 text-on-surface dark:text-slate-100') Embedded Banking
+					p(class='text-sm text-on-surface-variant dark:text-slate-400 leading-relaxed') Deep Griffin integration. Issue cards, manage payouts, and hold funds directly within your app ecosystem.
+				div(class='p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 border border-white/40 dark:border-slate-700/50')
+					span.material-symbols-outlined.text-primary(class='text-4xl mb-6') query_stats
+					h3.text-xl.font-bold.font-headline(class='mb-3 text-on-surface dark:text-slate-100') Advanced Analytics
+					p(class='text-sm text-on-surface-variant dark:text-slate-400 leading-relaxed') Real-time data engine that processes millions of events to give you actionable market insights instantly.
+				div(class='p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 border border-white/40 dark:border-slate-700/50')
+					span.material-symbols-outlined.text-primary(class='text-4xl mb-6') verified_user
+					h3.text-xl.font-bold.font-headline(class='mb-3 text-on-surface dark:text-slate-100') Enterprise Security
+					p(class='text-sm text-on-surface-variant dark:text-slate-400 leading-relaxed') Bank-grade encryption, SOC2 compliance, and advanced DDoS protection for every store in your network.
+				#developers(class='md:col-span-3 p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 border border-white/40 dark:border-slate-700/50 flex flex-col md:flex-row items-center gap-12 scroll-mt-32')
+					.flex-1
+						span.material-symbols-outlined.text-primary(class='text-4xl mb-6') terminal
+						h3.text-2xl.font-bold.font-headline(class='mb-4 text-on-surface dark:text-slate-100') Developer-First APIs
+						p(class='text-on-surface-variant dark:text-slate-400 leading-relaxed') Robust SDKs, GraphQL support, and webhooks that give your engineers the flexibility to build anything on top of Zairflow.
+					.bg-slate-900.rounded-xl.p-4.font-mono.text-xs.text-blue-300(class='w-full md:w-80 shadow-2xl overflow-hidden border border-slate-800')
+						.flex.gap-1_5.mb-4
+							.w-3.h-3.rounded-full(class='bg-red-500/50')
+							.w-3.h-3.rounded-full(class='bg-amber-500/50')
+							.w-3.h-3.rounded-full(class='bg-emerald-500/50')
+						.space-y-1
+							p
+								span.text-slate-500 # Fetch all tenants
+							p
+								span.text-pink-400 const
+								|  tenants = 
+								span.text-blue-400 await
+								|  zairflow.tenants.
+								span.text-yellow-200 list
+								| ()
+							p.pl-4.text-slate-400 limit: 50,
+							p.pl-4.text-slate-400 active: 
+								span.text-emerald-400 true
+							p
+								span.text-blue-400 console
+								| .
+								span.text-yellow-200 log
+								| (tenants.data)
+
+		section#pricing(class='bg-surface-container-low dark:bg-slate-900 py-32 scroll-mt-24')
+			.max-w-7xl.mx-auto.px-8
+				.text-center.mb-20
+					h2.text-4xl.font-extrabold.font-headline(class='tracking-tight mb-4 text-on-surface dark:text-slate-100') Simple, Transparent Scaling
+					p(class='text-on-surface-variant dark:text-slate-400 text-lg') Choose the tier that matches your business ambitions.
+				.grid.grid-cols-1(class='md:grid-cols-3 gap-8')
+					div(class='bg-surface-container-lowest dark:bg-slate-900 p-10 rounded-[2rem] border border-white dark:border-slate-700 shadow-sm flex flex-col hover:scale-[1.02] transition-transform duration-300')
+						h3.font-headline.font-bold(class='text-sm tracking-widest uppercase mb-4 text-slate-500 dark:text-slate-400') Starter
+						.flex.items-baseline.gap-1.mb-8
+							span(class='text-4xl font-black font-headline text-on-surface dark:text-slate-100') $299
+							span(class='text-on-surface-variant dark:text-slate-400') /mo
+						ul.space-y-4.mb-12(class='flex-grow')
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Up to 5 Storefronts
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Core Banking APIs
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Shared Infrastructure
+							li.flex.items-center.gap-3(class='text-sm font-medium text-slate-400')
+								span.material-symbols-outlined.text-slate-300(class='text-lg') cancel
+								|  Advanced Analytics
+						a.block.w-full.py-4.rounded-xl(href='/admin/auth/sign-up' class='border border-outline-variant dark:border-slate-600 text-center font-headline font-bold hover:bg-surface-container-low dark:hover:bg-slate-800 transition-colors no-underline text-on-surface dark:text-slate-100') Start Free Trial
+					div(class='bg-surface-container-lowest dark:bg-slate-900 p-10 rounded-[2rem] border-2 border-primary shadow-2xl shadow-blue-500/10 flex flex-col relative z-10 scale-105')
+						.absolute.top-0.right-10(class='-translate-y-1/2 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold tracking-tight') Most Popular
+						h3.font-headline.font-bold.text-primary(class='text-sm tracking-widest uppercase mb-4') Growth Pro
+						.flex.items-baseline.gap-1.mb-8
+							span(class='text-4xl font-black font-headline text-on-surface dark:text-slate-100') $899
+							span(class='text-on-surface-variant dark:text-slate-400') /mo
+						ul.space-y-4.mb-12(class='flex-grow')
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface dark:text-slate-100')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Up to 50 Storefronts
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface dark:text-slate-100')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Full Griffin Integration
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface dark:text-slate-100')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Real-time Analytics
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface dark:text-slate-100')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Priority Developer Support
+						a.block.w-full.py-4.rounded-xl.bg-gradient-to-r.from-primary-container.to-primary.text-on-primary-container(href='/admin/auth/sign-up' class='text-center font-headline font-bold shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity no-underline') Choose Growth
+					div(class='bg-surface-container-lowest dark:bg-slate-900 p-10 rounded-[2rem] border border-white dark:border-slate-700 shadow-sm flex flex-col hover:scale-[1.02] transition-transform duration-300')
+						h3.font-headline.font-bold(class='text-sm tracking-widest uppercase mb-4 text-slate-500 dark:text-slate-400') Enterprise
+						.flex.items-baseline.gap-1.mb-8
+							span(class='text-4xl font-black font-headline text-on-surface dark:text-slate-100') Custom
+						ul.space-y-4.mb-12(class='flex-grow')
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Unlimited Storefronts
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Dedicated Hardware
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  Custom API Rate Limits
+							li.flex.items-center.gap-3(class='text-sm font-medium text-on-surface-variant dark:text-slate-400')
+								span.material-symbols-outlined.text-primary(class='text-lg') check_circle
+								|  24/7 TAM Support
+						a.block.w-full.py-4.rounded-xl(href='mailto:sales@zairflow.com' class='border border-outline-variant dark:border-slate-600 text-center font-headline font-bold hover:bg-surface-container-low dark:hover:bg-slate-800 transition-colors no-underline text-on-surface dark:text-slate-100') Contact Sales
+
+		section#cta.max-w-7xl.mx-auto(class='px-8 py-32')
+			.bg-primary-container(class='rounded-[3rem] p-16 text-center relative overflow-hidden dark:bg-blue-950')
+				.absolute.top-0.right-0(class='-translate-y-1/2 translate-x-1/4 w-96 h-96 bg-primary rounded-full blur-[120px] opacity-40')
+				.absolute.bottom-0.left-0(class='translate-y-1/2 -translate-x-1/4 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-30')
+				.relative.z-10.space-y-8
+					h2.text-5xl(class='md:text-6xl font-black font-headline text-on-primary-container tracking-tight') Ready to scale?
+					p.text-blue-100.text-xl(class='max-w-2xl mx-auto font-medium') Join the world's most innovative e-commerce brands building on Zairflow. Start your 14-day free trial today.
+					.flex.flex-col(class='sm:flex-row justify-center items-center gap-6 pt-4')
+						a.inline-block(href='/admin/auth/sign-up' class='bg-surface-container-lowest dark:bg-slate-900 text-primary px-10 py-5 rounded-2xl font-headline font-extrabold text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all no-underline') Create Account
+						a.text-on-primary-container.font-headline.font-bold.text-lg(href='mailto:sales@zairflow.com' class='hover:underline underline-offset-8 transition-all no-underline') Schedule a Demo
+
+	footer(class='bg-slate-50 dark:bg-slate-950 w-full py-16 px-8 border-t border-slate-200/50 dark:border-slate-800/50')
+		.max-w-7xl.mx-auto.grid.grid-cols-2(class='md:grid-cols-5 gap-12')
+			.col-span-2
+				.text-xl.font-bold(class='text-slate-900 dark:text-slate-100 mb-6') Zairflow
+				p.text-slate-500.max-w-xs(class='mb-8 font-inter text-sm leading-relaxed') The multi-tenant infrastructure platform for high-growth e-commerce brands and fintech innovators.
+				p.font-inter.text-sm(class='text-slate-500 dark:text-slate-400') © 2026 Zairflow Inc. All rights reserved.
+			div
+				h4.font-bold(class='text-slate-900 dark:text-slate-100 text-sm mb-6') Product
+				ul.space-y-4
+					li: a.font-inter.text-sm(href='#platform' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Platform
+					li: a.font-inter.text-sm(href='#features' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Banking
+					li: a.font-inter.text-sm(href='#features' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Analytics
+					li: a.font-inter.text-sm(href='#pricing' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Pricing
+			div
+				h4.font-bold(class='text-slate-900 dark:text-slate-100 text-sm mb-6') Resources
+				ul.space-y-4
+					li: a.font-inter.text-sm(href='/api-docs' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Developer Docs
+					li: a.font-inter.text-sm(href='/api-docs' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') API Reference
+					li: a.font-inter.text-sm(href='#features' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Security
+					li: a.font-inter.text-sm(href='#' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Status
+			div
+				h4.font-bold(class='text-slate-900 dark:text-slate-100 text-sm mb-6') Company
+				ul.space-y-4
+					li: a.font-inter.text-sm(href='#' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Privacy Policy
+					li: a.font-inter.text-sm(href='#' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Terms of Service
+					li: a.font-inter.text-sm(href='mailto:sales@zairflow.com' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Contact
+					li: a.font-inter.text-sm(href='#' class='text-slate-500 hover:text-blue-600 transition-colors no-underline') Blog

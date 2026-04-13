@@ -1,0 +1,102 @@
+extends LayoutTheme
+
+prepend styles
+	script(src='https://cdn.tailwindcss.com?plugins=forms,container-queries')
+	link(rel='preconnect' href='https://fonts.googleapis.com')
+	link(rel='preconnect' href='https://fonts.gstatic.com' crossorigin='')
+	link(href='https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;700;800&family=Inter:wght@300;400;500;600&display=swap' rel='stylesheet')
+	link(href='https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap' rel='stylesheet')
+	script.
+		tailwind.config = {
+			darkMode: ['selector', 'html[data-bs-theme="dark"]'],
+			corePlugins: { preflight: false },
+			theme: {
+				extend: {
+					colors: {
+						'on-secondary-fixed-variant': '#3f465c',
+						'surface-container-high': '#e6e8ea',
+						'on-error': '#ffffff',
+						'inverse-surface': '#2d3133',
+						'outline-variant': '#c3c6d7',
+						'primary-fixed-dim': '#b4c5ff',
+						'surface-dim': '#d8dadc',
+						primary: '#004ac6',
+						'tertiary-fixed': '#c4e7ff',
+						'on-tertiary-fixed': '#001e2c',
+						'on-tertiary-fixed-variant': '#004c69',
+						'on-primary-container': '#eeefff',
+						'on-secondary-container': '#5c647a',
+						'secondary-fixed': '#dae2fd',
+						'on-tertiary-container': '#e1f2ff',
+						'inverse-primary': '#b4c5ff',
+						'tertiary-container': '#00759f',
+						'surface-tint': '#0053db',
+						surface: '#f7f9fb',
+						'error-container': '#ffdad6',
+						'on-surface': '#191c1e',
+						'on-tertiary': '#ffffff',
+						'on-secondary-fixed': '#131b2e',
+						'surface-container-lowest': '#ffffff',
+						'on-secondary': '#ffffff',
+						'surface-variant': '#e0e3e5',
+						'surface-bright': '#f7f9fb',
+						'inverse-on-surface': '#eff1f3',
+						'surface-container': '#eceef0',
+						background: '#f7f9fb',
+						tertiary: '#005b7c',
+						'secondary-fixed-dim': '#bec6e0',
+						'on-background': '#191c1e',
+						outline: '#737686',
+						'tertiary-fixed-dim': '#7bd0ff',
+						'secondary-container': '#dae2fd',
+						secondary: '#565e74',
+						'surface-container-highest': '#e0e3e5',
+						'on-surface-variant': '#434655',
+						error: '#ba1a1a',
+						'on-primary-fixed': '#00174b',
+						'on-error-container': '#93000a',
+						'primary-fixed': '#dbe1ff',
+						'on-primary': '#ffffff',
+						'on-primary-fixed-variant': '#003ea8',
+						'surface-container-low': '#f2f4f6',
+						'primary-container': '#2563eb',
+					},
+					borderRadius: {
+						DEFAULT: '0.125rem',
+						lg: '0.25rem',
+						xl: '0.5rem',
+						full: '0.75rem',
+					},
+					fontFamily: {
+						headline: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+						body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+						label: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+						inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+						manrope: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+					},
+				},
+			},
+		};
+	style.
+		.material-symbols-outlined {
+			font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+		}
+		.tonal-shift {
+			transition: background-color 0.3s ease;
+		}
+		.glass-header {
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+		}
+		/* Semantic Tailwind tokens are fixed light hexes; Phoenix theme.css can also set body bg. Force landing dark canvas. */
+		html[data-bs-theme="dark"] body.landing-page {
+			background-color: rgb(2 6 23) !important;
+			color: rgb(241 245 249) !important;
+		}
+		html[data-bs-theme="dark"] body.landing-page main {
+			background-color: transparent;
+		}
+
+append variables
+	- var title = 'Zairflow | The Ultimate Multi-Tenant E-Commerce Powerhouse';
+	- attrsBody = Object.assign({}, attrsBody || {}, { class: 'landing-page bg-surface font-body text-on-surface antialiased dark:bg-slate-950 dark:text-slate-100' });
