@@ -3,6 +3,7 @@ mixin Logo(config)
   -
     var brandText = (typeof store !== 'undefined' && store && store.name) ? store.name : 'Zairflow';
     var logoUrl = null;
+    var isStoreBranded = (typeof store !== 'undefined' && store && store.name);
     if (config.logoUrl) {
       logoUrl = config.logoUrl;
     } else if (typeof store !== 'undefined' && store && store.logo && store.logo.url) {
@@ -12,6 +13,13 @@ mixin Logo(config)
     if logoUrl
       img(src=logoUrl alt=brandText width=config.width)
     else
-      img(src=`${CWD}assets/img/icons/${config.logo}.png` alt=brandText width=config.width)
+      picture
+        source(media='(prefers-color-scheme: dark)' srcset=`${CWD}assets/img/brand/zairflow-logo-white.png`)
+        img(src=`${CWD}assets/img/brand/zairflow-logo-black.png` alt=brandText width=config.width)
     if config.text
-      h5.logo-text.ms-2(class=config.textClass ? config.textClass : '')= brandText
+      if isStoreBranded && !config.forceBrandWordmark
+        h5.logo-text.ms-2(class=config.textClass ? config.textClass : '')= brandText
+      else
+        picture.ms-2
+          source(media='(prefers-color-scheme: dark)' srcset=`${CWD}assets/img/brand/zairflow-wordmark-white.png`)
+          img(src=`${CWD}assets/img/brand/zairflow-wordmark-black.png` alt=brandText class=config.textClass ? config.textClass : '' style='height: 1.75rem; width: auto;')
