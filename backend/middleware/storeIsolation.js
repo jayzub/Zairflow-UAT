@@ -40,8 +40,26 @@ function isPlatformHost(hostNoPort) {
 }
 
 /**
+ * Optional parent host for storefront URLs: `{slug}.{parent}` (e.g. zairflow.com → perfume-store.zairflow.com).
+ * Set in production when the admin app is on an apex or host where inferring the parent from `Host` is wrong.
+ * Accepts `zairflow.com` or `https://zairflow.com`; path is ignored.
+ */
+function getConfiguredStoreSubdomainParent() {
+    const raw = process.env.STORE_SUBDOMAIN_PARENT_HOST;
+    if (raw == null || typeof raw !== 'string') return null;
+    let s = raw.trim();
+    if (!s) return null;
+    const lower = s.toLowerCase();
+    if (lower.startsWith('https://')) s = s.slice(8);
+    else if (lower.startsWith('http://')) s = s.slice(7);
+    s = s.split('/')[0].trim();
+    return s || null;
+}
+
+/**
  * Build store-scoped URLs for views (home, products).
  * Uses full subdomain URL everywhere: perfume-store.localhost:3001/home, perfume-store.griffin-platform.onrender.com/home, etc.
+ * When STORE_SUBDOMAIN_PARENT_HOST is set (non-localhost), uses that parent instead of inferring from the request Host.
  */
 function buildStoreUrls(req, store) {
     if (!store || !store.slug) return {};
@@ -58,6 +76,15 @@ function buildStoreUrls(req, store) {
             ? parts.slice(1).join('.') + (port ? ':' + port : '')
             : host;
         const base = `${protocol}://${store.slug}.${parentHost}`;
+        return {
+            storeHomepageUrl: `${base}/home`,
+            storeProductsUrl: `${base}/api/products`
+        };
+    }
+
+    const configuredParent = getConfiguredStoreSubdomainParent();
+    if (configuredParent) {
+        const base = `${protocol}://${store.slug}.${configuredParent}`;
         return {
             storeHomepageUrl: `${base}/home`,
             storeProductsUrl: `${base}/api/products`
