@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const User = require('../../models/user');
 const adminAuthService = require('../../services/admin/adminAuthService');
 const { sendAdminPasswordResetEmail } = require('../../services/adminPasswordResetEmail');
+const { isAdminRegistrationEnabled } = require('../../config/adminRegistration');
 
 exports.login = asyncHandler(async (req, res) => {
   const emailInput = (req.body.email || '').trim();
@@ -50,6 +51,13 @@ exports.login = asyncHandler(async (req, res) => {
 });
 
 exports.register = asyncHandler(async (req, res) => {
+  if (!isAdminRegistrationEnabled()) {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin registration is closed. Contact support@zairflow.com to request access.',
+    });
+  }
+
   // Check if user already exists
   const emailInput = (req.body.email || '').trim();
   const existingUser = await adminAuthService.findUserByEmail(emailInput);

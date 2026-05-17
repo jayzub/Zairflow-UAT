@@ -1,5 +1,12 @@
 const express = require('express');
+const { isAdminRegistrationEnabled } = require('../../config/adminRegistration');
+
 const router = express.Router();
+
+router.use((req, res, next) => {
+  res.locals.adminRegistrationEnabled = isAdminRegistrationEnabled();
+  next();
+});
 
 // Admin auth UI pages (no store isolation needed)
 router.get('/auth', (req, res) => {
@@ -11,7 +18,10 @@ router.get('/auth/sign-in', (req, res) => {
 });
 
 router.get('/auth/sign-up', (req, res) => {
-  res.render('admin/auth/sign-up');
+  const template = isAdminRegistrationEnabled()
+    ? 'admin/auth/sign-up-form'
+    : 'admin/auth/registration-closed';
+  res.render(template);
 });
 
 router.get('/auth/forgot-password', (req, res) => {
@@ -23,4 +33,3 @@ router.get('/auth/reset-password', (req, res) => {
 });
 
 module.exports = router;
-

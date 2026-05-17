@@ -15,8 +15,8 @@ block wrapperContent
           i.fas.fa-sign-in-alt.me-2
           | Sign In
         a.btn.btn-outline-primary.btn-lg(href='/admin/auth/sign-up')
-          i.fas.fa-user-plus.me-2
-          | Create Account
+          i.fas(class=adminRegistrationEnabled ? 'fa-user-plus' : 'fa-envelope').me-2
+          | #{adminRegistrationEnabled ? 'Create Account' : 'Request access'}
         a.btn.btn-outline-secondary.btn-lg(href='/admin/auth/forgot-password')
           i.fas.fa-key.me-2
           | Forgot Password

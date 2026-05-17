@@ -55,7 +55,10 @@ block wrapperContent
           span#successText
       
       .text-center
-        a.fs-9.fw-bold(href='/admin/auth/sign-up') Create an account
+        if adminRegistrationEnabled
+          a.fs-9.fw-bold(href='/admin/auth/sign-up') Create an account
+        else
+          a.fs-9.fw-bold(href='/admin/auth/sign-up') Request access
 
 block append scripts
   script.

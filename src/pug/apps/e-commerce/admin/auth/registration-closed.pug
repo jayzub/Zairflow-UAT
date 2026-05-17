@@ -1,0 +1,40 @@
+extends ../../../../layouts/LayoutTheme
+include ../../../../layouts/LayoutCardAuth
+
+block wrapperContent
+  +LayoutCardBasic({img:37, page: 'sign-up'})
+    .auth-form-box
+      .text-center.mb-7
+        a(href=`/`).d-flex.flex-center.text-decoration-none.mb-4
+          +Logo({text:false,width:58}).fw-bolder.fs-3.d-inline-block
+        h3.text-body-highlight Admin registration closed
+        p.text-body-tertiary
+          | New admin accounts are invite-only during early access.
+          |  Contact support to request access.
+
+      .alert.alert-subtle-primary.text-start.mb-4(role='alert')
+        p.mb-2.fw-semibold.text-body-highlight Need an account?
+        p.mb-0.fs-9.text-body-secondary
+          | Email us at
+          a.alert-link.fw-bold.text-decoration-underline(href='mailto:contact@zairflow.com') contact@zairflow.com
+          |  with your name, company, and how you plan to use Zairflow. We will follow up with next steps.
+
+      .d-grid.gap-2.mb-4
+        a.btn.btn-primary.w-100(href='mailto:contact@zairflow.com?subject=Admin%20account%20request')
+          i.fas.fa-envelope.me-2
+          | Contact support
+        a.btn.btn-outline-primary.w-100(href='/#contact')
+          | More contact options
+
+      .text-center
+        a.fs-9.fw-bold(href='/admin/auth/sign-in') Back to sign in
+
+block append scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/admin/me', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res) {
+          if (res.ok) window.location.href = '/admin/';
+        })
+        .catch(function() {});
+    });
