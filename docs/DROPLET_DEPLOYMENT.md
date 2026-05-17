@@ -61,13 +61,20 @@ npm run build
 
 ### Run in production
 
-Use **`start:render`**, not **`npm start`**:
+On a Droplet, run the app **once** under **systemd** (see [systemd service](#systemd-service)). Do **not** start a second copy with `npm run start:render` in an SSH session while the service is already running—that causes **`EADDRINUSE`** on port **3001** (see [Port already in use](#port-already-in-use-eaddrinuse)).
+
+The process command is **`node backend/server.js`** (same as `npm run start:render`). Use **`start:render`**, not **`npm start`**:
+
+- **`npm run start:render`** — production API + static assets (`node backend/server.js`). Use in **`ExecStart`** or for one-off debugging after stopping systemd.
+- **`npm start`** — Gulp watch + server; **development only**.
+
+Confirm the app is up without starting another instance:
 
 ```bash
-npm run start:render
+curl -sI http://127.0.0.1:3001/health
 ```
 
-This runs `node backend/server.js`. **`npm start`** runs Gulp and the server together and is aimed at **development**.
+(Use the port from `PORT` in `.env` if it is not **3001**.)
 
 ### Local development (for comparison)
 
@@ -98,19 +105,32 @@ Or inject them via **systemd** `Environment=` / `EnvironmentFile=`.
 
 ## systemd service
 
-Example pattern:
+Example unit pattern:
 
-- **`WorkingDirectory`:** app root.
-- **`ExecStart`:** `/usr/bin/node backend/server.js` (or equivalent full path).
-- **`EnvironmentFile`:** path to `.env` if you use one.
+- **`WorkingDirectory`:** app root (e.g. `/var/www/Zairflow-UAT`).
+- **`ExecStart`:** `/usr/bin/node backend/server.js` (equivalent to `npm run start:render`).
+- **`EnvironmentFile`:** path to `.env` if you use one (e.g. `/var/www/Zairflow-UAT/.env`).
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now <service-name>
+sudo systemctl status <service-name>
 sudo journalctl -u <service-name> -f
 ```
 
-Health check (if exposed): `curl -sI http://127.0.0.1:3001/health` (adjust port to match `PORT`).
+After code or env changes, **restart** the service—do not run `npm run start:render` in the foreground on the same port:
+
+```bash
+sudo systemctl restart <service-name>
+```
+
+Find a running unit if the name is unclear:
+
+```bash
+systemctl list-units --type=service --state=running | grep -iE 'zairflow|node'
+```
+
+Health check: `curl -sI http://127.0.0.1:3001/health` (adjust port to match `PORT`).
 
 ---
 
@@ -227,6 +247,70 @@ Then retry `npm ci` from the app root.
 
 ---
 
+## Port already in use (`EADDRINUSE`)
+
+**Symptom:** Starting the app prints Redis/DB success, then fails with:
+
+```text
+Error: listen EADDRINUSE: address already in use :::3001
+```
+
+**Cause:** Port **3001** (or your `PORT`) is already bound—usually because **systemd** is already running the app, or a previous manual `npm run start:render` / `node backend/server.js` is still running.
+
+`backend/server.js` connects to Redis and MongoDB **before** calling `listen()`, so you can see “connected” logs and still fail when binding the port.
+
+### Check whether the app is already healthy
+
+```bash
+curl -sI http://127.0.0.1:3001/health
+```
+
+If that responds, the server is already up; use **`systemctl restart`** for deploys instead of starting another process.
+
+### See what owns the port
+
+```bash
+sudo lsof -i :3001
+# or
+sudo ss -tlnp | grep 3001
+```
+
+| What you see | What to do |
+|--------------|------------|
+| `node` under a **systemd** unit | App is managed by systemd—`sudo systemctl restart <service-name>`; do not run `npm run start:render` again in SSH |
+| `node` from an old SSH session | Orphan process—stop it, then use systemd (or one intentional foreground start) |
+| Two `node` listeners | Duplicate start—stop one; keep a single process |
+
+### Fix
+
+**Normal production (systemd already running):**
+
+```bash
+sudo systemctl restart <service-name>
+sudo journalctl -u <service-name> -f
+```
+
+**Orphan manual process (no systemd, or you started it by hand):**
+
+```bash
+sudo kill $(sudo lsof -t -i:3001)
+sudo systemctl start <service-name>   # preferred
+```
+
+**Debugging in the foreground:** stop systemd (or kill the port holder) first, then:
+
+```bash
+npm run start:render
+```
+
+**Temporary alternate port** (only if Nginx `proxy_pass` matches):
+
+```bash
+PORT=3002 npm run start:render
+```
+
+---
+
 ## Routine deploy
 
 ```bash
@@ -235,7 +319,10 @@ git pull
 npm ci
 npm run build
 sudo systemctl restart <service-name>
+curl -sI http://127.0.0.1:3001/health
 ```
+
+Do **not** run `npm run start:render` after `systemctl restart` unless the service is stopped and you are intentionally running a single foreground instance.
 
 ---
 

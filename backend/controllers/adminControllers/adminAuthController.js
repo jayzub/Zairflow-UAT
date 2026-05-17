@@ -54,7 +54,7 @@ exports.register = asyncHandler(async (req, res) => {
   if (!isAdminRegistrationEnabled()) {
     return res.status(403).json({
       success: false,
-      message: 'Admin registration is closed. Contact support@zairflow.com to request access.',
+      message: 'Admin registration is closed. Contact contact@zairflow.com to request access.',
     });
   }
 
